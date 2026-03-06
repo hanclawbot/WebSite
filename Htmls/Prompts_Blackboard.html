@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑板板書與版畫提示詞產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%232a2a2a' fill-opacity='0.4' fill-rule='evenodd'%3E%3Cpath d='M0 38.59l2.83-2.83 1.41 1.41L1.41 40H0v-1.41zM0 1.9l2.83 2.83 1.41-1.41L1.41 0H0v1.9zM38.59 40l-2.83-2.83 1.41-1.41L40 38.59V40h-1.41zM40 1.41l-2.83 2.83-1.41-1.41L38.59 0H40v1.41zM20 18.6l2.83-2.83 1.41 1.41L21.41 20l2.83 2.83-1.41 1.41L20 21.41l-2.83 2.83-1.41-1.41L18.59 20l-2.83-2.83 1.41-1.41L20 18.59z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .chalk-border {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .input-dark {
+            background-color: #2d3748;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+
+        .input-dark:focus {
+            border-color: #48bb78;
+            ring-color: #48bb78;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
+        }
+    </style>
+</head>
+<body class="text-gray-200 min-h-screen p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-emerald-400 mb-2">
+                <i class="fas fa-chalkboard-teacher mr-2"></i>黑板板書、版畫提示詞產生器
+            </h1>
+            <p class="text-gray-400">輸入教學內容，一鍵生成擬真黑板畫 AI 提示詞</p>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Column: Settings & Inputs -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Step 1: Layout Selection -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg chalk-border">
+                    <h2 class="text-xl font-bold text-emerald-300 mb-4 border-b border-gray-700 pb-2">
+                        <i class="fas fa-th-large mr-2"></i>第一步：選擇版面配置
+                    </h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="1" class="peer sr-only" onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="far fa-square text-2xl mb-1 block"></i>
+                                <span class="text-sm">一整面黑板</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="2" class="peer sr-only" onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="fas fa-columns text-2xl mb-1 block"></i>
+                                <span class="text-sm">左右兩半</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="3" class="peer sr-only" onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="fas fa-table-columns text-2xl mb-1 block"></i>
+                                <span class="text-sm">三區塊 (並排)</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="4" class="peer sr-only" onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="fas fa-th-large text-2xl mb-1 block"></i>
+                                <span class="text-sm">四區塊 (上2下2)</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="5" class="peer sr-only" checked onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="fas fa-th text-2xl mb-1 block"></i>
+                                <span class="text-sm">五區塊 (上3下2)</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer relative">
+                            <input type="radio" name="layout" value="6" class="peer sr-only" onchange="renderPanels()">
+                            <div class="p-3 bg-gray-700 rounded border-2 border-gray-600 hover:border-gray-500 peer-checked:border-emerald-500 peer-checked:bg-gray-700 transition-all text-center">
+                                <i class="fas fa-th text-2xl mb-1 block"></i>
+                                <span class="text-sm">六區塊 (上3下3)</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Step 2: Content Input -->
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg chalk-border">
+                    <h2 class="text-xl font-bold text-emerald-300 mb-4 border-b border-gray-700 pb-2">
+                        <i class="fas fa-pen-fancy mr-2"></i>第二步：輸入板書與版畫內容
+                    </h2>
+                    <div id="panels-container" class="space-y-4">
+                        <!-- Dynamic content will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Output & Action -->
+            <div class="lg:col-span-1">
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg chalk-border sticky top-6">
+                    <h2 class="text-xl font-bold text-emerald-300 mb-4 border-b border-gray-700 pb-2">
+                        <i class="fas fa-terminal mr-2"></i>第三步：生成結果
+                    </h2>
+                    
+                    <p class="text-xs text-gray-400 mb-2">提示詞已優化為「擬真粉筆手寫風格」</p>
+                    
+                    <textarea id="output-prompt" class="w-full h-96 p-4 text-sm font-mono input-dark rounded-md resize-none" readonly></textarea>
+                    
+                    <div class="mt-4 flex flex-col space-y-3">
+                        <button onclick="copyToClipboard()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md shadow transition duration-200 flex items-center justify-center">
+                            <i class="fas fa-copy mr-2"></i> 複製提示詞
+                        </button>
+                        <div id="copy-feedback" class="text-center text-green-400 text-sm hidden">
+                            <i class="fas fa-check-circle"></i> 已複製到剪貼簿！
+                        </div>
+                    </div>
+
+                    <div class="mt-6 border-t border-gray-700 pt-4">
+                        <h4 class="text-sm font-bold text-gray-400 mb-2">使用小撇步：</h4>
+                        <ul class="text-xs text-gray-500 space-y-1 list-disc pl-4">
+                            <li>將複製的內容貼到 Google Gemini Nano 或 Imagen。</li>
+                            <li>若文字出現亂碼，請嘗試簡化標題字數。</li>
+                            <li>可將「版畫描述」改為英文，AI 有時會理解得更好。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Layout Definitions (ID to Descriptions)
+        const layouts = {
+            '1': { name: '一整面黑板', desc: 'Single full blackboard view', count: 1, labels: ['黑板中央'] },
+            '2': { name: '左右兩半', desc: 'Split vertically into 2 equal panels (Left, Right)', count: 2, labels: ['左半邊', '右半邊'] },
+            '3': { name: '三區塊 (並排)', desc: 'Split vertically into 3 equal panels (Left, Middle, Right)', count: 3, labels: ['左區塊', '中間區塊', '右區塊'] },
+            '4': { name: '四區塊 (上2下2)', desc: 'Grid of 4 quadrants', count: 4, labels: ['左上區塊', '右上區塊', '左下區塊', '右下區塊'] },
+            '5': { name: '五區塊 (上3下2)', desc: '5 distinct sections: 3 panels on top row, 2 wider panels on bottom row', count: 5, labels: ['左上區塊', '中上區塊', '右上區塊', '左下區塊', '右下區塊'] },
+            '6': { name: '六區塊 (上3下3)', desc: 'Grid of 6 sections: 3 on top, 3 on bottom', count: 6, labels: ['左上區塊', '中上區塊', '右上區塊', '左下區塊', '中下區塊', '右下區塊'] }
+        };
+
+        // State
+        let currentLayoutId = '5';
+        
+        // Initial Render
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPanels();
+        });
+
+        function renderPanels() {
+            // Get selected layout
+            const radios = document.getElementsByName('layout');
+            for (let radio of radios) {
+                if (radio.checked) {
+                    currentLayoutId = radio.value;
+                    break;
+                }
+            }
+
+            const layoutData = layouts[currentLayoutId];
+            const container = document.getElementById('panels-container');
+            container.innerHTML = '';
+
+            // Generate Input Fields
+            for (let i = 0; i < layoutData.count; i++) {
+                const label = layoutData.labels[i];
+                const card = document.createElement('div');
+                card.className = 'bg-gray-750 border border-gray-700 rounded p-4 hover:border-emerald-500/50 transition-colors';
+                card.innerHTML = `
+                    <div class="flex items-center mb-3">
+                        <span class="bg-emerald-900 text-emerald-300 text-xs font-bold px-2 py-1 rounded mr-2">#${i+1}</span>
+                        <h3 class="font-bold text-gray-300">${label}</h3>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">板書標題 (可留空)</label>
+                            <input type="text" class="panel-title w-full px-3 py-2 rounded input-dark text-sm" placeholder="例如：天作孽，猶可違">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">板書次標題/說明 (可留空)</label>
+                            <input type="text" class="panel-subtitle w-full px-3 py-2 rounded input-dark text-sm" placeholder="例如：孟子名言">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs text-gray-400 mb-1">版畫內容敘述 (必填，影響畫面)</label>
+                            <textarea class="panel-desc w-full px-3 py-2 rounded input-dark text-sm h-20" placeholder="描述畫面內容，例如：畫一個人撐傘在雨中奔跑..."></textarea>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            }
+
+            // Add event listeners for real-time update
+            const inputs = container.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', generatePrompt);
+            });
+
+            generatePrompt();
+        }
+
+        function generatePrompt() {
+            const layoutData = layouts[currentLayoutId];
+            const titles = document.querySelectorAll('.panel-title');
+            const subtitles = document.querySelectorAll('.panel-subtitle');
+            const descs = document.querySelectorAll('.panel-desc');
+            
+            let panelsContent = '';
+
+            for (let i = 0; i < layoutData.count; i++) {
+                const label = layoutData.labels[i];
+                const title = titles[i].value.trim();
+                const subtitle = subtitles[i].value.trim();
+                const desc = descs[i].value.trim() || "Chalk drawing illustrating the concept."; // Default fallback
+
+                let textInstruction = "";
+                if (title || subtitle) {
+                    textInstruction = `    * **手寫標題/文字：** "${title} ${subtitle}"\n`;
+                } else {
+                    textInstruction = `    * **文字：** 此區塊不需文字，專注於插畫。\n`;
+                }
+
+                panelsContent += `
+${i + 1}. **【${label}】**
+${textInstruction}    * **畫面：** ${desc}
+`;
+            }
+
+            const finalPrompt = `**畫面主體設定：**
+一張近距離特寫的舊式教室黑板。黑板表面有明顯的**磨損痕跡**與**擦拭不乾淨的白色粉筆灰**。
+黑板被粗糙的手繪白線劃分成 **[ ${layoutData.name} ]**：${layoutData.desc}。
+
+**藝術風格 (關鍵：擬真手寫粉筆畫)：**
+**高度寫實的粉筆質感 (Photorealistic Chalk Art)。**
+1.  **筆觸：** 線條必須**粗糙、有顆粒感 (Grainy)**，邊緣不要銳利，要呈現粉筆在黑板摩擦時的**斷續感**與**粉末感**。
+2.  **色彩：** 使用**低飽和度**的粉彩顏色 (Pastel Colors)。**嚴禁使用螢光色或過度鮮豔的色彩**。顏色要有透出黑板底色的感覺，**不要填滿填實** (No solid fills)，使用排線 (hatching) 上色。
+3.  **技法：** 模仿老師在黑板上的**快速塗鴉**，線條要放鬆、隨興，不要像電腦繪圖那樣精確完美。
+
+**文字風格指定：**
+所有的中文文字必須模仿**「真實的粉筆手寫板書」**。
+* **字體：** 必須是**楷體或行書的手寫風格**，筆畫粗細不一。
+* **質感：** 文字邊緣要有**毛邊**和**粉塵擴散**的效果，**絕對不要使用邊緣平滑的電腦字體**。
+
+**詳細區塊內容：**
+${panelsContent}
+**光影與材質細節：**
+* **材質：** 強調黑板的**霧面 (Matte)** 質感。畫面上要有隨機分布的粉筆灰塵點。
+* **光線：** 漫射光，不要有強烈的反光，讓畫面看起來像是一張用手機拍下的黑板照片。`;
+
+            document.getElementById('output-prompt').value = finalPrompt;
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("output-prompt");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999); 
+            
+            // Modern API approach could fail in some iframe contexts, so we use fallback if needed, 
+            // but for simple text areas execCommand is robust enough for generated files.
+            document.execCommand('copy'); 
+
+            const feedback = document.getElementById('copy-feedback');
+            feedback.classList.remove('hidden');
+            setTimeout(() => {
+                feedback.classList.add('hidden');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
