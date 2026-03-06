@@ -300,7 +300,16 @@
                 }
             };
 
-            // --- Prompt 生成邏輯 (遞迴) ---
+            // --- Prompt 生成邏輯 (遞迴，含絕對座標) ---
+
+            // 將座標轉為中文方位描述
+            const getAbsolutePositionDesc = (x1, y1, x2, y2) => {
+                const cx = (x1 + x2) / 2;
+                const cy = (y1 + y2) / 2;
+                const hDesc = cx < 35 ? '左側' : cx > 65 ? '右側' : '中央';
+                const vDesc = cy < 45 ? '上方' : cy > 72 ? '下方' : '中段';
+                return `畫面${vDesc}${hDesc}`;
+            };
 
             const generatePrompt = () => {
                 let styleDesc = "";
@@ -308,46 +317,76 @@
                 if (artStyle === 'handrawn') styleDesc = "溫暖的手繪風格 (Hand-drawn style)，使用色鉛筆或水彩質感，線條有機且柔和，營造親切的教育氛圍。";
                 if (artStyle === '3d') styleDesc = "可愛的 3D 黏土渲染風格 (3D Clay Render style)，圓潤的模型，柔和的頂光照明，類似皮克斯動畫的質感。";
 
-                let prompt = `一張${orientation === 'landscape' ? '橫向 (Landscape)' : '直向 (Portrait)'}的教育資訊圖表。\n\n`;
+                const orientationText = orientation === 'landscape' ? '橫向 (Landscape, 4:3)' : '直向 (Portrait, 3:4)';
+                let prompt = `一張${orientationText}的教育資訊圖表海報。\n\n`;
+
+                // 負面指令：禁止將排版資訊渲染成圖片文字
+                prompt += `**重要限制（請嚴格遵守）：**\n`;
+                prompt += `- 圖片中禁止出現任何百分比數字、座標數值、區塊標籤或排版說明文字。\n`;
+                prompt += `- 以下所有「位置」、「座標」、「佔畫面寬/高」等描述，僅供你理解版面配置使用，絕對不可渲染成圖片內的文字。\n\n`;
+
+                // 藝術風格
                 prompt += `**藝術風格：**\n${styleDesc}\n\n`;
-                prompt += `**畫面佈局與內容：**\n畫面背景為米黃色或淺暖色系，採用帶有圓角的區塊設計。佈局結構如下：\n\n`;
 
-                // 1. 描述固定標題區
-                prompt += `- **[頂部標題區域]**：\n`;
-                prompt += `  - **主標題**：「${chartTitle.title}」，背景色為${chartTitle.colorName}，位於畫面最上方。\n`;
-                prompt += `  - **副標題/說明**：「${chartSubtitle.title}」，背景色為${chartSubtitle.colorName}，位於主標題下方。\n\n`;
+                // 整體骨架（讓 AI 先建立空間感）
+                prompt += `**【排版指引，不顯示於圖片】整體佈局骨架（座標以整體畫面百分比表示）：**\n`;
+                prompt += `① 主標題區：Y 0%～12%，X 0%～100%（橫跨全寬，位於最頂部）\n`;
+                prompt += `② 副標題區：Y 12%～20%，X 0%～100%（橫跨全寬，緊接主標題下方）\n`;
+                prompt += `③ 主內容區：Y 20%～100%，X 0%～100%（橫跨全寬，其餘空間，細分如下）\n\n`;
 
-                prompt += `- **[主要內容區域]** (位於副標題下方)：\n`;
+                // 固定標題區
+                prompt += `**各區塊詳細內容：**\n\n`;
+                prompt += `**[主標題區域]（排版參考：X:0%~100%, Y:0%~12%，勿將此座標顯示於圖中）**\n`;
+                prompt += `  - 位置：畫面最頂部，橫跨全寬\n`;
+                prompt += `  - 背景色：${chartTitle.colorName}\n`;
+                prompt += `  - 標題文字：「${chartTitle.title}」，水平置中，字體醒目粗大\n`;
+                prompt += `  - 視覺元素：${chartTitle.visuals}\n\n`;
 
-                // 2. 遞迴描述動態區塊
-                const traverse = (node, depth = 0, context = "內容區") => {
-                    const indent = "  ".repeat(depth);
-                    
+                prompt += `**[副標題區域]（排版參考：X:0%~100%, Y:12%~20%，勿將此座標顯示於圖中）**\n`;
+                prompt += `  - 位置：主標題正下方，橫跨全寬\n`;
+                prompt += `  - 背景色：${chartSubtitle.colorName}\n`;
+                prompt += `  - 標題文字：「${chartSubtitle.title}」，水平置中，字體較小\n`;
+                prompt += `  - 視覺元素：${chartSubtitle.visuals}\n\n`;
+
+                // 遞迴描述動態區塊，攜帶絕對座標
+                const traverse = (node, x1, y1, x2, y2, label) => {
                     if (node.type === 'leaf') {
-                        prompt += `${indent}- **[${context}]**：背景為${node.content.colorName}。\n`;
-                        prompt += `${indent}  - 標題：「${node.content.title}」\n`;
-                        prompt += `${indent}  - 視覺元素：${node.content.visuals}\n\n`;
+                        const w = x2 - x1;
+                        const h = y2 - y1;
+                        const cx = Math.round((x1 + x2) / 2);
+                        const cy = Math.round((y1 + y2) / 2);
+                        const posDesc = getAbsolutePositionDesc(x1, y1, x2, y2);
+                        prompt += `**[${label}]（排版參考：X:${x1}%~${x2}%, Y:${y1}%~${y2}%，寬${w}%、高${h}%，勿將此座標顯示於圖中）**\n`;
+                        prompt += `  - 位置：${posDesc}，中心點約在畫面 (${cx}%, ${cy}%) 處\n`;
+                        prompt += `  - 背景色：${node.content.colorName}\n`;
+                        prompt += `  - 標題：「${node.content.title}」\n`;
+                        prompt += `  - 視覺元素：${node.content.visuals}\n\n`;
                     } else {
-                        // prompt += `${indent}* [佈局] ${context}被${dirText}為 ${node.children.length} 個部分：\n`;
-                        
                         node.children.forEach((child, index) => {
-                            let childContext = "";
+                            let nx1, ny1, nx2, ny2, childLabel;
                             if (node.direction === 'row') {
-                                childContext = index === 0 ? "左側" : "右側";
+                                const midX = Math.round((x1 + x2) / 2);
+                                nx1 = index === 0 ? x1 : midX;
+                                ny1 = y1;
+                                nx2 = index === 0 ? midX : x2;
+                                ny2 = y2;
+                                childLabel = index === 0 ? `${label}-左` : `${label}-右`;
                             } else {
-                                childContext = index === 0 ? "上方" : "下方";
+                                const midY = Math.round((y1 + y2) / 2);
+                                nx1 = x1;
+                                ny1 = index === 0 ? y1 : midY;
+                                nx2 = x2;
+                                ny2 = index === 0 ? midY : y2;
+                                childLabel = index === 0 ? `${label}-上` : `${label}-下`;
                             }
-                            // 如果 context 已經很長，就簡化
-                            if (depth > 0) childContext = `${context}的${childContext}`;
-                            
-                            traverse(child, depth + 1, childContext);
+                            traverse(child, nx1, ny1, nx2, ny2, childLabel);
                         });
                     }
                 };
 
-                traverse(layout);
-                
-                prompt += `**文字呈現：**\n圖片中包含中文標題與標籤，字體圓潤可愛，與插畫風格融合。`;
+                traverse(layout, 0, 20, 100, 100, '內容區');
+
+                prompt += `**文字呈現：**\n圖片中包含中文標題與標籤，字體圓潤可愛，與插畫風格融合。各區塊以圓角色塊區隔，整體背景為米黃色或淺暖色系。`;
                 setGeneratedPrompt(prompt);
             };
 
