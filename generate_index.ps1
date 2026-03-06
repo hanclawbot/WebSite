@@ -1,9 +1,38 @@
-﻿<!DOCTYPE html>
+# 取得所有 html 檔案（排除 index.html 自己）
+$files = Get-ChildItem -Path $PSScriptRoot -Filter "*.html" |
+         Where-Object { $_.Name -ne "index.html" } |
+         Sort-Object Name
+
+# 產生每個檔案的卡片 HTML
+$cards = ""
+foreach ($file in $files) {
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+    $modified = $file.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
+    $cards += @"
+    <a class="card" href="./$($file.Name)">
+      <div class="card-icon">&#128196;</div>
+      <div class="card-info">
+        <div class="card-title">$name</div>
+        <div class="card-date">$modified</div>
+      </div>
+    </a>
+"@
+}
+
+if ($cards -eq "") {
+    $cards = '<p class="empty">目前沒有任何網頁。</p>'
+}
+
+$count = $files.Count
+$generated = Get-Date -Format "yyyy-MM-dd HH:mm"
+
+$html = @"
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>蝬脤?蝝Ｗ?</title>
+  <title>網頁索引</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -121,26 +150,30 @@
 <body>
 
   <header>
-    <h1>&#127760; ??蝬脤?蝝Ｗ?</h1>
-    <p>暺?∠??喳??撠?蝬脤?</p>
+    <h1>&#127760; 我的網頁索引</h1>
+    <p>點選卡片即可開啟對應網頁</p>
   </header>
 
   <div class="stats">
     <div class="stat">
-      <div class="stat-num">0</div>
-      <div class="stat-label">蝬脤??賊?</div>
+      <div class="stat-num">$count</div>
+      <div class="stat-label">網頁數量</div>
     </div>
     <div class="stat">
       <div class="stat-num">&#10003;</div>
-      <div class="stat-label">撌脣?甇?/div>
+      <div class="stat-label">已同步</div>
     </div>
   </div>
 
   <div class="grid">
-<p class="empty">?桀?瘝?隞颱?蝬脤???/p>
+$cards
   </div>
 
-  <footer>?敺?堆?2026-03-06 09:45</footer>
+  <footer>最後更新：$generated</footer>
 
 </body>
 </html>
+"@
+
+$html | Out-File -FilePath (Join-Path $PSScriptRoot "index.html") -Encoding UTF8
+Write-Host "index.html generated with $count pages."
