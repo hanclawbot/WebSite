@@ -1,12 +1,12 @@
-$files = Get-ChildItem -Path $PSScriptRoot -Filter "*.html" |
-         Where-Object { $_.Name -ne "index.html" } |
+$htmlsFolder = Join-Path $PSScriptRoot "Htmls"
+$files = Get-ChildItem -Path $htmlsFolder -Filter "*.html" -ErrorAction SilentlyContinue |
          Sort-Object Name
 
 $cards = ""
 foreach ($file in $files) {
     $name = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
     $modified = $file.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
-    $cards += "    <a class=`"card`" href=`"./$($file.Name)`">`n"
+    $cards += "    <a class=`"card`" href=`"./Htmls/$($file.Name)`">`n"
     $cards += "      <div class=`"card-icon`">&#128196;</div>`n"
     $cards += "      <div class=`"card-info`">`n"
     $cards += "        <div class=`"card-title`">$name</div>`n"
