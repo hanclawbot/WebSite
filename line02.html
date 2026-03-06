@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE 靜態貼圖打包產生器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* 格紋背景，方便看去背圖 */
+        .checkerboard {
+            background-image: 
+                linear-gradient(45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #e5e7eb 75%), 
+                linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #ffffff;
+        }
+        .slot-container {
+            position: relative;
+            overflow: hidden;
+            border: 2px dashed #cbd5e1;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .slot-container:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .slot-container img {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center;
+            
+            /* --- 關鍵修正 --- */
+            /* 強制取消 CSS 框架對圖片寬高的預設限制 */
+            /* 確保螢幕上看到的尺寸基準與 Canvas 匯出時的原始尺寸一致 */
+            max-width: none !important;
+            max-height: none !important;
+            /* ---------------- */
+
+            pointer-events: none; /* 讓滑鼠事件穿透圖片傳給容器 */
+            will-change: transform; /* 優化效能 */
+        }
+        
+        /* 編輯按鈕樣式 */
+        .edit-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #e5e7eb;
+            border-radius: 9999px;
+            padding: 6px;
+            cursor: pointer;
+            z-index: 20;
+            display: none; /* 預設隱藏，hover 或有圖時顯示 */
+            transition: all 0.2s;
+        }
+        .slot-container:hover .edit-btn, .slot-container.has-image .edit-btn {
+            display: block;
+        }
+        .edit-btn:hover {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        /* Modal 樣式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="pb-20">
+
+    <!-- Header -->
+    <header class="bg-green-500 text-white p-4 shadow-md sticky top-0 z-50">
+        <!-- 保持寬版設計以容納 4 列 -->
+        <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-2xl font-bold flex items-center">
+                <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                LINE 靜態貼圖打包器
+            </h1>
+            
+            <div class="flex items-center gap-4 bg-green-600 p-2 rounded-lg">
+                <label class="font-medium">貼圖張數：</label>
+                <select id="countSelector" class="bg-white text-gray-800 rounded px-3 py-1 font-bold focus:outline-none focus:ring-2 focus:ring-green-300">
+                    <option value="8">8 張</option>
+                    <option value="16">16 張</option>
+                    <option value="24">24 張</option>
+                    <option value="32">32 張</option>
+                    <option value="40">40 張</option>
+                </select>
+            </div>
+
+            <button onclick="downloadAll()" id="downloadBtn" class="bg-white text-green-600 px-6 py-2 rounded-full font-bold hover:bg-green-50 transition shadow-lg flex items-center">
+                <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                打包下載 ZIP
+            </button>
+        </div>
+    </header>
+
+    <div class="max-w-[1600px] mx-auto p-4">
+        
+        <!-- 操作說明 -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-8 rounded shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mt-1">
+                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-blue-700 font-bold mb-1">使用方式：</p>
+                        <ul class="list-disc ml-4 text-sm text-blue-600 space-y-1">
+                            <li>點擊格子可<strong>上傳圖片</strong>。拖曳可<strong>移動</strong>位置。</li>
+                            <li>點擊右上角 <span class="inline-block bg-white border rounded p-0.5"><svg class="w-3 h-3 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></span> <strong>編輯按鈕</strong>，可調整<strong>旋轉角度</strong>與精準<strong>縮放</strong>。</li>
+                            <li>下載時會自動生成符合 LINE 規範的尺寸與檔名。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 必要區塊 (Main & Tab) -->
+        <h2 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">1. 必要圖片 (必填)</h2>
+        <div class="flex flex-wrap gap-10 justify-center mb-12">
+            <!-- Main Image -->
+            <div class="flex flex-col items-center">
+                <div class="text-sm font-semibold text-gray-500 mb-2">Main (240x240)</div>
+                <div id="slot-main" class="slot-container checkerboard relative bg-white rounded-lg" 
+                     style="width: 240px; height: 240px;"
+                     data-width="240" data-height="240" data-name="main">
+                    
+                     <!-- 編輯按鈕 -->
+                    <button class="edit-btn shadow-sm" title="編輯圖片">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none z-10 placeholder-info">
+                        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-xs">點擊上傳</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Image -->
+            <div class="flex flex-col items-center">
+                <div class="text-sm font-semibold text-gray-500 mb-2">Tab (96x74)</div>
+                <div id="slot-tab" class="slot-container checkerboard relative bg-white rounded-lg" 
+                     style="width: 96px; height: 74px;"
+                     data-width="96" data-height="74" data-name="tab">
+                    
+                     <!-- 編輯按鈕 -->
+                    <button class="edit-btn shadow-sm" title="編輯圖片">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none z-10 placeholder-info">
+                        <svg class="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="text-[10px]">上傳</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 貼圖區塊 -->
+        <h2 class="text-xl font-bold text-gray-700 mb-4 border-b pb-2">2. 貼圖內容 (370x320)</h2>
+        <div id="stickerGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-12 gap-y-12 justify-items-center">
+            <!-- JS 會動態產生格子 -->
+        </div>
+
+    </div>
+
+    <!-- 編輯 Modal -->
+    <div id="editModal" class="modal-overlay">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 transform transition-all scale-95 opacity-0" id="modalContent">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 flex justify-between">
+                <span>編輯圖片 <span id="modalTitleId" class="text-blue-600"></span></span>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </h3>
+
+            <!-- Preview Area -->
+            <div class="flex justify-center mb-6 bg-gray-100 p-4 rounded-lg checkerboard overflow-hidden h-[320px] items-center relative" id="modalPreviewContainer">
+                <!-- Javascript will inject image here -->
+            </div>
+
+            <!-- Controls -->
+            <div class="space-y-4">
+                <div>
+                    <label class="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                        縮放大小 (Scale)
+                        <span id="scaleValue" class="text-blue-500">1.0x</span>
+                    </label>
+                    <input type="range" id="scaleInput" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                </div>
+                
+                <div>
+                    <label class="flex justify-between text-sm font-medium text-gray-700 mb-1">
+                        旋轉角度 (Rotate)
+                        <span id="rotateValue" class="text-blue-500">0°</span>
+                    </label>
+                    <input type="range" id="rotateInput" min="-180" max="180" step="1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span>-180°</span>
+                        <span>0°</span>
+                        <span>180°</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mt-8 flex gap-3">
+                <button onclick="triggerUploadFromModal()" class="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition">
+                    更換圖片
+                </button>
+                <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold transition shadow-md">
+                    完成
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的 Canvas 用於生成圖片 -->
+    <canvas id="exportCanvas" class="hidden"></canvas>
+    
+    <!-- 隱藏的 Input 用於選擇檔案 -->
+    <input type="file" id="fileInput" accept="image/png, image/jpeg, image/webp" class="hidden">
+
+    <script>
+        // 設定
+        const STICKER_WIDTH = 370;
+        const STICKER_HEIGHT = 320;
+        
+        // 狀態管理
+        let slotsData = {}; // 儲存每個 slot 的狀態: { imgElement, x, y, scale, rotation, file }
+        let currentSlotId = null; // 當前正在操作的 slot ID
+        let editingSlotId = null; // 正在 Modal 中編輯的 ID
+
+        const countSelector = document.getElementById('countSelector');
+        const stickerGrid = document.getElementById('stickerGrid');
+        const fileInput = document.getElementById('fileInput');
+        
+        // Modal Elements
+        const modal = document.getElementById('editModal');
+        const modalContent = document.getElementById('modalContent');
+        const scaleInput = document.getElementById('scaleInput');
+        const rotateInput = document.getElementById('rotateInput');
+        const scaleValue = document.getElementById('scaleValue');
+        const rotateValue = document.getElementById('rotateValue');
+
+        // 初始化
+        function init() {
+            // 綁定 Main 和 Tab 的事件
+            setupSlot('slot-main');
+            setupSlot('slot-tab');
+
+            // 綁定下拉選單
+            countSelector.addEventListener('change', renderGrid);
+            
+            // 綁定檔案上傳
+            fileInput.addEventListener('change', handleFileSelect);
+
+            // Modal Sliders
+            scaleInput.addEventListener('input', updateModalPreview);
+            rotateInput.addEventListener('input', updateModalPreview);
+
+            // 初始渲染
+            renderGrid();
+        }
+
+        // 渲染下方的貼圖格
+        function renderGrid() {
+            const count = parseInt(countSelector.value);
+            stickerGrid.innerHTML = '';
+            
+            for (let i = 1; i <= count; i++) {
+                const id = String(i).padStart(2, '0'); // 01, 02...
+                const slotId = `slot-${id}`;
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex flex-col items-center';
+                
+                wrapper.innerHTML = `
+                    <div class="flex justify-between w-full max-w-[370px] mb-2 px-1">
+                        <span class="text-lg font-bold text-gray-700">${id}</span>
+                        <span class="text-xs text-gray-400 self-end">370x320</span>
+                    </div>
+                    <div id="${slotId}" class="slot-container checkerboard relative bg-white rounded-lg shadow-sm" 
+                         style="width: 370px; height: 320px;"
+                         data-width="${STICKER_WIDTH}" data-height="${STICKER_HEIGHT}" data-name="${id}">
+                        
+                         <!-- 編輯按鈕 -->
+                        <button class="edit-btn shadow-sm" title="編輯圖片">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
+
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 pointer-events-none z-10 placeholder-info">
+                            <svg class="w-12 h-12 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            <span class="text-sm">點擊上傳</span>
+                        </div>
+                    </div>
+                `;
+                
+                stickerGrid.appendChild(wrapper);
+                setupSlot(slotId);
+            }
+
+            // 恢復之前的圖片
+            Object.keys(slotsData).forEach(key => {
+                const el = document.getElementById(key);
+                if (el && slotsData[key].imgSrc) {
+                    displayImageInSlot(key, slotsData[key].imgSrc);
+                }
+            });
+        }
+
+        // 設定單個格子的事件
+        function setupSlot(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            // 初始化資料結構
+            if (!slotsData[id]) {
+                slotsData[id] = {
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    rotation: 0,
+                    imgSrc: null,
+                    imgObj: null,
+                    isDragging: false,
+                    lastMouseX: 0,
+                    lastMouseY: 0
+                };
+            }
+
+            // 綁定編輯按鈕事件 (阻止冒泡，避免觸發上傳/拖曳)
+            const editBtn = el.querySelector('.edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openModal(id);
+                });
+                // 也要綁定 mousedown 避免觸發拖曳
+                editBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+            }
+
+            // 點擊 -> 上傳 (只有在點擊空白處時)
+            el.addEventListener('click', (e) => {
+                // 如果有點到按鈕或正在拖曳，則忽略
+                if (slotsData[id].hasMoved) return;
+                
+                currentSlotId = id;
+                fileInput.value = ''; 
+                fileInput.click();
+            });
+
+            // 滾輪 -> 縮放
+            el.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                if (!slotsData[id].imgSrc) return;
+
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                let newScale = slotsData[id].scale * delta;
+                
+                if (newScale < 0.1) newScale = 0.1;
+                if (newScale > 5.0) newScale = 5.0;
+
+                slotsData[id].scale = newScale;
+                updateTransform(id);
+            });
+
+            // 滑鼠拖曳邏輯
+            el.addEventListener('mousedown', (e) => {
+                if (!slotsData[id].imgSrc) return;
+                if (e.target.closest('.edit-btn')) return; // 如果點到編輯按鈕
+
+                e.preventDefault(); 
+                
+                slotsData[id].isDragging = true;
+                slotsData[id].hasMoved = false; 
+                slotsData[id].lastMouseX = e.clientX;
+                slotsData[id].lastMouseY = e.clientY;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!slotsData[id] || !slotsData[id].isDragging) return;
+                
+                const dx = e.clientX - slotsData[id].lastMouseX;
+                const dy = e.clientY - slotsData[id].lastMouseY;
+                
+                if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                    slotsData[id].hasMoved = true;
+                }
+
+                slotsData[id].x += dx;
+                slotsData[id].y += dy;
+                slotsData[id].lastMouseX = e.clientX;
+                slotsData[id].lastMouseY = e.clientY;
+                
+                updateTransform(id);
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (slotsData[id]) {
+                    slotsData[id].isDragging = false;
+                    setTimeout(() => { slotsData[id].hasMoved = false; }, 100);
+                }
+            });
+        }
+
+        // --- Modal Logic ---
+
+        function openModal(id) {
+            if (!slotsData[id].imgSrc) {
+                // 如果沒有圖片，直接觸發上傳
+                currentSlotId = id;
+                fileInput.click();
+                return;
+            }
+
+            editingSlotId = id;
+            const data = slotsData[id];
+
+            // Update UI Title
+            const el = document.getElementById(id);
+            document.getElementById('modalTitleId').innerText = el.dataset.name.toUpperCase();
+
+            // Init Sliders
+            scaleInput.value = data.scale;
+            scaleValue.innerText = data.scale.toFixed(1) + 'x';
+            
+            rotateInput.value = data.rotation;
+            rotateValue.innerText = data.rotation + '°';
+
+            // Setup Preview
+            const previewContainer = document.getElementById('modalPreviewContainer');
+            previewContainer.innerHTML = ''; // Clear
+            
+            // Clone Image
+            const img = new Image();
+            img.src = data.imgSrc;
+            
+            // 修正 Modal 預覽的 CSS，確保也取消 max-width 限制
+            img.style.maxWidth = 'none';
+            img.style.maxHeight = 'none';
+            
+            img.style.position = 'absolute';
+            img.style.top = '50%';
+            img.style.left = '50%';
+            img.style.transformOrigin = 'center';
+            img.id = 'modalPreviewImg';
+            
+            previewContainer.appendChild(img);
+
+            // Show Modal
+            modal.classList.add('open');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+
+            // Apply transforms immediately
+            updateModalPreview();
+        }
+
+        function closeModal() {
+            modal.classList.remove('open');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            editingSlotId = null;
+        }
+
+        function updateModalPreview() {
+            if (!editingSlotId) return;
+
+            const s = parseFloat(scaleInput.value);
+            const r = parseInt(rotateInput.value);
+            
+            // Update UI Labels
+            scaleValue.innerText = s.toFixed(1) + 'x';
+            rotateValue.innerText = r + '°';
+
+            // Update Data (即時同步到主畫面)
+            slotsData[editingSlotId].scale = s;
+            slotsData[editingSlotId].rotation = r;
+
+            // Update Modal Image Transform
+            const img = document.getElementById('modalPreviewImg');
+            if (img) {
+                img.style.transform = `translate(-50%, -50%) rotate(${r}deg) scale(${s})`;
+            }
+
+            // Update Main Grid Image Transform
+            updateTransform(editingSlotId);
+        }
+
+        function triggerUploadFromModal() {
+            if (editingSlotId) {
+                currentSlotId = editingSlotId;
+                fileInput.click();
+            }
+        }
+
+        // --- File & Image Logic ---
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file || !currentSlotId) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const src = event.target.result;
+                slotsData[currentSlotId].imgSrc = src;
+                
+                // 重置該格子的數值 (新圖片)
+                slotsData[currentSlotId].x = 0;
+                slotsData[currentSlotId].y = 0;
+                slotsData[currentSlotId].rotation = 0;
+                
+                displayImageInSlot(currentSlotId, src);
+                
+                // 如果是在 Modal 中換圖，更新 Modal 預覽
+                if (currentSlotId === editingSlotId) {
+                   openModal(currentSlotId); // Re-init modal
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function displayImageInSlot(id, src) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            el.classList.add('has-image'); // 用來顯示編輯按鈕
+
+            const existingImg = el.querySelector('img');
+            if (existingImg) existingImg.remove();
+            
+            const placeholder = el.querySelector('.placeholder-info');
+            if (placeholder) placeholder.style.display = 'none';
+
+            const img = new Image();
+            img.src = src;
+            img.onload = () => {
+                slotsData[id].imgObj = img;
+                
+                // 如果是第一次載入 (scale 為 1 且沒動過)，自動計算適合的大小
+                if (slotsData[id].scale === 1 && slotsData[id].x === 0 && slotsData[id].y === 0) {
+                    const containerW = parseInt(el.dataset.width);
+                    const containerH = parseInt(el.dataset.height);
+                    const scaleW = containerW / img.naturalWidth;
+                    const scaleH = containerH / img.naturalHeight;
+                    // 初始縮放：Contain 且留一點白邊
+                    slotsData[id].scale = Math.min(scaleW, scaleH) * 0.8;
+                }
+                
+                updateTransform(id);
+            };
+            el.appendChild(img);
+        }
+
+        function updateTransform(id) {
+            const el = document.getElementById(id);
+            const img = el.querySelector('img');
+            if (!img) return;
+
+            const { x, y, scale, rotation } = slotsData[id];
+            
+            // 順序與 Canvas setTransform 一致: 
+            // 1. 元素中心點先定位到容器中心 (CSS top/left 50%)
+            // 2. translate(calc(-50% + x), calc(-50% + y))
+            //    -50% 把圖片中心移回對準定位點
+            //    +x, +y 加上使用者位移
+            // 3. rotate, scale
+            
+            img.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) rotate(${rotation}deg) scale(${scale})`;
+        }
+
+        // 打包下載
+        async function downloadAll() {
+            const zip = new JSZip();
+            const canvas = document.getElementById('exportCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            const btn = document.getElementById('downloadBtn');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `處理中...`;
+            btn.disabled = true;
+
+            const slotsToProcess = ['slot-main', 'slot-tab'];
+            const count = parseInt(countSelector.value);
+            for (let i = 1; i <= count; i++) {
+                slotsToProcess.push(`slot-${String(i).padStart(2, '0')}`);
+            }
+
+            try {
+                for (const id of slotsToProcess) {
+                    const el = document.getElementById(id);
+                    const data = slotsData[id];
+                    const fileName = el.dataset.name + '.png';
+                    const targetW = parseInt(el.dataset.width);
+                    const targetH = parseInt(el.dataset.height);
+
+                    // 設定 Canvas 大小
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    ctx.clearRect(0, 0, targetW, targetH);
+
+                    if (data && data.imgObj) {
+                        // 使用 setTransform 確保與 CSS 變形矩陣一致
+                        // a, d: 水平/垂直縮放
+                        // b, c: 傾斜 (用於旋轉)
+                        // e, f: 位移
+                        
+                        const imgW = data.imgObj.naturalWidth;
+                        const imgH = data.imgObj.naturalHeight;
+                        const scale = data.scale;
+                        const rotation = data.rotation;
+                        const x = data.x;
+                        const y = data.y;
+
+                        // 計算旋轉的弧度
+                        const rad = rotation * Math.PI / 180;
+                        const cos = Math.cos(rad);
+                        const sin = Math.sin(rad);
+
+                        // 設定變換矩陣
+                        ctx.setTransform(
+                            cos * scale, // a
+                            sin * scale, // b
+                            -sin * scale, // c
+                            cos * scale, // d
+                            targetW / 2 + x, // e (位移 X)
+                            targetH / 2 + y  // f (位移 Y)
+                        );
+
+                        // 繪製圖片 (以原點為中心)
+                        ctx.drawImage(data.imgObj, -imgW / 2, -imgH / 2, imgW, imgH);
+                        
+                        // 重置變換矩陣
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
+                        
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        zip.file(fileName, blob);
+                    } else {
+                        // 空白圖
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        zip.file(fileName, blob);
+                    }
+                }
+
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "line_stickers_pack.zip");
+
+            } catch (err) {
+                console.error(err);
+                alert('發生錯誤：' + err.message);
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
+        }
+
+        // 啟動
+        init();
+
+    </script>
+</body>
+</html>

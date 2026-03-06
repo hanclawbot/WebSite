@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 貼圖提示詞與分割工具 v2.2 (自訂背景與吸管去背)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 引入 JSZip library 用於打包下載 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #111827;
+        }
+        .card {
+            background-color: #1f2937;
+            border: 1px solid #374151;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #4b5563;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .btn-selected {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .btn-unselected {
+            background-color: #374151;
+            color: #d1d5db;
+        }
+        .btn-disabled {
+            background-color: #4b5563;
+            color: #9ca3af;
+            cursor: not-allowed;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        #prompt-output {
+            background-color: #111827;
+            border-color: #374151;
+            color: #e5e7eb;
+        }
+        .step-number {
+            background-color: #3b82f6;
+            color: white;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        #split-preview, #bg-remove-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+        .preview-container {
+            position: relative;
+        }
+        /* 透明背景網格樣式 */
+        .transparency-grid {
+            background-image: linear-gradient(45deg, #374151 25%, transparent 25%), linear-gradient(-45deg, #374151 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #374151 75%), linear-gradient(-45deg, transparent 75%, #374151 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #111827;
+        }
+        .preview-container img {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            object-fit: contain;
+            border-radius: 0.5rem;
+            border: 1px solid #4b5563;
+        }
+        .delete-btn {
+            position: absolute;
+            top: -0.5rem;
+            right: -0.5rem;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 1.75rem;
+            height: 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            line-height: 1;
+            cursor: pointer;
+            border: 2px solid #1f2937;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+        .delete-btn:hover {
+            transform: scale(1.1);
+        }
+        .file-input-label {
+            cursor: pointer;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            background-color: #374151;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .file-input-label:hover {
+            background-color: #4b5563;
+        }
+        #cropper-container {
+            position: relative;
+            cursor: crosshair;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        #cropper-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        /* Range slider styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -8px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4b5563;
+            border-radius: 2px;
+        }
+        /* Color input styling */
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 0.5rem;
+            cursor: pointer;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+        }
+        
+        .cursor-crosshair {
+            cursor: crosshair !important;
+        }
+        
+        .picking-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+            border: 4px solid #f59e0b;
+            border-radius: 0.5rem;
+            pointer-events: none;
+            display: none;
+        }
+        .picking-mode .picking-overlay {
+            display: block;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+
+    <div class="container mx-auto p-4 sm:p-6 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">AI 貼圖提示詞與分割工具 v2.2 🎨✂️</h1>
+            <p class="text-gray-400 mt-2">自訂背景色、分割貼圖、吸管智慧去背</p>
+        </header>
+
+        <main class="space-y-8">
+             <!-- 步驟一: 定義角色 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">1</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">定義角色</h2>
+                </div>
+                <div class="flex justify-center gap-4 mb-4">
+                    <button id="character-mode-upload" class="btn py-2 px-6 rounded-lg font-semibold btn-selected">基於上傳圖片</button>
+                    <button id="character-mode-input" class="btn py-2 px-6 rounded-lg font-semibold btn-unselected">自行輸入文字</button>
+                </div>
+                <div id="character-input-container" class="hidden">
+                    <input type="text" id="character-input" placeholder="請輸入角色描述，例如：一隻戴著草帽的棕色水豚" class="w-full bg-gray-900 text-white rounded border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2">
+                </div>
+            </div>
+
+            <!-- 步驟二: 定義尺寸 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">2</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">定義尺寸</h2>
+                </div>
+                <div id="size-options" class="flex flex-wrap gap-3">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+
+            <!-- 步驟三: 選擇風格 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">3</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">選擇一種風格</h2>
+                </div>
+                <div id="style-options" class="flex flex-wrap gap-3"></div>
+            </div>
+
+            <!-- 步驟四: 選擇表情/動作 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">4</div>
+                    <div class="ml-4">
+                        <h2 class="text-xl font-bold text-white">選擇表情與動作 (最多9個)</h2>
+                        <p id="selection-count" class="text-sm text-gray-400">目前已選：0/9</p>
+                    </div>
+                </div>
+                <div id="custom-expression-form" class="flex gap-2 mb-4">
+                    <input type="text" id="custom-expression-input" placeholder="或輸入自訂表情後按新增..." class="flex-grow bg-gray-900 text-white rounded border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 px-3 py-2">
+                    <button id="add-expression-button" class="btn bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg">新增</button>
+                </div>
+                <div id="expression-options" class="flex flex-wrap gap-3"></div>
+            </div>
+
+            <!-- 步驟五: 文字設定 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">5</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">文字設定</h2>
+                </div>
+                <div id="text-options" class="flex flex-wrap gap-3">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+
+             <!-- 步驟六: 背景顏色設定 (New) -->
+             <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">6</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">背景顏色設定</h2>
+                </div>
+                <p class="text-sm text-gray-400 mb-3">
+                    設定 AI 生成圖片時的背景顏色。使用「綠幕」或「藍幕」可避免與角色身上的白色衝突，方便後續去背。
+                </p>
+                <div class="flex flex-wrap gap-4 items-center">
+                     <div id="bg-color-options" class="flex flex-wrap gap-3">
+                         <!-- JS will populate -->
+                     </div>
+                     <div class="flex items-center gap-2 bg-gray-800 p-2 rounded-lg border border-gray-600">
+                         <label for="custom-bg-color" class="text-sm text-gray-300">自訂:</label>
+                         <input type="color" id="custom-bg-color" class="h-8 w-12" value="#00FF00">
+                         <span id="bg-color-display" class="text-sm font-mono text-blue-400">#00FF00</span>
+                     </div>
+                </div>
+            </div>
+
+            <!-- 步驟七: 產生與複製提示詞 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">7</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">產生的提示詞 (Prompt)</h2>
+                </div>
+                <p class="text-sm text-gray-400 mb-4">
+                    這是根據您的選擇整合好的完整提示詞。請按下複製按鈕，然後到 Google AI Studio 或其他 AI 繪圖平台貼上使用。
+                </p>
+                <textarea id="prompt-output" readonly class="w-full h-64 p-4 rounded-lg text-sm whitespace-pre-wrap font-mono"></textarea>
+                <button id="copy-button" class="mt-4 w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg btn">
+                    📋 複製提示詞
+                </button>
+            </div>
+            
+            <!-- 步驟八: 分割貼圖 -->
+            <div class="card p-6 rounded-xl shadow-lg">
+                <div class="flex items-center mb-4">
+                    <div class="step-number">8</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">分割貼圖</h2>
+                </div>
+                
+                <div class="flex justify-center gap-4 mb-4">
+                    <button id="mode-auto" class="btn py-2 px-6 rounded-lg font-semibold btn-selected">自動網格分割</button>
+                    <button id="mode-manual" class="btn py-2 px-6 rounded-lg font-semibold btn-unselected">手動框選分割</button>
+                </div>
+
+                <div id="auto-split-controls" class="flex justify-center items-center gap-4 mb-4">
+                    <label for="grid-cols" class="text-gray-300">欄 (Cols):</label>
+                    <input type="number" id="grid-cols" value="3" min="1" class="bg-gray-900 text-white w-16 text-center rounded border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="grid-rows" class="text-gray-300">列 (Rows):</label>
+                    <input type="number" id="grid-rows" value="3" min="1" class="bg-gray-900 text-white w-16 text-center rounded border border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <p class="text-sm text-gray-400 mb-4 text-center" id="upload-instruction">
+                    上傳圖片並設定網格，程式將會自動分割。
+                </p>
+
+                <div class="flex flex-col items-center space-y-4">
+                    <input type="file" id="image-upload" class="hidden" accept="image/png, image/jpeg">
+                    <label for="image-upload" class="file-input-label">📁 選擇圖片</label>
+                    <span id="file-name" class="text-sm text-gray-400">尚未選擇檔案</span>
+                </div>
+
+                <div id="cropper-container" class="mt-6 hidden">
+                    <canvas id="cropper-canvas"></canvas>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="font-bold text-lg mb-2 text-center">分割預覽</h3>
+                    <div id="split-preview" class="min-h-[120px] bg-gray-800/50 rounded-lg p-4">
+                         <p class="text-gray-500 text-center col-span-full py-8">分割後的圖片將顯示於此</p>
+                    </div>
+                </div>
+                <div class="flex gap-4 mt-6">
+                    <button id="clear-button" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg btn">🗑️ 清除重來</button>
+                </div>
+            </div>
+
+            <!-- 步驟九: 去背與下載 (Updated) -->
+            <div class="card p-6 rounded-xl shadow-lg border-blue-500 border-2">
+                <div class="flex items-center mb-4">
+                    <div class="step-number bg-purple-600">9</div>
+                    <h2 class="text-xl font-bold ml-4 text-white">智慧去背與打包下載</h2>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                    <div class="flex flex-col gap-4">
+                        
+                        <!-- Color Picker Control -->
+                        <div class="flex flex-col md:flex-row gap-4 items-center bg-gray-900 p-3 rounded-lg border border-gray-700">
+                            <div class="flex items-center gap-3 w-full md:w-auto">
+                                <span class="text-sm font-bold text-gray-300 whitespace-nowrap">去背目標色:</span>
+                                <input type="color" id="remove-target-color" class="h-10 w-16 rounded border border-gray-600">
+                            </div>
+                            
+                            <button id="pick-color-btn" class="w-full md:w-auto flex items-center justify-center gap-2 py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-lg btn transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg>
+                                吸取顏色 (點圖)
+                            </button>
+                            
+                            <p id="picking-status" class="hidden text-amber-400 text-sm font-bold animate-pulse">
+                                請點擊下方預覽圖中的背景顏色...
+                            </p>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                             <div class="w-full">
+                                <label class="block text-sm text-gray-300 mb-1">去背容許值 (Tolerance): <span id="tolerance-value" class="text-blue-400 font-bold">30</span></label>
+                                <input type="range" id="tolerance-slider" min="1" max="150" value="30" class="w-full">
+                                <p class="text-xs text-gray-500 mt-1">數值越高，能容忍的顏色差異越大 (建議 20-50)。</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-2 mt-2">
+                            <button id="remove-bg-button" class="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg btn">
+                                ✨ 執行去背
+                            </button>
+                            <button id="reset-bg-button" class="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg btn">
+                                ↺ 重置圖片
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-lg mb-2 text-center">最終成品預覽</h3>
+                <div id="bg-remove-preview" class="min-h-[120px] bg-gray-800/50 rounded-lg p-4 mb-6">
+                    <p class="text-gray-500 text-center col-span-full py-8">請先在步驟 8 產生分割圖片</p>
+                </div>
+
+                <button id="download-all-button" class="w-full py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg btn btn-disabled text-lg" disabled>
+                    💾 下載最終貼圖包 (.zip)
+                </button>
+            </div>
+
+        </main>
+
+        <footer class="text-center mt-8 text-gray-500 text-sm">
+            <p>&copy; 2024 AI 教學工具. All Rights Reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Part 1: Prompt Generator ---
+            const styleOptionsContainer = document.getElementById('style-options');
+            const expressionOptionsContainer = document.getElementById('expression-options');
+            const promptOutput = document.getElementById('prompt-output');
+            const copyButton = document.getElementById('copy-button');
+            const selectionCount = document.getElementById('selection-count');
+            const customExpressionInput = document.getElementById('custom-expression-input');
+            const addExpressionButton = document.getElementById('add-expression-button');
+            const characterModeUploadBtn = document.getElementById('character-mode-upload');
+            const characterModeInputBtn = document.getElementById('character-mode-input');
+            const characterInputContainer = document.getElementById('character-input-container');
+            const characterInput = document.getElementById('character-input');
+            
+            const sizeOptionsContainer = document.getElementById('size-options');
+            const textOptionsContainer = document.getElementById('text-options');
+            
+            // Step 6: Bg Color Elements
+            const bgColorOptionsContainer = document.getElementById('bg-color-options');
+            const customBgColorInput = document.getElementById('custom-bg-color');
+            const bgColorDisplay = document.getElementById('bg-color-display');
+            
+            // Step 9: Remove BG Elements
+            const removeTargetColorInput = document.getElementById('remove-target-color');
+            const pickColorBtn = document.getElementById('pick-color-btn');
+            const pickingStatus = document.getElementById('picking-status');
+
+
+            let characterMode = 'upload';
+            
+            // Step 2: Canvas Size Options
+            const sizeOptions = [
+                { ratio: '10:16', label: '10:16 (LINE 貼圖標準長型)' },
+                { ratio: '1:1', label: '1:1 (正方形)' },
+                { ratio: '16:10', label: '16:10 (橫向寬螢幕)' },
+                { ratio: '9:16', label: '9:16 (手機直式)' },
+                { ratio: '16:9', label: '16:9 (電腦寬螢幕)' },
+                { ratio: '4:3', label: '4:3 (傳統比例)' },
+                { ratio: '3:4', label: '3:4 (直式比例)' }
+            ];
+            let selectedSize = sizeOptions[0];
+
+            // Step 5: Text Options
+            const textOptions = [
+                { value: '藝術文字', label: '藝術文字', hasText: true },
+                { value: '對話框', label: '對話框', hasText: true },
+                { value: '雲朵造型', label: '雲朵造型', hasText: true },
+                { value: '無', label: '無 (不加任何文字與符號)', hasText: false }
+            ];
+            let selectedTextOption = textOptions[0];
+
+            // Step 6: Background Color Options
+            const bgColors = [
+                { name: '綠幕 (Green Screen)', value: '#00FF00', label: '🟩 綠幕' },
+                { name: '藍幕 (Blue Screen)', value: '#0000FF', label: '🟦 藍幕' },
+                { name: '白色 (White)', value: '#FFFFFF', label: '⬜ 白色' },
+                { name: '洋紅 (Magenta)', value: '#FF00FF', label: '🟪 洋紅' }
+            ];
+            let selectedBgColor = bgColors[0]; // Default Green
+
+            const styles = [
+                { name: '日系動漫', description: '清澈的大眼睛、精緻多變的髮型與乾淨俐落的線條，能夠生動地展現角色的情感與個性。' },
+                { name: '3D角色', description: '模擬現代動畫電影的風格，具有平滑的表面、逼真的光影和立體感，讓角色栩栩如生。' },
+                { name: '吉卜力', description: '手繪般的溫暖筆觸、鬱鬱蔥蔥的自然場景、充滿想像力的奇幻角色，營造出一個懷舊且引人入勝的魔法世界。' },
+                { name: '美式漫畫', description: '粗獷有力的黑色輪廓線、充滿動感的角色姿態與強烈的陰影對比，營造出超級英雄般的戲劇張力。' },
+                { name: '水彩插畫', description: '柔和的色彩渲染、朦朧的邊緣與層次感，帶來一種清新、溫暖且富有藝術氣息的感覺。' },
+                { name: '黏土模型', description: '模仿手工捏製的黏土質感，可能帶有指紋的痕跡，呈現出一種樸實、童趣且充滿溫度的停格動畫風格。' },
+                { name: 'Chibi Art / Q版', description: '閃閃發光的大眼睛 + 頭大身體小。' },
+                { name: 'Clipart / 剪貼畫風格', description: '線條明確，色彩是沒有漸變的單一色塊，看起來像用剪刀剪出的形狀貼在背景上，簡單但生動。' },
+                { name: 'Ukiyo-e / 浮世繪風格', description: '色彩鮮明但沉穩，帶有一種日本古色古香的韻味，就像一幅江戶時代的歷史畫卷，懷舊而優雅。' },
+                { name: 'Pixel Art / 像素藝術', description: '模仿早期解析度低的遊戲畫面，帶有一種返璞歸真的童趣。' },
+                { name: 'Neon sign / 霓虹燈風格', description: '模仿用霓虹燈條組成的招牌。「你夢想中想要開的店是什麼呢？」' },
+                { name: '80\'s Beach / 復古海灘', description: '復古色調 + 用水平粗線條來表達光影漸層。' },
+                { name: 'Tropicália / 熱帶風格', description: '源自巴西熱帶藝術運動。大膽飽和的顏色 + 動植物與民族圖騰。' },
+                { name: 'Maritime / 海洋風格', description: '藍色調與沙灘的暖色調 + 各式海洋元素 : 水手、燈塔、帆船、海岸線、海洋生物等。' },
+                { name: 'Russian Folk / 俄羅斯民間藝術', description: '模仿俄羅斯著名的民間藝術圖案。' },
+                { name: 'Mid-century art / 中世紀藝術', description: '少量的顏色、簡單的線條和噴墨般的筆觸。看起來既復古又現代，簡單但有特色。' },
+                { name: 'British Royalty / 復古英國皇室', description: '透過典雅與華麗的服裝，仿舊的色調，散發出經典的貴氣。' },
+                { name: 'Caricature / 誇飾、諷刺風格', description: '完美詮釋ChatGPT當機的一天...' },
+                { name: 'Pop Art / 普普藝術', description: '鮮艷色彩+鮮明對比+線條色塊:營造出熱鬧與充滿活力的感覺。用來呈現端午節活動，別有一番趣味。' },
+                { name: 'Ink Wash / 水墨畫風格', description: '用傳統水墨畫風格來表現滑手機、追劇等現代場景，別有一番衝突的趣味 : 原來古人用3C是這樣的啊…' },
+                { name: 'Glitch Art / 故障藝術', description: '以電子螢幕故障時出現的線條錯位、顏色分離等效果，讓「不完美」變成一種最獨特的「美」。' },
+                { name: 'Oil Panting / 油畫風格', description: '大膽的筆觸與堆疊的顏料，搭配粉嫩色調描繪出的花卉，總是給人一種「柔和又堅定」的感覺。' },
+                { name: 'Rubber Stamp / 橡皮圖章', description: '模仿蓋在手帳上的橡皮圖章風格，幫電子手帳裝飾一下。' },
+                { name: 'Marker Doodle / 馬克筆塗鴉', description: '每一筆隨興的筆劃，就像踏著輕快的步伐，準備展開一場冒險。' },
+                { name: 'Bauhaus style / 包浩斯風格', description: '藉由幾何圖形與三原色（紅黃藍）刻劃運動時的那種「簡單」的快樂。' },
+                { name: 'Picture Book / 繪本風格', description: '當我們都明白彼此的刺不是敵意的表現，而是內心深處的脆弱和需要，我們開始學會用溫柔與耐心觸碰彼此的靈魂，而不僅是關注那些鋒利的外表。這種理解帶來了真正的友誼，也真正的療癒了我們。' },
+                { name: 'Surrealism / 超現實主義', description: '看似非現實的場景，刻劃的卻是最真實的世界。' },
+                { name: 'Pixar / 皮克斯動畫風格', description: '每個人心中都有一部烙印在心中的皮克斯動畫，與心裡最深的情感共鳴著。' },
+                { name: 'Starry Night / 星空剪影', description: '看到「星空」你會想起甚麼? 是藏在心裡的某個人? 是宇宙吸引力法則? 還是___?' },
+                { name: 'Pride Rainbow / 彩虹風格', description: '讓我們一起秀出獨一無二的色彩，豐富這個世界!' },
+                { name: 'Fauvism / 野獸派風格', description: '用強烈的色彩與輪廓線，表達生動的情感。' },
+                { name: 'Whimsical / 奇幻風格', description: '當傲驕貓也需要工作...' },
+                { name: 'Soothing / 療癒寵物風格', description: '用柔和色彩與簡單線條，傳遞出一種舒服自在的感覺。' },
+                { name: '50\'s Diner / 美式懷舊餐廳', description: '逃離平凡日常，進入另一個溫馨又悠閒的世界。' },
+                { name: 'Boho Cartoon / 波希米亞卡通', description: '結合東歐、吉卜賽、墨西哥的民族元素，代表的是一種自由、浪漫的風格，以及無拘無束的精神。' },
+                { name: 'Color Manga / 優雅漫畫風', description: '以豐富的細節，與雅緻的色彩，結合了優雅與漫畫風格。' }
+            ];
+
+            let expressions = ['開心', '笑', '大笑', '難過', '哭泣', '生氣', '驚訝', '愛心', '比心', '思考', '酷', '害羞', '疲累', '睡覺', '緊張', '無奈', '加油', '感謝', 'OK', '拜託', '晚安', '早安', '慶祝', '收到', '掰掰', '讚', '問號', '傻眼', '嘆氣', '抱抱', '偷看', '耍廢'];
+            const MAX_EXPRESSIONS = 9;
+            let selectedStyle = styles[0];
+            let selectedExpressions = [];
+            
+            function initPromptGenerator(){
+                renderSizeOptions();
+                renderStyles();
+                renderExpressions();
+                renderTextOptions();
+                renderBgColorOptions();
+                updatePrompt();
+                updateSelectionCount();
+            }
+            
+            characterModeUploadBtn.addEventListener('click', () => setCharacterMode('upload'));
+            characterModeInputBtn.addEventListener('click', () => setCharacterMode('input'));
+            characterInput.addEventListener('input', updatePrompt);
+
+            function setCharacterMode(mode) {
+                characterMode = mode;
+                const isUpload = mode === 'upload';
+                
+                characterModeUploadBtn.classList.toggle('btn-selected', isUpload);
+                characterModeUploadBtn.classList.toggle('btn-unselected', !isUpload);
+                
+                characterModeInputBtn.classList.toggle('btn-selected', !isUpload);
+                characterModeInputBtn.classList.toggle('btn-unselected', isUpload);
+
+                characterInputContainer.classList.toggle('hidden', isUpload);
+                
+                updatePrompt();
+            }
+
+            function renderSizeOptions() {
+                sizeOptionsContainer.innerHTML = '';
+                sizeOptions.forEach(opt => {
+                    const button = document.createElement('button');
+                    button.textContent = opt.label;
+                    button.className = `btn py-2 px-4 rounded-lg font-semibold ${selectedSize.ratio === opt.ratio ? 'btn-selected' : 'btn-unselected'}`;
+                    button.onclick = () => {
+                        selectedSize = opt;
+                        renderSizeOptions();
+                        updatePrompt();
+                    };
+                    sizeOptionsContainer.appendChild(button);
+                });
+            }
+
+            function renderStyles(){
+                styleOptionsContainer.innerHTML='';
+                styles.forEach(style=>{
+                    const button=document.createElement('button');
+                    button.textContent=style.name;
+                    button.className=`btn py-2 px-4 rounded-lg font-semibold ${selectedStyle.name === style.name ? 'btn-selected' : 'btn-unselected'}`;
+                    button.onclick=()=>{
+                        selectedStyle=style;
+                        renderStyles();
+                        updatePrompt();
+                    };
+                    styleOptionsContainer.appendChild(button);
+                });
+            }
+
+            function renderExpressions(){
+                expressionOptionsContainer.innerHTML='';
+                const limitReached=selectedExpressions.length>=MAX_EXPRESSIONS;
+                expressions.forEach(expression=>{
+                    const button=document.createElement('button');
+                    button.textContent=expression;
+                    const isSelected=selectedExpressions.includes(expression);
+                    button.className='btn py-2 px-4 rounded-lg font-semibold';
+                    if(isSelected)button.classList.add('btn-selected');
+                    else if(limitReached){button.classList.add('btn-disabled');button.disabled=true;}
+                    else button.classList.add('btn-unselected');
+                    button.onclick=()=>{
+                        if(isSelected)selectedExpressions=selectedExpressions.filter(e=>e!==expression);
+                        else if(selectedExpressions.length<MAX_EXPRESSIONS)selectedExpressions.push(expression);
+                        renderExpressions();
+                        updateSelectionCount();
+                        updatePrompt();
+                    };
+                    expressionOptionsContainer.appendChild(button);
+                });
+            }
+            
+            function renderTextOptions() {
+                textOptionsContainer.innerHTML = '';
+                textOptions.forEach(opt => {
+                    const button = document.createElement('button');
+                    button.textContent = opt.label;
+                    button.className = `btn py-2 px-4 rounded-lg font-semibold ${selectedTextOption.value === opt.value ? 'btn-selected' : 'btn-unselected'}`;
+                    button.onclick = () => {
+                        selectedTextOption = opt;
+                        renderTextOptions();
+                        updatePrompt();
+                    };
+                    textOptionsContainer.appendChild(button);
+                });
+            }
+
+            function renderBgColorOptions() {
+                bgColorOptionsContainer.innerHTML = '';
+                bgColors.forEach(color => {
+                    const button = document.createElement('button');
+                    button.textContent = color.label;
+                    // Check if this is selected, either via preset or manually matching value
+                    const isSelected = selectedBgColor.value === color.value;
+                    button.className = `btn py-2 px-4 rounded-lg font-semibold ${isSelected ? 'btn-selected' : 'btn-unselected'}`;
+                    button.onclick = () => {
+                        selectedBgColor = color;
+                        customBgColorInput.value = color.value; // Sync custom input
+                        bgColorDisplay.textContent = color.value;
+                        removeTargetColorInput.value = color.value; // Sync step 9
+                        renderBgColorOptions();
+                        updatePrompt();
+                    };
+                    bgColorOptionsContainer.appendChild(button);
+                });
+                
+                // Initialize display and step 9 input
+                bgColorDisplay.textContent = selectedBgColor.value;
+                customBgColorInput.value = selectedBgColor.value;
+                removeTargetColorInput.value = selectedBgColor.value;
+            }
+
+            customBgColorInput.addEventListener('input', (e) => {
+                const val = e.target.value.toUpperCase();
+                selectedBgColor = { name: 'Custom Color', value: val, label: 'Custom' };
+                bgColorDisplay.textContent = val;
+                removeTargetColorInput.value = val; // Sync Step 9
+                renderBgColorOptions(); // Will deselect presets
+                updatePrompt();
+            });
+
+
+            function addNewExpression() {
+                const newExpression = customExpressionInput.value.trim();
+                if (newExpression && !expressions.includes(newExpression)) {
+                    expressions.push(newExpression);
+                    renderExpressions();
+                }
+                customExpressionInput.value = '';
+                customExpressionInput.focus();
+            }
+
+            addExpressionButton.addEventListener('click', addNewExpression);
+            customExpressionInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addNewExpression();
+                }
+            });
+
+            function updateSelectionCount(){selectionCount.textContent=`目前已選：${selectedExpressions.length}/${MAX_EXPRESSIONS}`;}
+            
+            function updatePrompt(){
+                if(selectedExpressions.length === 0){
+                    promptOutput.value='請至少選擇一個表情或動作來產生提示詞。';
+                    return;
+                }
+                
+                let characterDescription = '';
+                if (characterMode === 'upload') {
+                    characterDescription = '基於上傳的圖片。';
+                } else {
+                    characterDescription = characterInput.value.trim() || '（請在此輸入角色描述）';
+                }
+
+                const expressionList = selectedExpressions.join(', ');
+                
+                let textRequirement = '';
+                if (selectedTextOption.hasText) {
+                    textRequirement = `，並附有一個[${selectedTextOption.value}]，${expressionList}，文字皆使用繁體中文。`;
+                } else {
+                    textRequirement = `。\n**排除項目: 絕對禁止在圖片中包含任何形式的文字、字幕、字母、數字、標籤或浮水印。**`;
+                }
+
+                // Determine background description based on selection
+                let bgDesc = "";
+                if (selectedBgColor.name.includes("Custom")) {
+                     bgDesc = `背景必須是純色 (Hex Color Code: ${selectedBgColor.value})`;
+                } else {
+                     bgDesc = `背景必須是${selectedBgColor.name} (Hex Color Code: ${selectedBgColor.value})`;
+                }
+
+                const promptTemplate = `製作一個 [${selectedSize.ratio}] 的 ${selectedStyle.name} 畫布，包含九個相同服裝造型，但姿勢與表情各異的 LINE 貼圖，這些姿勢與表情要與下述文字說明符合。
+
+- 角色: ${characterDescription}
+- 風格: ${selectedStyle.name}。
+- 風格說明: ${selectedStyle.description}
+- 包含的表情/動作: ${expressionList}。請確保所有指定的表情都包含在內。
+- 格式要求: 單一的 PNG 檔案，${bgDesc}。
+- 構圖: 網格中的每個表情圖案都必須完整顯示，不可以互相重疊，邊緣也不可以被裁切。
+- 每個 LINE 貼圖皆有白色邊框${textRequirement}`;
+                
+                promptOutput.value = promptTemplate;
+            }
+
+            copyButton.addEventListener('click',()=>{if(!promptOutput.value||promptOutput.value.startsWith('請至少選擇')){alert('請先選擇表情才能複製提示詞！');return;}promptOutput.select();promptOutput.setSelectionRange(0,99999);try{document.execCommand('copy');const originalText=copyButton.innerHTML;copyButton.innerHTML='✅ 已複製！';copyButton.classList.replace('bg-green-600','bg-blue-500');copyButton.classList.replace('hover:bg-green-700','hover:bg-blue-600');setTimeout(()=>{copyButton.innerHTML=originalText;copyButton.classList.replace('bg-blue-500','bg-green-600');copyButton.classList.replace('hover:bg-blue-600','hover:bg-green-700');},2000);}catch(err){alert('複製失敗，請手動選取並複製。');}window.getSelection().removeAllRanges();});
+
+            // --- Part 2: Image Splitter & Background Remover ---
+            const imageUpload = document.getElementById('image-upload');
+            const splitPreview = document.getElementById('split-preview');
+            const downloadAllButton = document.getElementById('download-all-button');
+            const clearButton = document.getElementById('clear-button');
+            const fileNameSpan = document.getElementById('file-name');
+            const modeAutoBtn = document.getElementById('mode-auto');
+            const modeManualBtn = document.getElementById('mode-manual');
+            const instruction = document.getElementById('upload-instruction');
+            const autoSplitControls = document.getElementById('auto-split-controls');
+            const gridColsInput = document.getElementById('grid-cols');
+            const gridRowsInput = document.getElementById('grid-rows');
+            
+            // Background Removal Elements
+            const bgRemovePreview = document.getElementById('bg-remove-preview');
+            const removeBgButton = document.getElementById('remove-bg-button');
+            const resetBgButton = document.getElementById('reset-bg-button');
+            const toleranceSlider = document.getElementById('tolerance-slider');
+            const toleranceValue = document.getElementById('tolerance-value');
+            
+            const cropperContainer = document.getElementById('cropper-container');
+            const cropperCanvas = document.getElementById('cropper-canvas');
+            const cropperCtx = cropperCanvas.getContext('2d');
+
+            // Data Structure: { id, name, originalData: base64, currentData: base64 }
+            let splitImagesData = [];
+            let currentMode = 'auto';
+            let originalImageData = null;
+            const originalImageObject = new Image();
+            let isDrawing = false;
+            let startX, startY, endX, endY;
+            
+            // Picking Mode State
+            let isPickingMode = false;
+
+            function resetSplitter() {
+                splitPreview.innerHTML = '';
+                bgRemovePreview.innerHTML = '<p class="text-gray-500 text-center col-span-full py-8">請先在步驟 8 產生分割圖片</p>';
+                splitImagesData = [];
+                originalImageData = null;
+                fileNameSpan.textContent = '尚未選擇檔案';
+                imageUpload.value = '';
+                cropperContainer.classList.add('hidden');
+                updateDownloadButtonState();
+                exitPickingMode();
+            }
+
+            function updateDownloadButtonState() {
+                if (splitImagesData.length > 0) {
+                    downloadAllButton.disabled = false;
+                    downloadAllButton.classList.remove('btn-disabled');
+                } else {
+                    downloadAllButton.disabled = true;
+                    downloadAllButton.classList.add('btn-disabled');
+                }
+            }
+            
+            clearButton.addEventListener('click', resetSplitter);
+
+            modeAutoBtn.addEventListener('click', () => switchMode('auto'));
+            modeManualBtn.addEventListener('click', () => switchMode('manual'));
+
+            function switchMode(newMode) {
+                currentMode = newMode;
+                modeAutoBtn.classList.toggle('btn-selected', newMode === 'auto');
+                modeAutoBtn.classList.toggle('btn-unselected', newMode !== 'auto');
+                modeManualBtn.classList.toggle('btn-selected', newMode === 'manual');
+                modeManualBtn.classList.toggle('btn-unselected', newMode !== 'manual');
+
+                if (newMode === 'auto') {
+                    instruction.textContent = '上傳圖片並設定網格，程式將會自動分割。';
+                    autoSplitControls.style.display = 'flex';
+                    cropperContainer.classList.add('hidden');
+                } else {
+                    instruction.textContent = '上傳圖片後，在圖片上按住滑鼠左鍵拖曳來框選您要的貼圖範圍。';
+                    autoSplitControls.style.display = 'none';
+                    if(originalImageData) cropperContainer.classList.remove('hidden');
+                }
+                
+                if(originalImageData) processImage(originalImageData);
+            }
+
+            imageUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    fileNameSpan.textContent = file.name;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        originalImageData = e.target.result;
+                        originalImageObject.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            originalImageObject.onload = () => {
+                processImage(originalImageData);
+            };
+            
+            function processImage(imageData) {
+                 splitPreview.innerHTML = '';
+                 splitImagesData = [];
+                 renderBgRemovalPreview(); 
+                 updateDownloadButtonState();
+
+                 if(currentMode === 'auto') {
+                    cropperContainer.classList.add('hidden');
+                    splitImageAuto(imageData);
+                 } else {
+                    cropperContainer.classList.remove('hidden');
+                    initManualCropper();
+                 }
+            }
+
+            function handleGridChange() {
+                if (originalImageData && currentMode === 'auto') {
+                    splitImageAuto(originalImageData);
+                }
+            }
+            gridColsInput.addEventListener('change', handleGridChange);
+            gridRowsInput.addEventListener('change', handleGridChange);
+
+            function splitImageAuto(imageData) {
+                const cols = parseInt(gridColsInput.value) || 1;
+                const rows = parseInt(gridRowsInput.value) || 1;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const cellWidth = originalImageObject.width / cols;
+                const cellHeight = originalImageObject.height / rows;
+
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        canvas.width = cellWidth;
+                        canvas.height = cellHeight;
+                        ctx.drawImage(originalImageObject, col * cellWidth, row * cellHeight, cellWidth, cellHeight, 0, 0, cellWidth, cellHeight);
+                        addCroppedImage(canvas.toDataURL('image/png'));
+                    }
+                }
+            }
+
+            function initManualCropper() {
+                cropperCanvas.width = originalImageObject.width;
+                cropperCanvas.height = originalImageObject.height;
+                cropperCtx.drawImage(originalImageObject, 0, 0);
+            }
+            
+            function addCroppedImage(dataUrl) {
+                const id = Date.now() + Math.random(); 
+                const newImage = { 
+                    id: id, 
+                    name: `sticker_${splitImagesData.length + 1}.png`, 
+                    originalData: dataUrl,
+                    currentData: dataUrl 
+                };
+                splitImagesData.push(newImage);
+                
+                // Step 8 Preview
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'preview-container';
+                previewContainer.dataset.id = id;
+
+                const previewImg = document.createElement('img');
+                previewImg.src = dataUrl;
+                previewImg.className = 'transparency-grid';
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.title = '刪除此圖';
+                deleteBtn.onclick = () => removeCroppedImage(id);
+
+                previewContainer.appendChild(previewImg);
+                previewContainer.appendChild(deleteBtn);
+                splitPreview.appendChild(previewContainer);
+                
+                // Step 9 Preview
+                renderBgRemovalPreview();
+                updateDownloadButtonState();
+            }
+
+            function removeCroppedImage(id) {
+                splitImagesData = splitImagesData.filter(img => img.id !== id);
+                const elementToRemove = splitPreview.querySelector(`.preview-container[data-id="${id}"]`);
+                if (elementToRemove) elementToRemove.remove();
+                
+                splitImagesData.forEach((img, index) => {
+                    img.name = `sticker_${index + 1}.png`;
+                });
+
+                renderBgRemovalPreview();
+                updateDownloadButtonState();
+            }
+
+            // --- Step 9 Logic: Background Removal ---
+
+            toleranceSlider.addEventListener('input', (e) => {
+                toleranceValue.textContent = e.target.value;
+            });
+
+            removeBgButton.addEventListener('click', () => {
+                const tolerance = parseInt(toleranceSlider.value);
+                const targetColorHex = removeTargetColorInput.value;
+                processAllImagesBackground(targetColorHex, tolerance);
+            });
+
+            resetBgButton.addEventListener('click', () => {
+                splitImagesData.forEach(img => {
+                    img.currentData = img.originalData;
+                });
+                renderBgRemovalPreview();
+            });
+            
+            // --- Color Picking Logic ---
+            pickColorBtn.addEventListener('click', () => {
+                isPickingMode = !isPickingMode;
+                if(isPickingMode) {
+                    enterPickingMode();
+                } else {
+                    exitPickingMode();
+                }
+            });
+            
+            function enterPickingMode() {
+                isPickingMode = true;
+                bgRemovePreview.classList.add('cursor-crosshair', 'picking-mode');
+                pickingStatus.classList.remove('hidden');
+                pickColorBtn.classList.replace('bg-amber-600', 'bg-red-600');
+                pickColorBtn.classList.replace('hover:bg-amber-700', 'hover:bg-red-700');
+                pickColorBtn.innerHTML = '❌ 取消吸取';
+            }
+            
+            function exitPickingMode() {
+                isPickingMode = false;
+                bgRemovePreview.classList.remove('cursor-crosshair', 'picking-mode');
+                pickingStatus.classList.add('hidden');
+                pickColorBtn.classList.replace('bg-red-600', 'bg-amber-600');
+                pickColorBtn.classList.replace('hover:bg-red-700', 'hover:bg-amber-700');
+                pickColorBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                                </svg> 吸取顏色 (點圖)`;
+            }
+
+            function renderBgRemovalPreview() {
+                bgRemovePreview.innerHTML = '';
+                
+                if (splitImagesData.length === 0) {
+                     bgRemovePreview.innerHTML = '<p class="text-gray-500 text-center col-span-full py-8">請先在步驟 8 產生分割圖片</p>';
+                     return;
+                }
+
+                splitImagesData.forEach(imgData => {
+                    const container = document.createElement('div');
+                    container.className = 'preview-container';
+                    
+                    const overlay = document.createElement('div');
+                    overlay.className = 'picking-overlay';
+                    
+                    const img = document.createElement('img');
+                    img.src = imgData.currentData;
+                    img.className = 'transparency-grid shadow-lg';
+                    
+                    // Click handler for picking color
+                    img.addEventListener('click', (e) => {
+                        if (!isPickingMode) return;
+                        
+                        // Create temp canvas to extract color
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Calculate click position relative to image
+                        const rect = img.getBoundingClientRect();
+                        const x = (e.clientX - rect.left) * (img.naturalWidth / rect.width);
+                        const y = (e.clientY - rect.top) * (img.naturalHeight / rect.height);
+                        
+                        const p = ctx.getImageData(x, y, 1, 1).data;
+                        const hex = "#" + ((1 << 24) + (p[0] << 16) + (p[1] << 8) + p[2]).toString(16).slice(1).toUpperCase();
+                        
+                        removeTargetColorInput.value = hex;
+                        
+                        // Flash effect or notification
+                        pickingStatus.textContent = `已吸取顏色: ${hex}`;
+                        setTimeout(() => {
+                             if(isPickingMode) pickingStatus.textContent = "請點擊下方預覽圖中的背景顏色...";
+                             exitPickingMode();
+                        }, 500);
+                    });
+                    
+                    container.appendChild(img);
+                    container.appendChild(overlay);
+                    bgRemovePreview.appendChild(container);
+                });
+            }
+
+            async function processAllImagesBackground(targetHex, tolerance) {
+                removeBgButton.textContent = '處理中...';
+                removeBgButton.classList.add('btn-disabled');
+
+                // Convert Hex to RGB
+                const rTarget = parseInt(targetHex.slice(1, 3), 16);
+                const gTarget = parseInt(targetHex.slice(3, 5), 16);
+                const bTarget = parseInt(targetHex.slice(5, 7), 16);
+
+                for (let i = 0; i < splitImagesData.length; i++) {
+                    splitImagesData[i].currentData = await removeColorBackground(splitImagesData[i].originalData, rTarget, gTarget, bTarget, tolerance);
+                }
+
+                renderBgRemovalPreview();
+                
+                removeBgButton.textContent = '✨ 執行去背';
+                removeBgButton.classList.remove('btn-disabled');
+            }
+
+            function removeColorBackground(base64Image, rTarget, gTarget, bTarget, tolerance) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.src = base64Image;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        
+                        // Distance squared threshold for performance (avoid sqrt)
+                        // Max distance in RGB is sqrt(255^2 * 3) approx 441
+                        // Tolerance mapping: 0-100 map to distance
+                        const distThreshold = tolerance * 3; // Approx factor
+
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            
+                            // Euclidean distance
+                            const dist = Math.sqrt(
+                                Math.pow(r - rTarget, 2) +
+                                Math.pow(g - gTarget, 2) +
+                                Math.pow(b - bTarget, 2)
+                            );
+                            
+                            if (dist <= distThreshold) {
+                                data[i + 3] = 0; // Set Alpha to 0
+                            }
+                        }
+
+                        ctx.putImageData(imageData, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                });
+            }
+
+            // --- Cropper Events ---
+            cropperContainer.addEventListener('mousedown', e => {
+                isDrawing = true;
+                const rect = cropperCanvas.getBoundingClientRect();
+                startX = (e.clientX - rect.left) * (cropperCanvas.width / rect.width);
+                startY = (e.clientY - rect.top) * (cropperCanvas.height / rect.height);
+            });
+
+            cropperContainer.addEventListener('mousemove', e => {
+                if (!isDrawing) return;
+                const rect = cropperCanvas.getBoundingClientRect();
+                endX = (e.clientX - rect.left) * (cropperCanvas.width / rect.width);
+                endY = (e.clientY - rect.top) * (cropperCanvas.height / rect.height);
+
+                cropperCtx.clearRect(0, 0, cropperCanvas.width, cropperCanvas.height);
+                cropperCtx.drawImage(originalImageObject, 0, 0);
+                cropperCtx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                cropperCtx.fillRect(0, 0, cropperCanvas.width, cropperCanvas.height);
+                const width = endX - startX;
+                const height = endY - startY;
+                cropperCtx.drawImage(originalImageObject, startX, startY, width, height, startX, startY, width, height);
+            });
+
+            cropperContainer.addEventListener('mouseup', () => {
+                if (!isDrawing) return;
+                isDrawing = false;
+                
+                const x = Math.min(startX, endX);
+                const y = Math.min(startY, endY);
+                const width = Math.abs(endX - startX);
+                const height = Math.abs(endY - startY);
+
+                if (width > 10 && height > 10) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCtx.drawImage(originalImageObject, x, y, width, height, 0, 0, width, height);
+                    addCroppedImage(tempCanvas.toDataURL('image/png'));
+                }
+                
+                cropperCtx.clearRect(0, 0, cropperCanvas.width, cropperCanvas.height);
+                cropperCtx.drawImage(originalImageObject, 0, 0);
+            });
+
+            downloadAllButton.addEventListener('click', () => {
+                if (splitImagesData.length === 0) return;
+                const zip = new JSZip();
+                splitImagesData.forEach(imgData => {
+                    const base64Data = imgData.currentData.split(',')[1];
+                    zip.file(imgData.name, base64Data, { base64: true });
+                });
+                zip.generateAsync({ type: 'blob' }).then(content => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = 'stickers_pack.zip';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            });
+
+            initPromptGenerator();
+        });
+    </script>
+</body>
+</html>
