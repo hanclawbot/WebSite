@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式圖表提示詞產生器</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel (用於解析 JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; }
+        /* 自定義捲軸樣式 */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #bbb; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        /**
+         * ------------------------------------------------------------------
+         * 內建圖示組件 (移除外部依賴以修復 ReferenceError)
+         * ------------------------------------------------------------------
+         */
+        const IconBase = ({ size = 24, className = "", children }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const SplitSquareHorizontal = (props) => (
+            <IconBase {...props}>
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <line x1="12" x2="12" y1="3" y2="21"/>
+            </IconBase>
+        );
+
+        const SplitSquareVertical = (props) => (
+            <IconBase {...props}>
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <line x1="3" x2="21" y1="12" y2="12"/>
+            </IconBase>
+        );
+
+        const Type = (props) => (
+            <IconBase {...props}>
+                <polyline points="4 7 4 4 20 4 20 7"/>
+                <line x1="9" x2="15" y1="20" y2="20"/>
+                <line x1="12" x2="12" y1="4" y2="20"/>
+            </IconBase>
+        );
+
+        const Palette = (props) => (
+            <IconBase {...props}>
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+            </IconBase>
+        );
+
+        const ImageIcon = (props) => (
+            <IconBase {...props}>
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+            </IconBase>
+        );
+
+        const Trash2 = (props) => (
+            <IconBase {...props}>
+                <path d="M3 6h18"/>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                <line x1="10" x2="10" y1="11" y2="17"/>
+                <line x1="14" x2="14" y1="11" y2="17"/>
+            </IconBase>
+        );
+
+        const Copy = (props) => (
+            <IconBase {...props}>
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </IconBase>
+        );
+
+        const RefreshCcw = (props) => (
+            <IconBase {...props}>
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                <path d="M16 16h5v5"/>
+            </IconBase>
+        );
+
+        const Settings2 = (props) => (
+            <IconBase {...props}>
+                <path d="M17 19v-9"/>
+                <path d="M17 5V2"/>
+                <path d="M17 10c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2Z"/>
+                <path d="M7 2v9"/>
+                <path d="M7 16v5"/>
+                <path d="M7 16c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2Z"/>
+            </IconBase>
+        );
+
+        const Check = (props) => (
+            <IconBase {...props}>
+                <polyline points="20 6 9 17 4 12"/>
+            </IconBase>
+        );
+
+
+        /**
+         * ------------------------------------------------------------------
+         * 核心資料結構與輔助函數
+         * ------------------------------------------------------------------
+         */
+
+        // 產生唯一 ID
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+
+        // 預設的初始區塊
+        const initialLayout = {
+            id: 'root',
+            type: 'leaf', // 'leaf' (內容區塊) 或 'container' (容器)
+            direction: null, // 'row' (水平排列) 或 'col' (垂直排列)
+            children: [],
+            // 僅 Leaf 有以下內容
+            content: {
+                title: '內容區塊',
+                visuals: '請點擊分割或編輯...',
+                color: 'bg-orange-50', // Tailwind class mapping
+                colorName: '米白/背景'
+            }
+        };
+
+        // 色票選項 (新增紅色系)
+        const colorOptions = [
+            { name: '紅色系', class: 'bg-red-100', code: 'Soft Red' },
+            { name: '藍色系', class: 'bg-blue-100', code: 'Soft Blue' },
+            { name: '米白/背景', class: 'bg-orange-50', code: 'Cream/Beige' },
+            { name: '粉色系', class: 'bg-pink-100', code: 'Pastel Pink' },
+            { name: '綠色系', class: 'bg-green-100', code: 'Sage Green' },
+            { name: '黃色系', class: 'bg-yellow-100', code: 'Warm Yellow' },
+            { name: '紫色系', class: 'bg-purple-100', code: 'Lavender' },
+            { name: '橘色系', class: 'bg-orange-100', code: 'Soft Orange' },
+            { name: '灰色系', class: 'bg-gray-100', code: 'Light Gray' },
+        ];
+
+        /**
+         * 遞迴更新節點的函數
+         */
+        const updateNodeInTree = (node, targetId, updateFn) => {
+            if (node.id === targetId) {
+                return updateFn(node);
+            }
+            if (node.children) {
+                return {
+                    ...node,
+                    children: node.children.map(child => updateNodeInTree(child, targetId, updateFn))
+                };
+            }
+            return node;
+        };
+
+        /**
+         * ------------------------------------------------------------------
+         * 主應用程式元件
+         * ------------------------------------------------------------------
+         */
+        function App() {
+            // 主要分割區塊狀態
+            const [layout, setLayout] = useState(initialLayout);
+            
+            // 固定標題列與副標題列狀態
+            const [chartTitle, setChartTitle] = useState({ 
+                title: '主要大標題', 
+                visuals: '醒目的標題設計', 
+                color: 'bg-red-100', 
+                colorName: '紅色系' 
+            });
+            const [chartSubtitle, setChartSubtitle] = useState({ 
+                title: '副標題 / 說明文字', 
+                visuals: '補充說明文字', 
+                color: 'bg-blue-100', 
+                colorName: '藍色系' 
+            });
+
+            const [orientation, setOrientation] = useState('landscape'); // landscape | portrait
+            const [artStyle, setArtStyle] = useState('flat'); // flat | handrawn | 3d
+            const [generatedPrompt, setGeneratedPrompt] = useState('');
+            const [editingNodeId, setEditingNodeId] = useState(null);
+            
+            // 用於編輯 Modal 的暫存狀態
+            const [editForm, setEditForm] = useState({ title: '', visuals: '', color: '', colorName: '' });
+
+            // 當佈局或設定改變時，自動重新生成 Prompt
+            useEffect(() => {
+                generatePrompt();
+            }, [layout, orientation, artStyle, chartTitle, chartSubtitle]);
+
+            // --- 操作邏輯 ---
+
+            const handleSplit = (id, direction) => {
+                setLayout(prev => updateNodeInTree(prev, id, (node) => ({
+                    ...node,
+                    type: 'container',
+                    direction: direction,
+                    children: [
+                        {
+                            id: generateId(),
+                            type: 'leaf',
+                            content: { ...node.content, title: `${node.content.title} (A)` }
+                        },
+                        {
+                            id: generateId(),
+                            type: 'leaf',
+                            content: { ...node.content, title: `${node.content.title} (B)` }
+                        }
+                    ]
+                })));
+            };
+
+            const handleResetNode = (id) => {
+                if (confirm('確定要合併此區塊的所有子內容嗎？這將會重置為單一區塊。')) {
+                    setLayout(prev => updateNodeInTree(prev, id, (node) => ({
+                        ...node,
+                        type: 'leaf',
+                        direction: null,
+                        children: [],
+                        content: {
+                            title: '新區塊',
+                            visuals: '請輸入描述',
+                            color: 'bg-gray-100',
+                            colorName: '灰色系'
+                        }
+                    })));
+                }
+            };
+
+            // 開啟編輯 Modal (支援一般節點與固定節點)
+            const openEditModal = (nodeId, content) => {
+                setEditingNodeId(nodeId);
+                setEditForm({ ...content });
+            };
+
+            // 儲存編輯
+            const saveEdit = () => {
+                // 處理固定標題
+                if (editingNodeId === 'title-fixed') {
+                    setChartTitle({ ...editForm });
+                    setEditingNodeId(null);
+                    return;
+                }
+                // 處理固定副標題
+                if (editingNodeId === 'subtitle-fixed') {
+                    setChartSubtitle({ ...editForm });
+                    setEditingNodeId(null);
+                    return;
+                }
+
+                // 處理一般樹狀節點
+                setLayout(prev => updateNodeInTree(prev, editingNodeId, (node) => ({
+                    ...node,
+                    content: { ...editForm }
+                })));
+                setEditingNodeId(null);
+            };
+
+            const resetAll = () => {
+                if (confirm('確定要重置整個畫布嗎？')) {
+                    setLayout({ ...initialLayout, id: generateId() });
+                }
+            };
+
+            // --- Prompt 生成邏輯 (遞迴) ---
+
+            const generatePrompt = () => {
+                let styleDesc = "";
+                if (artStyle === 'flat') styleDesc = "可愛、乾淨的 2D 扁平向量插畫風格 (Flat Vector Illustration)，具有日系可愛 (Kawaii) 元素。線條清晰，色彩採用柔和的粉嫩色調 (Pastel colors)。";
+                if (artStyle === 'handrawn') styleDesc = "溫暖的手繪風格 (Hand-drawn style)，使用色鉛筆或水彩質感，線條有機且柔和，營造親切的教育氛圍。";
+                if (artStyle === '3d') styleDesc = "可愛的 3D 黏土渲染風格 (3D Clay Render style)，圓潤的模型，柔和的頂光照明，類似皮克斯動畫的質感。";
+
+                let prompt = `一張${orientation === 'landscape' ? '橫向 (Landscape)' : '直向 (Portrait)'}的教育資訊圖表。\n\n`;
+                prompt += `**藝術風格：**\n${styleDesc}\n\n`;
+                prompt += `**畫面佈局與內容：**\n畫面背景為米黃色或淺暖色系，採用帶有圓角的區塊設計。佈局結構如下：\n\n`;
+
+                // 1. 描述固定標題區
+                prompt += `- **[頂部標題區域]**：\n`;
+                prompt += `  - **主標題**：「${chartTitle.title}」，背景色為${chartTitle.colorName}，位於畫面最上方。\n`;
+                prompt += `  - **副標題/說明**：「${chartSubtitle.title}」，背景色為${chartSubtitle.colorName}，位於主標題下方。\n\n`;
+
+                prompt += `- **[主要內容區域]** (位於副標題下方)：\n`;
+
+                // 2. 遞迴描述動態區塊
+                const traverse = (node, depth = 0, context = "內容區") => {
+                    const indent = "  ".repeat(depth);
+                    
+                    if (node.type === 'leaf') {
+                        prompt += `${indent}- **[${context}]**：背景為${node.content.colorName}。\n`;
+                        prompt += `${indent}  - 標題：「${node.content.title}」\n`;
+                        prompt += `${indent}  - 視覺元素：${node.content.visuals}\n\n`;
+                    } else {
+                        // prompt += `${indent}* [佈局] ${context}被${dirText}為 ${node.children.length} 個部分：\n`;
+                        
+                        node.children.forEach((child, index) => {
+                            let childContext = "";
+                            if (node.direction === 'row') {
+                                childContext = index === 0 ? "左側" : "右側";
+                            } else {
+                                childContext = index === 0 ? "上方" : "下方";
+                            }
+                            // 如果 context 已經很長，就簡化
+                            if (depth > 0) childContext = `${context}的${childContext}`;
+                            
+                            traverse(child, depth + 1, childContext);
+                        });
+                    }
+                };
+
+                traverse(layout);
+                
+                prompt += `**文字呈現：**\n圖片中包含中文標題與標籤，字體圓潤可愛，與插畫風格融合。`;
+                setGeneratedPrompt(prompt);
+            };
+
+            const copyToClipboard = () => {
+                navigator.clipboard.writeText(generatedPrompt);
+                alert("提示詞已複製！");
+            };
+
+            /**
+             * 遞迴渲染元件
+             */
+            const BlockRenderer = ({ node, depth = 0 }) => {
+                if (node.type === 'container') {
+                    return (
+                        <div className={`flex flex-1 gap-2 p-1 border-2 border-dashed border-gray-300 rounded-lg relative group transition-all duration-300
+                            ${node.direction === 'row' ? 'flex-row' : 'flex-col'}
+                        `}>
+                            {/* Container Controls (Hover to see) */}
+                            <div className="absolute -top-3 -right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    onClick={(e) => { e.stopPropagation(); handleResetNode(node.id); }}
+                                    className="bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 text-xs flex items-center gap-1 px-2"
+                                    title="合併回單一區塊"
+                                >
+                                    <Trash2 size={12} /> 合併
+                                </button>
+                            </div>
+
+                            {node.children.map((child) => (
+                                <BlockRenderer key={child.id} node={child} depth={depth + 1} />
+                            ))}
+                        </div>
+                    );
+                }
+
+                // Leaf Node
+                return (
+                    <div 
+                        className={`flex-1 min-h-[80px] min-w-[80px] rounded-xl relative group transition-all duration-200 border border-transparent hover:border-blue-400 hover:shadow-lg flex flex-col items-center justify-center p-2 text-center cursor-default ${node.content.color}`}
+                    >
+                        {/* Content Preview */}
+                        <h4 className="font-bold text-gray-800 text-base mb-1 pointer-events-none line-clamp-1">{node.content.title}</h4>
+                        <p className="text-[10px] text-gray-500 line-clamp-2 pointer-events-none">{node.content.visuals}</p>
+                        
+                        {/* Action Overlay */}
+                        <div className="absolute inset-0 bg-white/80 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex flex-col items-center justify-center gap-2 backdrop-blur-sm z-20">
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => handleSplit(node.id, 'row')}
+                                    className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 text-xs font-medium"
+                                >
+                                    <SplitSquareHorizontal size={14} /> 左右
+                                </button>
+                                <button 
+                                    onClick={() => handleSplit(node.id, 'col')}
+                                    className="flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 text-xs font-medium"
+                                >
+                                    <SplitSquareVertical size={14} /> 上下
+                                </button>
+                            </div>
+                            <button 
+                                onClick={() => openEditModal(node.id, node.content)}
+                                className="flex items-center gap-1 bg-gray-800 text-white px-4 py-1.5 rounded-lg hover:bg-gray-700 text-xs font-medium mt-1"
+                            >
+                                <Settings2 size={14} /> 編輯
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-50 text-gray-800 font-sans flex flex-col md:flex-row overflow-hidden">
+                    
+                    {/* ---------------- 左側控制與輸出面板 ---------------- */}
+                    <div className="w-full md:w-[400px] bg-white border-r border-gray-200 flex flex-col h-screen overflow-y-auto shadow-xl z-20">
+                        <div className="p-6 space-y-6">
+                            <div className="space-y-1">
+                                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                    <Palette className="text-pink-500" />
+                                    Prompt 產生器
+                                </h1>
+                                <p className="text-sm text-gray-500">自定義分割圖表版面，生成 AI 提示詞。</p>
+                            </div>
+
+                            {/* 全局設定 */}
+                            <div className="space-y-4 border-b border-gray-100 pb-6">
+                                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">全域設定</h3>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button 
+                                        onClick={() => setOrientation('landscape')}
+                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${orientation === 'landscape' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="w-8 h-6 border-2 border-current rounded-sm"></div>
+                                        <span className="text-xs font-medium">橫向 (4:3)</span>
+                                    </button>
+                                    <button 
+                                        onClick={() => setOrientation('portrait')}
+                                        className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${orientation === 'portrait' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                                    >
+                                        <div className="w-6 h-8 border-2 border-current rounded-sm"></div>
+                                        <span className="text-xs font-medium">直向 (3:4)</span>
+                                    </button>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-xs font-medium text-gray-600">藝術風格</label>
+                                    <select 
+                                        value={artStyle} 
+                                        onChange={(e) => setArtStyle(e.target.value)}
+                                        className="w-full p-2.5 rounded-lg border border-gray-300 text-sm focus:ring-2 focus:ring-pink-200 focus:border-pink-400 outline-none"
+                                    >
+                                        <option value="flat">🎨 扁平可愛向量 (Flat Vector)</option>
+                                        <option value="handrawn">✏️ 溫暖手繪風格 (Hand-drawn)</option>
+                                        <option value="3d">🧊 3D 黏土渲染 (3D Clay)</option>
+                                    </select>
+                                </div>
+
+                                 <button 
+                                    onClick={resetAll}
+                                    className="w-full py-2 flex items-center justify-center gap-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg text-sm transition-colors"
+                                >
+                                    <RefreshCcw size={14} /> 重置所有版面
+                                </button>
+                            </div>
+
+                            {/* Prompt 輸出區 */}
+                            <div className="flex-1 flex flex-col space-y-2">
+                                <div className="flex justify-between items-center">
+                                   <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">生成的提示詞</h3>
+                                   <button 
+                                        onClick={copyToClipboard}
+                                        className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium"
+                                    >
+                                        <Copy size={12} /> 複製文字
+                                   </button>
+                                </div>
+                                <textarea 
+                                    className="flex-1 min-h-[200px] w-full p-3 rounded-lg border border-gray-300 bg-gray-50 text-sm text-gray-700 leading-relaxed font-mono resize-none focus:ring-2 focus:ring-blue-200 outline-none"
+                                    value={generatedPrompt}
+                                    readOnly
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ---------------- 右側畫布互動區 ---------------- */}
+                    <div className="flex-1 bg-gray-200/50 flex flex-col items-center justify-center p-8 overflow-auto relative">
+                        <div className="absolute top-4 left-4 text-gray-400 text-sm font-medium select-none pointer-events-none">
+                            Canvas Preview
+                        </div>
+
+                        {/* 畫布容器：根據方向改變比例 */}
+                        <div 
+                            className={`bg-white shadow-2xl rounded-xl p-4 transition-all duration-500 ease-in-out flex flex-col
+                                ${orientation === 'landscape' ? 'w-full max-w-4xl aspect-[4/3]' : 'h-full max-h-[800px] aspect-[3/4]'}
+                            `}
+                        >
+                            <div className="flex flex-col w-full h-full gap-2">
+                                {/* 固定標題區 (Title Row) */}
+                                <div 
+                                    onClick={() => openEditModal('title-fixed', chartTitle)}
+                                    className={`w-full p-4 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:shadow-lg transition-all border border-transparent hover:border-gray-400 ${chartTitle.color} shrink-0`}
+                                    style={{ height: '12%' }}
+                                >
+                                    <h2 className="text-xl font-bold text-gray-800 pointer-events-none">{chartTitle.title}</h2>
+                                    <p className="text-xs text-gray-600 pointer-events-none opacity-50">點擊編輯標題</p>
+                                </div>
+
+                                {/* 固定副標題區 (Subtitle Row) */}
+                                <div 
+                                    onClick={() => openEditModal('subtitle-fixed', chartSubtitle)}
+                                    className={`w-full p-2 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:shadow-lg transition-all border border-transparent hover:border-gray-400 ${chartSubtitle.color} shrink-0`}
+                                    style={{ height: '8%' }}
+                                >
+                                    <h3 className="text-sm font-semibold text-gray-700 pointer-events-none">{chartSubtitle.title}</h3>
+                                </div>
+
+                                {/* 動態分割區 (Main Dynamic Area) */}
+                                <div className="flex-1 flex flex-col relative min-h-0">
+                                   <BlockRenderer node={layout} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-4 text-gray-400 text-xs text-center">
+                            💡 提示：點擊上方紅/藍區塊可編輯標題；點擊下方區塊可進行無限分割。
+                        </div>
+                    </div>
+
+                    {/* ---------------- 編輯 Modal ---------------- */}
+                    {editingNodeId && (
+                        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                    <h3 className="font-bold text-gray-800">編輯區塊內容</h3>
+                                    <button onClick={() => setEditingNodeId(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+                                </div>
+                                
+                                <div className="p-6 space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1">標題文字</label>
+                                        <div className="relative">
+                                            <Type className="absolute left-3 top-2.5 text-gray-400" size={16} />
+                                            <input 
+                                                type="text" 
+                                                value={editForm.title}
+                                                onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none"
+                                                placeholder="輸入文字..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-1">視覺/圖示描述</label>
+                                        <div className="relative">
+                                            <ImageIcon className="absolute left-3 top-2.5 text-gray-400" size={16} />
+                                            <textarea 
+                                                value={editForm.visuals}
+                                                onChange={(e) => setEditForm({...editForm, visuals: e.target.value})}
+                                                className="w-full pl-9 p-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-200 outline-none h-24 resize-none"
+                                                placeholder="描述圖示或補充細節..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 mb-2">背景色調</label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {colorOptions.map((c) => (
+                                                <button
+                                                    key={c.name}
+                                                    onClick={() => setEditForm({...editForm, color: c.class, colorName: c.name})}
+                                                    className={`h-10 rounded-lg border-2 flex items-center justify-center transition-all ${c.class} ${editForm.color === c.class ? 'border-blue-500 scale-105 shadow-sm' : 'border-transparent hover:border-gray-300'}`}
+                                                    title={c.name}
+                                                >
+                                                    {editForm.color === c.class && <Check size={16} className="text-gray-600/50" />}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-right text-gray-400 mt-1">目前選擇：{editForm.colorName}</p>
+                                    </div>
+                                </div>
+
+                                <div className="p-4 border-t border-gray-100 flex justify-end gap-2 bg-gray-50">
+                                    <button 
+                                        onClick={() => setEditingNodeId(null)}
+                                        className="px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-200 text-sm font-medium"
+                                    >
+                                        取消
+                                    </button>
+                                    <button 
+                                        onClick={saveEdit}
+                                        className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium shadow-lg shadow-blue-200"
+                                    >
+                                        儲存變更
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
