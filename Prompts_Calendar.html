@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 通用月曆生成器 (V7 單機版)</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* 自定義樣式補充 */
+        body {
+            font-family: "Noto Sans TC", sans-serif;
+        }
+        /* 隱藏滾動條但在需要時顯示 */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+    </style>
+</head>
+<body class="bg-rose-50 text-rose-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Icons Components (內嵌 SVG 以確保單檔執行無誤) ---
+        const IconBase = ({ children, size = 24, className = "" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {children}
+            </svg>
+        );
+
+        const CalendarIcon = (props) => (
+            <IconBase {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></IconBase>
+        );
+        const CopyIcon = (props) => (
+            <IconBase {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></IconBase>
+        );
+        const ImageIcon = (props) => (
+            <IconBase {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></IconBase>
+        );
+        const Wand2Icon = (props) => (
+            <IconBase {...props}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></IconBase>
+        );
+        const SunIcon = (props) => (
+            <IconBase {...props}><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></IconBase>
+        );
+        const MoonIcon = (props) => (
+            <IconBase {...props}><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></IconBase>
+        );
+        const UploadCloudIcon = (props) => (
+            <IconBase {...props}><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></IconBase>
+        );
+        const CheckCircle2Icon = (props) => (
+            <IconBase {...props}><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></IconBase>
+        );
+        const LayoutIcon = (props) => (
+            <IconBase {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></IconBase>
+        );
+        const Settings2Icon = (props) => (
+            <IconBase {...props}><path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></IconBase>
+        );
+        const PaletteIcon = (props) => (
+            <IconBase {...props}><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></IconBase>
+        );
+
+
+        // --- Main App Component ---
+        const App = () => {
+            const [year, setYear] = useState(2026);
+            const [month, setMonth] = useState(0); 
+            
+            // 1. 清空預設值
+            const [theme, setTheme] = useState('');
+            const [characterDetails, setCharacterDetails] = useState('');
+            
+            const [useUploadedImage, setUseUploadedImage] = useState(true);
+            const [generationMode, setGenerationMode] = useState('full'); 
+            const [aspectRatio, setAspectRatio] = useState('3:4');
+            
+            // 2. 新增風格選項與狀態
+            const styles = [
+                { label: '日式手繪畫風', value: 'Japanese Hand-Drawn Style' },
+                { label: '日式動漫風格', value: 'Japanese Anime Style' },
+                { label: '像素化藝術風格', value: 'Pixel Art Style' },
+                { label: '3D黏土風格', value: '3D Clay Render Style' },
+                { label: '電腦繪圖風格', value: 'Digital Art Style' },
+                { label: '水墨風格', value: 'Ink Wash Painting Style' },
+                { label: '可愛Q版風格', value: 'Cute Chibi Style' },
+            ];
+            const [artStyle, setArtStyle] = useState(styles[0].value);
+
+            const [weekStart, setWeekStart] = useState('Sunday'); // 'Sunday' or 'Monday'
+            const [generatedPrompt, setGeneratedPrompt] = useState('');
+            const [copySuccess, setCopySuccess] = useState(false);
+            const [previewMode, setPreviewMode] = useState('light');
+
+            const months = [
+                { value: 0, label: '一月 January', en: 'January' },
+                { value: 1, label: '二月 February', en: 'February' },
+                { value: 2, label: '三月 March', en: 'March' },
+                { value: 3, label: '四月 April', en: 'April' },
+                { value: 4, label: '五月 May', en: 'May' },
+                { value: 5, label: '六月 June', en: 'June' },
+                { value: 6, label: '七月 July', en: 'July' },
+                { value: 7, label: '八月 August', en: 'August' },
+                { value: 8, label: '九月 September', en: 'September' },
+                { value: 9, label: '十月 October', en: 'October' },
+                { value: 10, label: '十一月 November', en: 'November' },
+                { value: 11, label: '十二月 December', en: 'December' },
+            ];
+
+            // 日期計算
+            const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+            const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
+            const daysInMonth = getDaysInMonth(year, month);
+            const actualFirstDayIndex = getFirstDayOfMonth(year, month);
+
+            // 週起始日邏輯
+            let gridOffset = 0;
+            if (weekStart === 'Sunday') {
+                gridOffset = actualFirstDayIndex;
+            } else {
+                gridOffset = actualFirstDayIndex === 0 ? 6 : actualFirstDayIndex - 1;
+            }
+            
+            const dayNamesEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const firstDayName = dayNamesEn[actualFirstDayIndex];
+            const previewHeaders = weekStart === 'Sunday' 
+                ? ['S','M','T','W','T','F','S']
+                : ['M','T','W','T','F','S','S'];
+
+            // 自動生成 Prompt
+            useEffect(() => {
+                const monthName = months[month].en;
+                let finalPrompt = "";
+
+                // 提示詞開頭
+                let intro = useUploadedImage 
+                    ? `Based on the uploaded image, generate a calendar design in ${artStyle}. `
+                    : `Generate a calendar design. Art Style: ${artStyle}. `;
+
+                // 核心主題
+                const coreSubject = characterDetails 
+                    ? `Subject: ${theme}, featuring ${characterDetails}.`
+                    : `Subject: ${theme}.`;
+
+                // 佈局指令
+                let layoutInstruction = "";
+
+                if (generationMode === 'background') {
+                    layoutInstruction = `Composition: Create a large negative space (empty area) in the bottom half. ` +
+                    `IMPORTANT: Ensure NO text, NO numbers, and NO calendar grid are generated. ` +
+                    `Focus only on the background illustration.`;
+                } else {
+                    layoutInstruction = `Layout: A complete monthly calendar for ${monthName} ${year}. ` +
+                    `STRICT LAYOUT RULES: ` +
+                    `1. Weekly grid format MUST start on ${weekStart} (Columns: ${weekStart === 'Sunday' ? 'Sun-Sat' : 'Mon-Sun'}). ` +
+                    `2. The month starts on ${firstDayName} (1st is ${firstDayName}). ` +
+                    `3. Since the week starts on ${weekStart}, place the '1st' in the ${['1st','2nd','3rd','4th','5th','6th','7th'][gridOffset]} column cell. ` +
+                    `4. Total days: ${daysInMonth}. Numbers must be sequential. ` +
+                    `Typography: Clear typography. The text "${monthName}" and "${year}" must be visible.`;
+                }
+
+                finalPrompt = `${intro} ${coreSubject} ${layoutInstruction} High resolution, intricate details, aspect ratio ${aspectRatio}.`;
+
+                setGeneratedPrompt(finalPrompt);
+                setCopySuccess(false);
+            }, [year, month, theme, characterDetails, useUploadedImage, artStyle, aspectRatio, generationMode, weekStart, gridOffset, firstDayName, daysInMonth]);
+
+            // 複製功能 (相容於本地檔案)
+            const handleCopy = () => {
+                const copyToClipboard = (text) => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        return navigator.clipboard.writeText(text);
+                    } else {
+                        // Fallback for file:// or older browsers
+                        return new Promise((resolve, reject) => {
+                            const textArea = document.createElement("textarea");
+                            textArea.value = text;
+                            textArea.style.position = "fixed"; 
+                            document.body.appendChild(textArea);
+                            textArea.focus();
+                            textArea.select();
+                            try {
+                                document.execCommand('copy');
+                                document.body.removeChild(textArea);
+                                resolve();
+                            } catch (err) {
+                                document.body.removeChild(textArea);
+                                reject(err);
+                            }
+                        });
+                    }
+                };
+
+                copyToClipboard(generatedPrompt)
+                    .then(() => {
+                        setCopySuccess(true);
+                        setTimeout(() => setCopySuccess(false), 2000);
+                    })
+                    .catch(err => console.error('Copy failed', err));
+            };
+
+            return (
+                <div className="min-h-screen bg-rose-50 text-rose-900 font-sans p-4 md:p-8 flex flex-col lg:flex-row gap-6">
+                
+                {/* 左側：設定面板 */}
+                <div className="w-full lg:w-1/3 flex flex-col gap-4 bg-white p-5 rounded-2xl shadow-xl border border-rose-100 h-fit">
+                    <div className="flex items-center gap-2 border-b border-rose-50 pb-3">
+                    <Wand2Icon className="w-6 h-6 text-rose-500" />
+                    <h1 className="text-xl font-bold">
+                        Gemini 通用月曆生成器 (V7 單機版)
+                    </h1>
+                    </div>
+
+                    {/* 1. 墊圖設定 */}
+                    <div className={`p-4 rounded-xl border-2 transition-all ${useUploadedImage ? 'bg-rose-50 border-rose-300' : 'bg-gray-50 border-gray-200'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 font-bold text-sm uppercase tracking-wider">
+                            <UploadCloudIcon size={16}/>
+                            1. 墊圖模式 (參考圖片)
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked={useUploadedImage} onChange={(e) => setUseUploadedImage(e.target.checked)} className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                        </label>
+                    </div>
+                    {useUploadedImage && <p className="text-xs text-rose-700">請記得在 Gemini 對話框上傳圖片！</p>}
+                    </div>
+
+                    {/* 2. 風格與模式 */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                            <label className="block text-xs font-bold opacity-50 uppercase">2. 繪畫風格 (Style)</label>
+                        </div>
+                        {/* 風格下拉選單 */}
+                        <div className="relative">
+                            <div className="absolute left-3 top-2.5 text-gray-400 pointer-events-none">
+                                <PaletteIcon size={16}/>
+                            </div>
+                            <select 
+                                value={artStyle} 
+                                onChange={(e) => setArtStyle(e.target.value)}
+                                className="w-full p-2 pl-10 bg-white border border-rose-200 rounded-lg text-sm appearance-none focus:ring-2 focus:ring-rose-300 outline-none font-medium"
+                            >
+                                {styles.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                            </select>
+                        </div>
+
+                        <label className="block text-xs font-bold opacity-50 uppercase mt-2">3. 生成內容</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button 
+                                onClick={() => setGenerationMode('background')}
+                                className={`p-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1 transition ${generationMode === 'background' ? 'bg-rose-100 border-rose-500 text-rose-800' : 'bg-white text-gray-400'}`}
+                            >
+                                <ImageIcon size={18}/>
+                                純背景 (無字)
+                            </button>
+                            <button 
+                                onClick={() => setGenerationMode('full')}
+                                className={`p-3 rounded-lg border text-xs font-bold flex flex-col items-center gap-1 transition ${generationMode === 'full' ? 'bg-rose-100 border-rose-500 text-rose-800' : 'bg-white text-gray-400'}`}
+                            >
+                                <LayoutIcon size={18}/>
+                                完整月曆 (含日期)
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 3. 日期設定區 */}
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <label className="flex items-center gap-1 text-xs font-bold text-gray-500 uppercase mb-3">
+                        <Settings2Icon size={12}/> 日期與排版設定
+                    </label>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">年份</label>
+                            <input type="number" value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="w-full p-2 bg-white border border-gray-200 rounded-md text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">月份</label>
+                            <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="w-full p-2 bg-white border border-gray-200 rounded-md text-sm">
+                            {months.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">每週第一天 (Week Starts On)</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button 
+                                onClick={() => setWeekStart('Sunday')}
+                                className={`px-3 py-2 text-xs font-bold rounded-md border transition ${weekStart === 'Sunday' ? 'bg-rose-500 text-white border-rose-600' : 'bg-white text-gray-600 border-gray-200'}`}
+                            >
+                                週日 (Sun)
+                            </button>
+                            <button 
+                                onClick={() => setWeekStart('Monday')}
+                                className={`px-3 py-2 text-xs font-bold rounded-md border transition ${weekStart === 'Monday' ? 'bg-rose-500 text-white border-rose-600' : 'bg-white text-gray-600 border-gray-200'}`}
+                            >
+                                週一 (Mon)
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* 4. 內容描述 */}
+                    <div>
+                        <label className="block text-xs font-bold opacity-50 uppercase mb-1">主題</label>
+                        <input 
+                            type="text" 
+                            value={theme} 
+                            onChange={(e) => setTheme(e.target.value)} 
+                            placeholder="例如: 森林中的小屋, 可愛的貓咪..."
+                            className="w-full p-2 bg-rose-50/50 border-rose-100 border rounded-md" 
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold opacity-50 uppercase mb-1">外觀細節描述</label>
+                        <textarea 
+                            value={characterDetails} 
+                            onChange={(e) => setCharacterDetails(e.target.value)} 
+                            placeholder="例如: 溫暖的陽光, 豐富的細節..."
+                            className="w-full p-2 bg-rose-50/50 border-rose-100 border rounded-md h-16 text-xs resize-none" 
+                        />
+                    </div>
+
+                    <hr className="border-rose-50" />
+
+                    {/* Prompt 輸出 */}
+                    <div className="relative">
+                    <div className="flex justify-between items-end mb-1">
+                        <label className="block text-xs font-bold text-rose-600 uppercase">生成的 Prompt</label>
+                    </div>
+                    <textarea
+                        readOnly
+                        value={generatedPrompt}
+                        className="w-full h-36 p-3 text-xs bg-slate-900 text-rose-300 rounded-lg resize-none font-mono leading-relaxed outline-none border border-rose-200"
+                    ></textarea>
+                    <button
+                        onClick={handleCopy}
+                        className="absolute bottom-3 right-3 bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-md transition shadow-sm text-xs font-bold flex items-center gap-1"
+                    >
+                        {copySuccess ? "已複製!" : <span className="flex items-center gap-1"><CopyIcon size={14} /> 複製 Prompt</span>}
+                    </button>
+                    </div>
+                </div>
+
+                {/* 右側：視覺化 */}
+                <div className="w-full lg:w-2/3 flex flex-col gap-4">
+                    <div className="flex justify-between items-center bg-white p-3 rounded-xl shadow-sm border border-rose-100">
+                    <span className="text-sm font-bold text-rose-800 flex items-center gap-2">
+                        <LayoutIcon size={16} className="text-rose-500"/>
+                        排版規則驗證
+                    </span>
+                    <div className="flex gap-2">
+                        <button onClick={() => setPreviewMode('light')} className={`p-1.5 rounded transition ${previewMode === 'light' ? 'bg-rose-100 text-rose-600' : 'text-gray-400'}`}><SunIcon size={18}/></button>
+                        <button onClick={() => setPreviewMode('dark')} className={`p-1.5 rounded transition ${previewMode === 'dark' ? 'bg-slate-800 text-rose-300' : 'text-gray-400'}`}><MoonIcon size={18}/></button>
+                    </div>
+                    </div>
+
+                    {/* 數據驗證卡片 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <div className="bg-white p-2 rounded-lg border border-rose-100 shadow-sm text-center">
+                            <span className="block text-gray-400 font-bold uppercase">Week Starts</span>
+                            <span className="font-bold text-rose-800 text-lg">{weekStart}</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-rose-100 shadow-sm text-center">
+                            <span className="block text-gray-400 font-bold uppercase">1st is on</span>
+                            <span className="font-bold text-orange-600 text-lg">{firstDayName}</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-rose-100 shadow-sm text-center">
+                            <span className="block text-gray-400 font-bold uppercase">Start Column</span>
+                            <span className="font-bold text-rose-800 text-lg">第 {gridOffset + 1} 格</span>
+                        </div>
+                        <div className="bg-white p-2 rounded-lg border border-rose-100 shadow-sm text-center flex items-center justify-center">
+                            <span className="text-gray-400 font-bold">Style</span>
+                            <span className="text-rose-600 font-bold ml-1 truncate max-w-[80px]" title={artStyle}>{artStyle.split(' ')[0]}</span>
+                        </div>
+                    </div>
+
+                    {/* 畫布區域 */}
+                    <div className={`flex-grow rounded-2xl shadow-xl flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-300 ${previewMode === 'dark' ? 'bg-slate-900' : 'bg-rose-50'}`}>
+                        
+                        <div className={`relative w-full max-w-md aspect-[3/4] flex flex-col overflow-hidden shadow-2xl rounded-lg bg-white border-4 border-white`}>
+                        {/* 圖片區 */}
+                        <div className="h-1/2 bg-rose-100 flex items-center justify-center border-b border-rose-200">
+                            <div className="text-center opacity-50 px-4">
+                                <div className="mx-auto mb-2 text-rose-300 flex justify-center"><ImageIcon size={48} /></div>
+                                <p className="font-bold text-rose-800 text-sm">AI Image Area</p>
+                                <p className="text-[10px] truncate max-w-[200px]">{theme || "請輸入主題"}</p>
+                                <p className="text-[10px] text-rose-400 mt-1">風格: {artStyle}</p>
+                            </div>
+                        </div>
+
+                        {/* 日期區 */}
+                        <div className="h-1/2 p-4 bg-white flex flex-col">
+                            <h2 className="text-3xl font-black text-rose-900 mb-2">{months[month].en} <span className="text-lg font-light text-gray-400">{year}</span></h2>
+                            
+                            {/* 格線模擬 */}
+                            <div className="flex-grow">
+                                {/* 星期標頭 (動態更新) */}
+                                <div className="grid grid-cols-7 mb-2 border-b border-gray-100 pb-1">
+                                    {previewHeaders.map((d,i) => (
+                                    <div key={i} className={`text-center text-[10px] font-bold ${
+                                        (d === 'S' || d === 'S') ? 'text-orange-500' : 'text-gray-400'
+                                    }`}>
+                                        {d}
+                                    </div>
+                                    ))}
+                                </div>
+                                
+                                {/* 動態生成的網格 (示意) */}
+                                <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-600 font-medium">
+                                    {/* 偏移量空位 */}
+                                    {Array.from({length: gridOffset}).map((_, i) => <div key={`empty-${i}`}></div>)}
+                                    
+                                    {/* 數字 */}
+                                    {Array.from({length: daysInMonth}).map((_, i) => (
+                                        <div key={i} className={`aspect-square flex items-center justify-center rounded-full hover:bg-rose-50`}>
+                                            {i + 1}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
