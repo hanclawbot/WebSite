@@ -16,7 +16,7 @@ foreach ($file in $files) {
 }
 
 if ($cards -eq "") {
-    $cards = "    <p class=`"empty`">&#30446;&#21069;&#27809;&#26377;&#20219;&#20309;&#32178;&#39151;&#12290;</p>`n"
+    $cards = "    <p class=`"empty`">&#30446;&#21069;&#27809;&#26377;&#20219;&#20309;&#32178;&#38913;&#12290;</p>`n"
 }
 
 $count = $files.Count
@@ -27,7 +27,7 @@ $html += "<html lang=`"zh-TW`">`n"
 $html += "<head>`n"
 $html += "  <meta charset=`"UTF-8`">`n"
 $html += "  <meta name=`"viewport`" content=`"width=device-width, initial-scale=1.0`">`n"
-$html += "  <title>&#32178;&#39151;&#32034;&#24341;</title>`n"
+$html += "  <title>&#32178;&#38913;&#32034;&#24341;</title>`n"
 $html += "  <style>`n"
 $html += "    * { box-sizing: border-box; margin: 0; padding: 0; }`n"
 $html += "    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; padding: 40px 20px; }`n"
@@ -50,11 +50,11 @@ $html += "  </style>`n"
 $html += "</head>`n"
 $html += "<body>`n"
 $html += "  <header>`n"
-$html += "    <h1>&#127760; JyunHan &#32178;&#39151;&#32034;&#24341;</h1>`n"
-$html += "    <p>&#40670;&#36984;&#21345;&#29255;&#21363;&#21487;&#38283;&#21855;&#35442;&#32178;&#39151;</p>`n"
+$html += "    <h1>&#127760; JyunHan &#32178;&#38913;&#32034;&#24341;</h1>`n"
+$html += "    <p>&#40670;&#36984;&#21345;&#29255;&#21363;&#21487;&#38283;&#21855;&#35442;&#32178;&#38913;</p>`n"
 $html += "  </header>`n"
 $html += "  <div class=`"stats`">`n"
-$html += "    <div class=`"stat`"><div class=`"stat-num`">$count</div><div class=`"stat-label`">&#32178;&#39151;&#25976;&#37327;</div></div>`n"
+$html += "    <div class=`"stat`"><div class=`"stat-num`">$count</div><div class=`"stat-label`">&#32178;&#38913;&#25976;&#37327;</div></div>`n"
 $html += "    <div class=`"stat`"><div class=`"stat-num`">&#10003;</div><div class=`"stat-label`">&#24050;&#21516;&#27493;</div></div>`n"
 $html += "  </div>`n"
 $html += "  <div class=`"grid`">`n"
