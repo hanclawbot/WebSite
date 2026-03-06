@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重疊剪影提示詞產生器</title>
+    
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 載入 React 和 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 修正：載入新版 Babel (v7) 以支援現代語法 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- Icon Components (Inline SVG for portability) ---
+        const Layers = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        );
+        const Copy = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        );
+        const Sparkles = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 3v4"/><path d="M3 5h4"/><path d="M3 9h4"/></svg>
+        );
+        const Image = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        );
+        const Check = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>
+        );
+        const Command = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 3a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3H6a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3V6a3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3h12a3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+        );
+        const Scissors = ({ size = 24, className = "" }) => (
+             <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" x2="8.12" y1="4" y2="15.88"/><line x1="14.47" x2="20" y1="14.48" y2="20"/><line x1="8.12" x2="12" y1="8.12" y2="12"/></svg>
+        );
+        const Merge = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3"/><path d="m8 18 4 4 4-4"/><path d="M12 22v-6.3"/><path d="M6 12h12"/></svg>
+        );
+
+        // --- Main App Component ---
+        const App = () => {
+            const [mainTheme, setMainTheme] = useState('');
+            const [layer1Detail, setLayer1Detail] = useState('');
+            const [layer1Text, setLayer1Text] = useState('');
+            const [layer2Detail, setLayer2Detail] = useState('');
+            const [layer3Detail, setLayer3Detail] = useState('');
+            // Removed orientation state
+            const [generatedPrompts, setGeneratedPrompts] = useState(null);
+            const [mergedPrompt, setMergedPrompt] = useState(null);
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [copiedIndex, setCopiedIndex] = useState(null);
+
+            const generatePrompts = () => {
+                if (!mainTheme.trim()) return;
+                
+                setIsGenerating(true);
+                
+                setTimeout(() => {
+                    // 固定尺寸描述，配合三聯畫通常為直式面板拼接
+                    const sizeDesc = "Vertical 9:16 aspect ratio";
+                    
+                    const borderDesc = "strictly enclosed in a standardized thick solid black rectangular border frame, the border thickness is constant and fixed for all layers, outer and inner edges of the frame are straight lines, white margin around the frame, all black elements must be physically connected to the frame or ground to ensure they do not fall out when laser cut, single continuous piece";
+
+                    // 基礎風格設定
+                    const baseStyle = `style of laser cutting stencil art, multi-layered shadow box, solid flat pure black silhouette, isolated on white background with wide white margins, high contrast, clean distinct edges, vector graphics style, 8k resolution, no shading, no gradients, no floating isolated parts, ${sizeDesc}, ${borderDesc}`;
+
+                    // 中文基礎風格翻譯
+                    const sizeDescZh = "直式 9:16 構圖（適合三聯畫拼接）";
+                    const borderDescZh = "嚴格包含在標準化的厚實純黑實心矩形外框內，所有圖層的邊框厚度固定且一致，外框與內框邊緣皆為直線，外框周圍保留白邊，所有黑色元素必須物理連接至外框或地面，呈現一體成型的結構";
+                    const baseStyleZh = `雷射切割模版風格，紙雕燈箱藝術，純黑平面剪影，白底去背（保留寬白邊），高對比，邊緣清晰，向量圖風格，無陰影，無漸層，無懸空孤島，${sizeDescZh}，${borderDescZh}`;
+
+                    // 處理圖層細節
+                    const l1Content = layer1Detail.trim() || `decorative elements relevant to [${mainTheme}]`;
+                    const l1TextContent = layer1Text.trim() ? `, incorporating the text "${layer1Text}" into the frame design naturally (stencil font)` : "";
+                    const l1TextContentZh = layer1Text.trim() ? `，並將文字「${layer1Text}」自然融入邊框設計中（模版字體）` : "";
+                    const l2Content = layer2Detail.trim() || `main character or subject of [${mainTheme}]`;
+                    const l3Content = layer3Detail.trim() || `background scenery relevant to [${mainTheme}]`;
+
+                    // 1. 生成合併提示詞 (Merged Prompt)
+                    // 固定使用 vertical panels
+                    const mergedText = `A single image containing three distinct vertical rectangular panels arranged side-by-side (triptych style) on a white background, representing the 3 layers of a 3D shadow box art for [${mainTheme}].
+LEFT PANEL (Foreground Layer): Detailed framing elements: [${l1Content}] growing from the standardized black border frame${l1TextContent}, center empty.
+CENTER PANEL (Middle Layer): Main Subject: [${l2Content}], standing on a solid continuous horizontal ground line connecting to the frame, centered composition.
+RIGHT PANEL (Background Layer): Background Scenery: [${l3Content}] connecting to the side frames.
+UNIFIED STYLE: All three panels must be strictly enclosed in identical thick solid black rectangular border frames with constant thickness. ${baseStyle}. All black elements must be connected to the frame.`;
+
+                    const mergedTextZh = `一張包含三個並排矩形面板的圖片（三聯畫風格），分別代表 [${mainTheme}] 3D燈箱的三個圖層。左側面板（前景）：邊框裝飾 [${l1Content}]${l1TextContentZh}。中間面板（中景）：核心主體 [${l2Content}]。右側面板（背景）：背景景色 [${l3Content}]。統一風格：${baseStyleZh}，確保三個外框尺寸厚度完全一致。`;
+
+                    setMergedPrompt({
+                        text: mergedText,
+                        textZh: mergedTextZh
+                    });
+
+                    // 2. 生成個別提示詞 (Individual Prompts)
+                    const prompts = [
+                        {
+                            layer: "第一層：前景 (邊框、裝飾與文字)",
+                            desc: `裝飾元素：${l1Content} ${layer1Text ? `| 文字：${layer1Text}` : ""}`,
+                            text: `Foreground layer for a laser cut shadow box of [${mainTheme}], detailed framing elements: [${l1Content}] growing from the standardized black border frame${l1TextContent}, creating a depth frame, ${baseStyle}, center completely empty and white for visibility.`,
+                            textZh: `[${mainTheme}] 雷射切割燈箱的前景層，邊框細節元素：[${l1Content}] 從標準黑框長出${l1TextContentZh}，形成景深框架，${baseStyleZh}，中間完全留白以顯示後方。`
+                        },
+                        {
+                            layer: "第二層：中景 (核心主體)",
+                            desc: `主體人物/物件：${l2Content}`,
+                            text: `Middle layer main subject for a laser cut shadow box of [${mainTheme}], strictly maintaining the identical standardized rectangular border frame as the foreground layer without distortion. Inside this fixed frame, focusing on [${l2Content}], the subject stands on a solid continuous horizontal ground line that physically connects to the inner vertical edges of the frame, centered composition, ${baseStyle}, ensure the figure is attached to the ground line.`,
+                            textZh: `[${mainTheme}] 雷射切割燈箱的中景層，嚴格保持與前景層完全相同的標準矩形外框，不可變形。在此固定外框內，專注於 [${l2Content}]，主體必須站在一條實心的連續水平地平線上，該地平線需物理連接至外框的內側垂直邊緣，置中構圖，${baseStyleZh}，確保人物與地面相連。`
+                        },
+                        {
+                            layer: "第三層：背景 (場景環境)",
+                            desc: `背景環境：${l3Content}`,
+                            text: `Background layer for a laser cut shadow box of [${mainTheme}], strictly using the same standardized rectangular border frame as the previous layers. Depicting [${l3Content}] connecting to the side frames. Any floating elements must be physically attached to the top border frame or the ground below, no floating islands, ${baseStyle}, ensure the outer border is identical in thickness and size to the foreground layer.`,
+                            textZh: `[${mainTheme}] 雷射切割燈箱的背景層，嚴格使用與前幾層相同的標準矩形外框。描繪 [${l3Content}] 並連接至兩側外框。任何懸浮元素必須物理連接至上方邊框或下方地面，不可有懸空的孤島，${baseStyleZh}，確保外框與前景層的厚度與尺寸完全一致。`
+                        }
+                    ];
+
+                    setGeneratedPrompts(prompts);
+                    setIsGenerating(false);
+                }, 800);
+            };
+
+            const copyToClipboard = (text, index) => {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        setCopiedIndex(index);
+                        setTimeout(() => setCopiedIndex(null), 2000);
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                        fallbackCopyTextToClipboard(text, index);
+                    });
+                } else {
+                    fallbackCopyTextToClipboard(text, index);
+                }
+            };
+
+            const fallbackCopyTextToClipboard = (text, index) => {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; 
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    setCopiedIndex(index);
+                    setTimeout(() => setCopiedIndex(null), 2000);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+                document.body.removeChild(textArea);
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-900 text-slate-100 font-sans p-4 md:p-8 flex flex-col items-center">
+                
+                    {/* Header */}
+                    <header className="max-w-2xl w-full text-center mb-8 space-y-4">
+                        <div className="inline-flex items-center justify-center p-3 bg-indigo-600 rounded-full shadow-lg shadow-indigo-500/30 mb-2">
+                            <Scissors size={32} className="text-white" />
+                        </div>
+                        <h1 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-300">
+                            雷射切割-剪影提示詞產生器
+                        </h1>
+                        <p className="text-slate-400">
+                            專為 Google Gemini Nano Banana 打造。生成「固定框尺寸、不斷裂」的連體剪影結構。
+                        </p>
+                    </header>
+
+                    {/* Input Section */}
+                    <div className="max-w-3xl w-full bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-6 shadow-xl mb-8">
+                        
+                        {/* Orientation Selection Removed */}
+
+                        {/* Layer Settings */}
+                        <div className="space-y-6">
+                            {/* Main Theme */}
+                            <div>
+                                <label className="block text-sm font-bold text-indigo-400 mb-2 ml-1">
+                                    核心主題 (Main Theme)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={mainTheme}
+                                    onChange={(e) => setMainTheme(e.target.value)}
+                                    placeholder="例如：火影忍者、海底世界 (必填)"
+                                    className="w-full bg-slate-900 border border-slate-600 text-white text-lg rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                                />
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {/* Layer 1 */}
+                                <div className="md:col-span-2 bg-slate-800 p-4 rounded-xl border border-slate-700/50">
+                                    <h3 className="text-emerald-400 font-bold mb-3 flex items-center gap-2">
+                                        <span className="bg-emerald-500/20 w-6 h-6 rounded flex items-center justify-center text-sm">1</span>
+                                        前景層設定 (邊框)
+                                    </h3>
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">裝飾元素 (Frame Elements)</label>
+                                            <input
+                                                type="text"
+                                                value={layer1Detail}
+                                                onChange={(e) => setLayer1Detail(e.target.value)}
+                                                placeholder="例如：手裏劍、苦無、樹葉符號"
+                                                className="w-full bg-slate-900 border border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs text-slate-400 mb-1">邊框文字 (選填)</label>
+                                            <input
+                                                type="text"
+                                                value={layer1Text}
+                                                onChange={(e) => setLayer1Text(e.target.value)}
+                                                placeholder="例如：Naruto、忍者 (若不需要請留空)"
+                                                className="w-full bg-slate-900 border border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-emerald-500 outline-none"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Layer 2 */}
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
+                                    <h3 className="text-amber-400 font-bold mb-3 flex items-center gap-2">
+                                        <span className="bg-amber-500/20 w-6 h-6 rounded flex items-center justify-center text-sm">2</span>
+                                        中景層設定 (主體)
+                                    </h3>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">主要人物/物件 (Main Subject)</label>
+                                        <input
+                                            type="text"
+                                            value={layer2Detail}
+                                            onChange={(e) => setLayer2Detail(e.target.value)}
+                                            placeholder="例如：鳴人與佐助背對背站立"
+                                            className="w-full bg-slate-900 border border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-amber-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Layer 3 */}
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700/50">
+                                    <h3 className="text-purple-400 font-bold mb-3 flex items-center gap-2">
+                                        <span className="bg-purple-500/20 w-6 h-6 rounded flex items-center justify-center text-sm">3</span>
+                                        背景層設定 (環境)
+                                    </h3>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">背景景色 (Background)</label>
+                                        <input
+                                            type="text"
+                                            value={layer3Detail}
+                                            onChange={(e) => setLayer3Detail(e.target.value)}
+                                            placeholder="例如：木葉忍者村後方的火影岩"
+                                            className="w-full bg-slate-900 border border-slate-600 text-sm rounded-lg px-3 py-2 focus:ring-1 focus:ring-purple-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={generatePrompts}
+                                disabled={!mainTheme.trim() || isGenerating}
+                                className={`w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-lg transition-all transform active:scale-[0.99] ${
+                                !mainTheme.trim() || isGenerating
+                                    ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                                    : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-lg shadow-indigo-500/25'
+                                }`}
+                            >
+                                {isGenerating ? (
+                                    <span className="animate-pulse">生成中...</span>
+                                ) : (
+                                    <React.Fragment>
+                                        <Sparkles size={20} />
+                                        生成精確提示詞
+                                    </React.Fragment>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Results Section */}
+                    {generatedPrompts && (
+                        <div className="max-w-3xl w-full space-y-6 animate-fade-in-up pb-10">
+                            <div className="flex items-center justify-between text-slate-400 px-2">
+                                <span className="text-sm font-medium uppercase tracking-wider">生成結果</span>
+                                <div className="flex gap-2">
+                                    <span className="text-xs bg-emerald-900/50 text-emerald-400 px-2 py-1 rounded border border-emerald-800/50">
+                                        雷射切割專用
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* --- Merged Prompt Section (New) --- */}
+                            {mergedPrompt && (
+                                <div className="group bg-gradient-to-br from-slate-800 to-indigo-900/30 border-2 border-indigo-500/50 rounded-xl p-5 shadow-lg shadow-indigo-500/10 mb-8 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                                        <Merge size={120} />
+                                    </div>
+                                    <div className="flex justify-between items-start mb-3 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-indigo-500 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/40">
+                                                <Merge size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-white text-xl">整合合併提示詞 (三聯畫)</h3>
+                                                <p className="text-indigo-300 text-xs">一張圖包含前、中、後三區塊，確保外框一致性。</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => copyToClipboard(mergedPrompt.text, 'merged')}
+                                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all text-sm font-bold shadow-md hover:shadow-indigo-500/40"
+                                            title="複製整合提示詞"
+                                        >
+                                            {copiedIndex === 'merged' ? (
+                                                <><Check size={18} /> 已複製</>
+                                            ) : (
+                                                <><Copy size={18} /> 複製整合提示詞</>
+                                            )}
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="bg-slate-900/80 rounded-lg p-4 border border-indigo-500/30 group-hover:border-indigo-500/50 transition-colors mb-3 relative z-10">
+                                        <div className="text-xs text-indigo-400 mb-1 uppercase tracking-wider font-bold">English Prompt (All-in-One)</div>
+                                        <p className="font-mono text-sm text-slate-200 leading-relaxed break-words">
+                                            {mergedPrompt.text}
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 relative z-10">
+                                        <div className="text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">中文結構說明</div>
+                                        <p className="font-sans text-sm text-slate-400 leading-relaxed break-words">
+                                            {mergedPrompt.textZh}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Separator */}
+                            <div className="flex items-center gap-4 py-2">
+                                <div className="h-px bg-slate-700 flex-1"></div>
+                                <span className="text-slate-500 text-xs uppercase tracking-widest">或使用個別圖層提示詞</span>
+                                <div className="h-px bg-slate-700 flex-1"></div>
+                            </div>
+
+                            {generatedPrompts.map((item, index) => (
+                                <div 
+                                    key={index} 
+                                    className="group bg-slate-800 border border-slate-700 hover:border-indigo-500/50 rounded-xl p-5 transition-all duration-300 shadow-md hover:shadow-indigo-500/10"
+                                >
+                                    <div className="flex justify-between items-start mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                                index === 0 ? 'bg-emerald-500/20 text-emerald-400' :
+                                                index === 1 ? 'bg-amber-500/20 text-amber-400' :
+                                                'bg-purple-500/20 text-purple-400'
+                                            }`}>
+                                                <span className="font-bold">{index + 1}</span>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-white text-lg">{item.layer}</h3>
+                                                <p className="text-slate-400 text-xs">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => copyToClipboard(item.text, index)}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg transition-all text-sm font-medium border border-indigo-500/30"
+                                            title="複製英文提示詞"
+                                        >
+                                            {copiedIndex === index ? (
+                                                <><Check size={16} /> 已複製</>
+                                            ) : (
+                                                <><Copy size={16} /> 複製英文提示詞</>
+                                            )}
+                                        </button>
+                                    </div>
+                                    
+                                    {/* English Prompt */}
+                                    <div className="bg-slate-900/80 rounded-lg p-4 border border-slate-800 group-hover:border-slate-600 transition-colors mb-3">
+                                        <div className="text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">English Prompt</div>
+                                        <p className="font-mono text-sm text-slate-300 leading-relaxed break-words">
+                                            {item.text}
+                                        </p>
+                                    </div>
+
+                                    {/* Chinese Translation */}
+                                    <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50">
+                                        <div className="text-xs text-slate-500 mb-1 uppercase tracking-wider font-bold">中文翻譯 (參考用)</div>
+                                        <p className="font-sans text-sm text-slate-400 leading-relaxed break-words">
+                                            {item.textZh}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Tips Footer */}
+                            <div className="mt-8 bg-blue-900/20 border border-blue-800/50 rounded-xl p-4 flex gap-4 items-start">
+                                <div className="mt-1 bg-blue-500/20 p-2 rounded-lg text-blue-400 shrink-0">
+                                    <Scissors size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-blue-200 text-sm mb-1">雷射切割小撇步</h4>
+                                    <ul className="text-blue-300/80 text-xs leading-relaxed list-disc list-inside space-y-1">
+                                        <li><strong>推薦使用整合提示詞：</strong>三張圖併在一起生成，AI 更能掌握外框的統一性，減少尺寸誤差。</li>
+                                        <li><strong>分層輸入：</strong>現在你可以精確指定每一層的內容，確保生成結果（如火影岩、特定人物）符合預期。</li>
+                                        <li><strong>文字融入：</strong>前景層若有輸入文字，AI 會嘗試將其作為「模版字體 (stencil font)」融入邊框，切割時字體才不會掉落。</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // 渲染應用程式
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
