@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>圖片展示器</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    h1 {
+      margin-bottom: 20px;
+      color: #00d9ff;
+    }
+    
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    button, .file-btn {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: #00d9ff;
+      color: #1a1a2e;
+    }
+    
+    .btn-primary:hover {
+      background: #00b8d4;
+      transform: scale(1.05);
+    }
+    
+    .btn-success {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .btn-success:hover {
+      background: #45a049;
+    }
+    
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #da190b;
+    }
+    
+    .file-btn {
+      background: #ff9800;
+      color: #1a1a2e;
+      display: inline-block;
+    }
+    
+    .file-btn:hover {
+      background: #f57c00;
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .orientation-select {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .orientation-select label {
+      cursor: pointer;
+      padding: 12px 20px;
+      border: 2px solid #00d9ff;
+      border-radius: 8px;
+      transition: all 0.3s;
+    }
+    
+    .orientation-select input:checked + label {
+      background: #00d9ff;
+      color: #1a1a2e;
+    }
+    
+    .orientation-select input {
+      display: none;
+    }
+    
+    #gallery {
+      width: 100%;
+      max-width: 1200px;
+      min-height: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+      border: 2px dashed #333;
+      border-radius: 12px;
+    }
+    
+    #gallery img {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    
+    .placeholder {
+      color: #666;
+      font-size: 18px;
+    }
+    
+    /* 全螢幕幻燈片模式 */
+    #slideshow {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: black;
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #slideshow.active {
+      display: flex;
+    }
+    
+    #slideshow img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    #slideshow .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+    }
+    
+    .info {
+      margin-top: 15px;
+      color: #888;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🖼️ 圖片展示器</h1>
+  
+  <div class="controls">
+    <label class="file-btn">
+      📁 選擇資料夾
+      <input type="file" id="folderInput" webkitdirectory directory multiple accept="image/*">
+    </label>
+    
+    <div class="orientation-select">
+      <span>展示模式：</span>
+      <input type="radio" name="orientation" id="landscape" value="landscape" checked>
+      <label for="landscape">🖥️ 橫式螢幕</label>
+      
+      <input type="radio" name="orientation" id="portrait" value="portrait">
+      <label for="portrait">📱 直式螢幕</label>
+    </div>
+    
+    <button class="btn-primary" id="refreshBtn">🔄 重新整理</button>
+    <button class="btn-success" id="playBtn">▶️ 開始播放</button>
+  </div>
+  
+  <div id="gallery">
+    <span class="placeholder">請選擇一個圖片資料夾...</span>
+  </div>
+  
+  <div class="info" id="info"></div>
+  
+  <div id="slideshow">
+    <button class="close-btn" id="closeSlideshow">✕</button>
+    <img id="slideshowImg" src="" alt="slideshow">
+  </div>
+
+  <script>
+    let images = [];
+    let currentIndex = 0;
+    let isPlaying = false;
+    let slideshowInterval = null;
+    
+    const folderInput = document.getElementById('folderInput');
+    const gallery = document.getElementById('gallery');
+    const info = document.getElementById('info');
+    const refreshBtn = document.getElementById('refreshBtn');
+    const playBtn = document.getElementById('playBtn');
+    const slideshow = document.getElementById('slideshow');
+    const slideshowImg = document.getElementById('slideshowImg');
+    const closeSlideshow = document.getElementById('closeSlideshow');
+    
+    // 讀取圖片
+    folderInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files).filter(f => f.type.startsWith('image/'));
+      images = files;
+      displayImages();
+    });
+    
+    // 取得圖片方向
+    function getOrientation(img) {
+      return img.naturalWidth > img.naturalHeight ? 'landscape' : 'portrait';
+    }
+    
+    // 隨機打亂陣列
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    
+    // 載入圖片為 Promise
+    function loadImage(file) {
+      return new Promise((resolve) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          resolve({ file, url, orientation: getOrientation(img), img });
+        };
+        img.onerror = () => resolve(null);
+        img.src = url;
+      });
+    }
+    
+    // 顯示圖片
+    async function displayImages() {
+      if (images.length === 0) {
+        gallery.innerHTML = '<span class="placeholder">請選擇一個圖片資料夾...</span>';
+        info.textContent = '';
+        return;
+      }
+      
+      const preferredOrientation = document.querySelector('input[name="orientation"]:checked').value;
+      const shuffled = shuffle(images);
+      
+      // 預載入所有圖片
+      const loadedImages = [];
+      for (const file of shuffled) {
+        const loaded = await loadImage(file);
+        if (loaded) loadedImages.push(loaded);
+      }
+      
+      gallery.innerHTML = '';
+      
+      if (loadedImages.length === 0) {
+        gallery.innerHTML = '<span class="placeholder">沒有找到圖片</span>';
+        return;
+      }
+      
+      // 根據選擇的模式顯示圖片
+      let imgElements = [];
+      
+      for (const imgObj of loadedImages) {
+        if (preferredOrientation === 'landscape') {
+          // 橫式螢幕模式
+          if (imgObj.orientation === 'portrait') {
+            // 找到另一張直式圖片
+            const otherPortrait = loadedImages.find((img, idx) => 
+              idx !== loadedImages.indexOf(imgObj) && img.orientation === 'portrait'
+            );
+            
+            if (otherPortrait) {
+              // 兩張直式左右擺放
+              const container = document.createElement('div');
+              container.style.display = 'flex';
+              container.style.gap = '10px';
+              
+              const img1 = document.createElement('img');
+              img1.src = imgObj.url;
+              
+              const img2 = document.createElement('img');
+              img2.src = otherPortrait.url;
+              
+              container.appendChild(img1);
+              container.appendChild(img2);
+              gallery.appendChild(container);
+              
+              // 標記已使用
+              loadedImages.splice(loadedImages.indexOf(otherPortrait), 1);
+              continue;
+            }
+          }
+          // 橫式圖片直接顯示
+          const imgEl = document.createElement('img');
+          imgEl.src = imgObj.url;
+          gallery.appendChild(imgEl);
+          
+        } else {
+          // 直式螢幕模式
+          if (imgObj.orientation === 'landscape') {
+            // 找到另一張橫式圖片
+            const otherLandscape = loadedImages.find((img, idx) => 
+              idx !== loadedImages.indexOf(imgObj) && img.orientation === 'landscape'
+            );
+            
+            if (otherLandscape) {
+              // 兩張橫式上下擺放
+              const container = document.createElement('div');
+              container.style.display = 'flex';
+              container.style.flexDirection = 'column';
+              container.style.gap = '10px';
+              
+              const img1 = document.createElement('img');
+              img1.src = imgObj.url;
+              
+              const img2 = document.createElement('img');
+              img2.src = otherLandscape.url;
+              
+              container.appendChild(img1);
+              container.appendChild(img2);
+              gallery.appendChild(container);
+              
+              // 標記已使用
+              loadedImages.splice(loadedImages.indexOf(otherLandscape), 1);
+              continue;
+            }
+          }
+          // 直式圖片直接顯示
+          const imgEl = document.createElement('img');
+          imgEl.src = imgObj.url;
+          gallery.appendChild(imgEl);
+        }
+      }
+      
+      info.textContent = `共 ${images.length} 張圖片 | 模式：${preferredOrientation === 'landscape' ? '橫式螢幕' : '直式螢幕'}`;
+    }
+    
+    // 重新整理
+    refreshBtn.addEventListener('click', displayImages);
+    
+    // 監聽模式切換
+    document.querySelectorAll('input[name="orientation"]').forEach(radio => {
+      radio.addEventListener('change', displayImages);
+    });
+    
+    // 播放幻燈片
+    playBtn.addEventListener('click', async () => {
+      if (images.length === 0) {
+        alert('請先選擇圖片資料夾！');
+        return;
+      }
+      
+      isPlaying = true;
+      currentIndex = 0;
+      
+      // 預載入所有圖片
+      const loadedImages = [];
+      for (const file of shuffle(images)) {
+        const loaded = await loadImage(file);
+        if (loaded) loadedImages.push(loaded);
+      }
+      
+      if (loadedImages.length === 0) {
+        alert('沒有可顯示的圖片！');
+        return;
+      }
+      
+      const preferredOrientation = document.querySelector('input[name="orientation"]:checked').value;
+      
+      // 建立幻燈片陣列
+      const slideshowImages = [];
+      
+      for (let i = 0; i < loadedImages.length; i++) {
+        const imgObj = loadedImages[i];
+        
+        if (preferredOrientation === 'landscape') {
+          if (imgObj.orientation === 'portrait') {
+            const otherPortrait = loadedImages.find((img, idx) => 
+              idx > i && img.orientation === 'portrait'
+            );
+            
+            if (otherPortrait) {
+              slideshowImages.push([imgObj, otherPortrait]);
+              loadedImages.splice(loadedImages.indexOf(otherPortrait), 1);
+              continue;
+            }
+          }
+          slideshowImages.push([imgObj]);
+          
+        } else {
+          if (imgObj.orientation === 'landscape') {
+            const otherLandscape = loadedImages.find((img, idx) => 
+              idx > i && img.orientation === 'landscape'
+            );
+            
+            if (otherLandscape) {
+              slideshowImages.push([imgObj, otherLandscape]);
+              loadedImages.splice(loadedImages.indexOf(otherLandscape), 1);
+              continue;
+            }
+          }
+          slideshowImages.push([imgObj]);
+        }
+      }
+      
+      // 顯示幻燈片
+      function showSlide(index) {
+        if (!isPlaying) return;
+        
+        const slide = slideshowImages[index % slideshowImages.length];
+        
+        // 清除之前的內容
+        slideshow.innerHTML = '';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.textContent = '✕';
+        closeBtn.onclick = stopSlideshow;
+        slideshow.appendChild(closeBtn);
+        
+        if (preferredOrientation === 'landscape') {
+          const container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.gap = '10px';
+          
+          slide.forEach(imgObj => {
+            const img = document.createElement('img');
+            img.src = imgObj.url;
+            container.appendChild(img);
+          });
+          
+          slideshow.appendChild(container);
+        } else {
+          const container = document.createElement('div');
+          container.style.display = 'flex';
+          container.style.flexDirection = 'column';
+          container.style.gap = '10px';
+          
+          slide.forEach(imgObj => {
+            const img = document.createElement('img');
+            img.src = imgObj.url;
+            container.appendChild(img);
+          });
+          
+          slideshow.appendChild(container);
+        }
+        
+        slideshow.classList.add('active');
+        
+        // 3秒後切換下一張
+        slideshowInterval = setTimeout(() => {
+          currentIndex++;
+          if (currentIndex >= slideshowImages.length) {
+            currentIndex = 0;
+          }
+          showSlide(currentIndex);
+        }, 3000);
+      }
+      
+      showSlide(0);
+    });
+    
+    // 停止幻燈片
+    function stopSlideshow() {
+      isPlaying = false;
+      if (slideshowInterval) {
+        clearTimeout(slideshowInterval);
+        slideshowInterval = null;
+      }
+      slideshow.classList.remove('active');
+    }
+    
+    // 關閉按鈕
+    closeSlideshow.addEventListener('click', stopSlideshow);
+    
+    // ESC 鍵關閉
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        stopSlideshow();
+      }
+    });
+  </script>
+</body>
+</html>
