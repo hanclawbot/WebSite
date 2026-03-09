@@ -1,0 +1,482 @@
+{
+  "site": {
+    "title": "AI 提示詞寶典",
+    "description": "學習如何與 AI 有效溝通"
+  },
+  "chapters": [
+    {
+      "id": "basics",
+      "title": "💡 基礎概念",
+      "content": "了解什麼是 Prompt、為什麼重要",
+      "examples": [
+        {
+          "bad": "寫一首詩",
+          "good": "寫一首關於春天的七言絕句，要押韻，表達對新生的希望",
+          "explanation": "好的 Prompt 包含：主題、風格、長度、語氣等具體要求"
+        }
+      ]
+    },
+    {
+      "id": "structure",
+      "title": "📐 結構化 Prompt",
+      "content": "學會使用框架讓 AI 理解你的需求",
+      "examples": [
+        {
+          "bad": "幫我寫程式",
+          "good": "用 Python 寫一個計算 BMI 的程式\n\n輸入：體重(kg)、身高(m)\n輸出：BMI 值與身體狀態說明\n需求：包含錯誤處理、保留兩位小數",
+          "explanation": "使用「背景 + 任務 + 要求」的結構"
+        }
+      ]
+    },
+    {
+      "id": "roles",
+      "title": "🎭 角色扮演",
+      "content": "賦予 AI 特定身份來獲得更專業的結果",
+      "examples": [
+        {
+          "bad": "這段程式碼有什麼問題？",
+          "good": "你是一位資深 Python 工程師，擁有 10 年經驗。請審視以下程式碼，找出效能問題並提供優化建議：\n\n```python\ndef process_data(data):\n    # ... code ...\n```",
+          "explanation": "指定角色可以獲得該領域專家的觀點"
+        }
+      ]
+    },
+    {
+      "id": "context",
+      "title": "📚 上下文提供",
+      "content": "給予足夠背景資訊讓 AI 理解情境",
+      "examples": [
+        {
+          "bad": "寫一封email",
+          "good": "我正在向客戶提案，需要一封email：\n- 客戶名稱：張總\n- 提案主題：AI 顧問服務\n- 目標：預約下週三下午會議\n- 語氣：專業但親切",
+          "explanation": "提供越多相關背景，結果越精準"
+        }
+      ]
+    },
+    {
+      "id": "format",
+      "title": "📋 輸出格式指定",
+      "content": "明確指定輸出格式獲得結構化結果",
+      "examples": [
+        {
+          "bad": "告訴我天氣",
+          "good": "查詢台北今日天氣，以以下格式輸出：\n\n| 項目 | 數值 |\n|------|------|\n| 溫度 | XX°C |\n| 濕度 | XX% |\n| 天氣狀態 | [晴/陰/雨] |\n| 建議穿著 | [建議] |",
+          "explanation": "表格、JSON、列表等格式都能指定"
+        }
+      ]
+    },
+    {
+      "id": "iterative",
+      "title": "🔄 迭代優化",
+      "content": "透過多次對話逐步完善結果",
+      "examples": [
+        {
+          "bad": "（一次要求完美）",
+          "good": "第一輪：生成初稿\n第二輪：請針對 XX 段落補充更多細節\n第三輪：語氣改得更正式",
+          "explanation": "把複雜任務拆分成多輪對話"
+        }
+      ]
+    },
+    {
+      "id": "chain",
+      "title": "🔗 Chain of Thought",
+      "content": "引導 AI 展示思考過程",
+      "examples": [
+        {
+          "bad": "答案是什麼？",
+          "good": "請一步步思考，解釋你的推理過程：\n1. 首先...\n2. 因此...\n3. 最後結論是...",
+          "explanation": "對於複雜問題，引導 AI 展示過程能獲得更準確答案"
+        }
+      ]
+    },
+    {
+      "id": "fewshot",
+      "title": "🎯 Few-Shot 提示",
+      "content": "提供範例讓 AI 學習你想要的形式",
+      "examples": [
+        {
+          "bad": "把這句話改成負面",
+          "good": "把以下句子改寫為負面語氣：\n\n範例：\n- 正面：今天天氣很好 → 負面：今天天氣很差\n- 正面：這個產品很棒 → 負面：這個產品很糟糕\n\n待處理：這個服務很專業",
+          "explanation": "提供 1-3 個範例讓 AI 理解模式"
+        }
+      ]
+    }
+  ],
+  "aiTools": [
+    {
+      "name": "Cursor",
+      "icon": "⌨️",
+      "description": "AI 增強的程式碼編輯器，基於 VS Code",
+      "bestFor": ["程式開發", "Bug 修復", "重構", "程式碼補全"],
+      "strengths": ["深度理解整個專案", "自然語言編輯", "Chat 功能", "Terminal AI"],
+      "tips": [
+        "使用 Cmd+K 快速編輯選取程式碼",
+        "使用 Cmd+L 開啟 Chat 對話",
+        "@Files 可以引用特定檔案",
+        "直接說「幫我重構這個函數」而非只給指令"
+      ],
+      "promptStyle": "直接具體，說明檔案和目標"
+    },
+    {
+      "name": "Windsurf",
+      "icon": "🌊",
+      "description": "Codeium 推出的 AI 編輯器，強調 Flow 工程",
+      "bestFor": ["複雜任務", "多檔案修改", "Flow 工程", "自動化"],
+      "strengths": ["Cascade 功能", "深度專案理解", "Agent 模式", "預測性建議"],
+      "tips": [
+        "使用 Cascade 進行複雜多步驟任務",
+        "描述「流程」而非只給「指令」",
+        "Wave 功能可記住對話上下文",
+        "善用 Tab 接受 AI 建議"
+      ],
+      "promptStyle": "描述目標和預期結果，讓 AI 規劃步驟"
+    },
+    {
+      "name": "v0",
+      "icon": "🎨",
+      "description": "Vercel 推出的 UI 生成 AI，專精於 React/Next.js",
+      "bestFor": ["UI 開發", "網頁原型", "React 元件", "視覺設計"],
+      "strengths": ["即時預覽", "Shadcn/UI 整合", "Tailwind CSS", "快速原型"],
+      "tips": [
+        "直接描述你要的視覺效果",
+        "使用「添加...」而非「修改...」",
+        "可以上傳圖片作為參考",
+        "善用「生成圖片」功能 Outside Code Project"
+      ],
+      "promptStyle": "視覺化描述，注重設計細節"
+    },
+    {
+      "name": "Claude",
+      "icon": "🧠",
+      "description": "Anthropic 推出的 AI 助手，強大且安全",
+      "bestFor": ["複雜推理", "長文寫作", "程式碼審查", "分析思考"],
+      "strengths": ["超長上下文", "思考過程透明", "安全性高", "Haiku/Sonnet/Opus 三模型"],
+      "tips": [
+        "使用 Anthropic API 整合自己的應用",
+        "Thinking 功能可看見推理過程",
+        "Artifacts 可以生成互動式輸出",
+        "適合計劃和複雜分析任務"
+      ],
+      "promptStyle": "清晰結構，適合複雜任務分解"
+    },
+    {
+      "name": "ChatGPT",
+      "icon": "💬",
+      "description": "OpenAI 推出的對話式 AI，最廣為人知",
+      "bestFor": ["日常對話", "創意寫作", "問題解答", "學習輔助"],
+      "strengths": ["多功能", "GPTs 自定義", "Plugins 擴充", "Voice 語音"],
+      "tips": [
+        "GPT Store 有大量自定義 GPT 可用",
+        "善用 Custom Instructions 設定預設行為",
+        "可上傳檔案進行分析",
+        "Memory 功能可記住對話偏好"
+      ],
+      "promptStyle": "自然對話，明確要求輸出格式"
+    },
+    {
+      "name": "Perplexity",
+      "icon": "🔍",
+      "description": "AI 驅動的搜尋引擎，即時資訊檢索",
+      "bestFor": ["事實查證", "最新資訊", "研究調查", "快速解答"],
+      "strengths": ["即時網路搜尋", "來源引用", "Pro 搜尋", "聚焦主題"],
+      "tips": [
+        "使用 /focus 切換搜尋類型",
+        "Pro 模式適合複雜研究",
+        "可追蹤主題獲得最新資訊",
+        "適合驗證事實和快速調研"
+      ],
+      "promptStyle": "簡潔問題，明確資訊需求"
+    },
+    {
+      "name": "Warp",
+      "icon": "⚡",
+      "description": "AI 增強的終端機，智慧化命令列",
+      "bestFor": ["命令列操作", "Shell 腳本", "DevOps", "系統管理"],
+      "strengths": ["AI Command 建議", "自然語言轉 Shell", "工作流程", "Reusable Commands"],
+      "tips": [
+        "使用 AI Command (Cmd+/) 獲得命令建議",
+        "自然語言描述你要做什麼",
+        "建立 Warp AI Blocks 自動化常見任務",
+        "支援 SSH 和 Terraform"
+      ],
+      "promptStyle": "描述你要完成的任務，而非只給命令"
+    },
+    {
+      "name": "Manus",
+      "icon": "🤖",
+      "description": "Monica AI 推出的通用 AI Agent",
+      "bestFor": ["複雜任務自動化", "多步驟工作流", "自主規劃", "線上操作"],
+      "strengths": ["自主執行", "多工具整合", "線上操作能力", "長期記憶"],
+      "tips": [
+        "給予明確目標，讓 AI 自主規劃",
+        "適合需要瀏覽網頁的任務",
+        "可以處理多步驟複雜任務",
+        "注意任務進度，適時干預"
+      ],
+      "promptStyle": "明確目標，描述預期結果"
+    }
+  ],
+  "toolComparison": [
+    {
+      "category": "🎨 UI/網頁開發",
+      "recommended": ["v0", "Cursor"],
+      "reason": "v0 專精 UI 生成，Cursor 適合後續開發"
+    },
+    {
+      "category": "💻 程式開發",
+      "recommended": ["Cursor", "Windsurf", "Claude"],
+      "reason": "兩者都是專業 IDE，Claude 適合複雜架構規劃"
+    },
+    {
+      "category": "📝 內容創作",
+      "recommended": ["ChatGPT", "Claude"],
+      "reason": "兩者都擅長寫作，Claude 更適合長文"
+    },
+    {
+      "category": "🔍 研究調查",
+      "recommended": ["Perplexity", "ChatGPT"],
+      "reason": "Perplexity 擅長即時資訊，ChatGPT 適合深入分析"
+    },
+    {
+      "category": "🖥️ 終端操作",
+      "recommended": ["Warp", "Cursor"],
+      "reason": "Warp 是專業終端機，Cursor 有內建 Terminal"
+    },
+    {
+      "category": "🤖 自動化任務",
+      "recommended": ["Manus", "Windsurf"],
+      "reason": "Manus 擅長自主執行，Windsurf 適合開發流程"
+    }
+  ],
+  "tools": [
+    {
+      "name": "ChatGPT",
+      "tips": "擅長對話、創作、解答問題"
+    },
+    {
+      "name": "Claude",
+      "tips": "長上下文、程式碼審查、寫作風格"
+    },
+    {
+      "name": "Cursor",
+      "tips": "程式碼補全、專案理解、Bug 修復"
+    },
+    {
+      "name": "Windsurf",
+      "tips": "Flow 工程、複雜任務分解"
+    },
+    {
+      "name": "Perplexity",
+      "tips": "搜尋為主的問答、事實查證"
+    },
+    {
+      "name": "v0",
+      "tips": "UI 生成、描述你要的視覺效果"
+    }
+  ],
+  "prompts": [
+    {
+      "category": "📝 寫作幫手",
+      "title": "文章潤飾",
+      "prompt": "請潤飾以下文章，使其更加流暢、專業：\n\n[在此貼上文章]",
+      "tags": ["寫作", "潤飾", "文章"]
+    },
+    {
+      "category": "💻 程式開發",
+      "title": "Code Review",
+      "prompt": "你是一位資深工程師。請審視以下程式碼：\n\n```\n[貼上程式碼]\n```\n\n請指出：\n1. 可能的問題\n2. 效能優化建議\n3. 最佳實踐建議",
+      "tags": ["程式", "審查", "優化"]
+    },
+    {
+      "category": "📊 數據分析",
+      "title": "解釋數據",
+      "prompt": "請分析以下數據，並提供洞見：\n\n[貼上數據或描述數據]\n\n請以以下格式呈現：\n- 主要發現\n- 趨勢分析\n- 建議行動",
+      "tags": ["分析", "數據", "洞見"]
+    },
+    {
+      "category": "🎨 創意發想",
+      "title": "創業點子",
+      "prompt": "我想要創業，領域是 [領域]。請提供：\n\n1. 5 個具體的商業點子\n2. 每個點子的目標客群\n3. 初步營收模式\n4. 主要競爭對手",
+      "tags": ["創業", "商業", "創意"]
+    },
+    {
+      "category": "📚 學習輔助",
+      "title": "教學解說",
+      "prompt": "以老師的角度，解釋以下概念：\n\n[概念名稱]\n\n請用淺顯易懂的方式說明，並提供一個生活化的例子",
+      "tags": ["學習", "教學", "概念"]
+    },
+    {
+      "category": "📧 商業文書",
+      "title": "會議邀請",
+      "prompt": "請幫我撰寫一封會議邀請郵件：\n\n- 會議主題：\n- 時間：\n- 與會人員：\n- 會議目標：\n- 期望穿著/準備：",
+      "tags": ["email", "邀請", "商業"]
+    },
+    {
+      "category": "📝 寫作幫手",
+      "title": "部落格文章",
+      "prompt": "請幫我撰寫一篇部落格文章：\n\n- 主題：\n- 目標讀者：\n- 風格：\n- 字數：\n- 需包含的關鍵字：\n\n大綱：\n1. 開頭_hook\n2. 問題陳述\n3. 解決方案\n4. 案例分享\n5. 總結行動呼籲",
+      "tags": ["部落格", "行銷", "內容"]
+    },
+    {
+      "category": "📝 寫作幫手",
+      "title": "社群貼文",
+      "prompt": "請幫我撰寫一篇社群媒體貼文：\n\n- 平台：\n- 帳號風格：\n- 訊息重點：\n- 呼籲行動(CTA)：\n- 相關 Hashtags：\n\n長度：",
+      "tags": ["社群", "IG", "FB", "行銷"]
+    },
+    {
+      "category": "📧 商業文書",
+      "title": "抱怨回覆",
+      "prompt": "請幫我撰寫回覆客戶抱怨的郵件：\n\n- 客戶姓名：\n- 抱怨內容：\n- 我們的處理方案：\n- 語氣：同理心但堅定\n\n請先表達歉意，再說明解決方案，最後感謝回饋",
+      "tags": ["客服", "email", "回覆"]
+    },
+    {
+      "category": "📧 商業文書",
+      "title": "談判郵件",
+      "prompt": "請幫我撰寫商業談判郵件：\n\n- 對象：\n- 談判目標：\n- 我方籌碼：\n- 讓步空間：\n- 語氣：專業、尊重但堅定\n\n請使用「先肯定對方 → 陳述立場 → 提出方案 → 邀請討論」的結構",
+      "tags": ["談判", "商務", "email"]
+    },
+    {
+      "category": "💻 程式開發",
+      "title": "解釋程式碼",
+      "prompt": "請詳細解釋以下程式碼：\n\n```\n[貼上程式碼]\n```\n\n請用淺顯易懂的方式說明：\n1. 這段程式在做什麼\n2. 重要的變數/函數用途\n3. 可能的風險或注意事項",
+      "tags": ["程式", "教學", "學習"]
+    },
+    {
+      "category": "💻 程式開發",
+      "title": "寫單元測試",
+      "prompt": "請為以下程式碼撰寫單元測試：\n\n```\n[貼上程式碼]\n```\n\n使用的測試框架：\n期望的測試案例：\n\n請包含邊界情況測試",
+      "tags": ["測試", "開發", "品質"]
+    },
+    {
+      "category": "💻 程式開發",
+      "title": "SQL 查詢優化",
+      "prompt": "請分析並優化以下 SQL 查詢：\n\n```sql\n[貼上 SQL]\n```\n\n資料表結構：\n效能問題：\n\n請說明優化策略並提供優化後的 SQL",
+      "tags": ["SQL", "資料庫", "效能"]
+    },
+    {
+      "category": "💻 程式開發",
+      "title": "正規表達式",
+      "prompt": "請幫我撰寫正規表達式：\n\n匹配目標：\n範例輸入：\n範例輸出：\n\n請解釋正規表達式的每個部分",
+      "tags": ["Regex", "驗證", "開發"]
+    },
+    {
+      "category": "📊 數據分析",
+      "title": "建立圖表",
+      "prompt": "請幫我建立圖表描述：\n\n資料：\n想呈現的資訊：\n圖表類型：\n\n請用 ASCII 藝術或文字描述呈現方式",
+      "tags": ["圖表", "視覺化", "數據"]
+    },
+    {
+      "category": "📊 數據分析",
+      "title": "Excel 公式",
+      "prompt": "請幫我撰寫 Excel/Google Sheets 公式：\n\n目標：\n資料範圍：\n條件：\n\n請提供公式並說明用法",
+      "tags": ["Excel", "試算表", "公式"]
+    },
+    {
+      "category": "🎨 創意發想",
+      "title": "產品命名",
+      "prompt": "請幫我為產品命名：\n\n產品類型：\n目標客群：\n品牌調性：\n關鍵字：\n\n請提供 10 個名稱選項，包含中英文",
+      "tags": ["命名", "品牌", "創意"]
+    },
+    {
+      "category": "🎨 創意發想",
+      "title": "影片腳本",
+      "prompt": "請幫我撰寫影片腳本：\n\n影片類型：\n主題：\n時長：\n目標觀眾：\n風格：\n\n請包含：開場鉤子、內容大綱、結尾呼籲",
+      "tags": ["影片", "腳本", "YT"]
+    },
+    {
+      "category": "🎨 創意發想",
+      "title": "簡報大綱",
+      "prompt": "請幫我設計簡報大綱：\n\n主題：\n目標受眾：\n時長：\n主要訊息：\n\n請提供 Slide-by-Slide 結構",
+      "tags": ["簡報", "PPT", "演講"]
+    },
+    {
+      "category": "📚 學習輔助",
+      "title": "讀書筆記",
+      "prompt": "請幫我製作讀書筆記：\n\n書名：\n作者：\n你最想記住的 3 個重點：\n\n請用康乃爾筆記法格式呈現",
+      "tags": ["筆記", "學習", "閱讀"]
+    },
+    {
+      "category": "📚 學習輔助",
+      "title": "模擬面試",
+      "prompt": "請扮演面試官，根據以下職位問我問題：\n\n應徵職位：\n公司：\n經驗背景：\n\n請先問第一個問題，我回答後再給 Feedback",
+      "tags": ["面試", "求職", "練習"]
+    },
+    {
+      "category": "📚 學習輔助",
+      "title": "語言練習",
+      "prompt": "請幫我練習 [語言]：\n\n主題：\n程度：\n我的目標：\n\n請用該語言跟我對話，並糾正我的錯誤",
+      "tags": ["語言", "學習", "對話"]
+    },
+    {
+      "category": "🧠 思考輔助",
+      "title": "SWOT 分析",
+      "prompt": "請幫我進行 SWOT 分析：\n\n分析對象：\n\n請分別列出：\n- S (優勢)\n- W (劣勢)\n- O (機會)\n- T (威脅)\n\n每項至少 3 點",
+      "tags": ["分析", "策略", "商業"]
+    },
+    {
+      "category": "🧠 思考輔助",
+      "title": "決策矩陣",
+      "prompt": "請用決策矩陣幫我分析：\n\n決策問題：\n選項 A：\n選項 B：\n選項 C：\n\n評估標準（加權）：\n1. 成本 (30%)\n2. 效益 (40%)\n3. 風險 (20%)\n4. 時間 (10%)\n\n請計算並推薦最佳選項",
+      "tags": ["決策", "分析", "比較"]
+    },
+    {
+      "category": "🧠 思考輔助",
+      "title": "問題根因分析",
+      "prompt": "請幫我分析問題的根本原因：\n\n問題描述：\n相關因素：\n\n請使用 5 Whys 或魚骨圖方法分析",
+      "tags": ["分析", "問題", "解決"]
+    },
+    {
+      "category": "🧠 思考輔助",
+      "title": "腦力激盪",
+      "prompt": "請幫我腦力激盪：\n\n主題：\n目標：\n約束條件：\n\n請提供至少 15 個創意點子，不要批判",
+      "tags": ["創意", "腦力", "點子"]
+    },
+    {
+      "category": "💰 理財規劃",
+      "title": "投資分析",
+      "prompt": "請分析以下投資標的：\n\n標的：\n我的投資目標：\n風險承受度：\n\n請提供：\n1. 基本面分析\n2. 風險評估\n3. 建議配置比例",
+      "tags": ["投資", "理財", "分析"]
+    },
+    {
+      "category": "💰 理財規劃",
+      "title": "預算規劃",
+      "prompt": "請幫我規劃月度預算：\n\n月收入：\n固定支出：\n理財目標：\n\n請提供：\n1. 支出分類建議\n2. 分配比例\n3. 儲蓄建議",
+      "tags": ["預算", "理財", "規劃"]
+    },
+    {
+      "category": "🏥 健康生活",
+      "title": "運動規劃",
+      "prompt": "請幫我規劃運動計畫：\n\n目標：\n每週可用時間：\n目前體能狀況：\n設備：\n\n請提供每週訓練課表",
+      "tags": ["運動", "健身", "健康"]
+    },
+    {
+      "category": "🏥 健康生活",
+      "title": "飲食建議",
+      "prompt": "請給我飲食建議：\n\n目標：\n飲食偏好：\n過敏/不適：\n每日熱量目標：\n\n請提供：\n1. 每日菜單\n2. 營養均衡建議\n3. 備餐技巧",
+      "tags": ["飲食", "健康", "營養"]
+    },
+    {
+      "category": "🏥 健康生活",
+      "title": "睡眠改善",
+      "prompt": "請幫我改善睡眠品質：\n\n目前作息：\n睡眠問題：\n年齡：\n\n請提供：\n1. 睡眠衛生建議\n2. 放鬆技巧\n3. 作息調整建議",
+      "tags": ["睡眠", "健康", "改善"]
+    },
+    {
+      "category": "📅 時間管理",
+      "title": "每日計畫",
+      "prompt": "請幫我規劃今日行程：\n\n今日目標：\n必做事項：\n可用時間：\n能量高峰期：\n\n請用時間區塊呈現",
+      "tags": ["計畫", "效率", "日程"]
+    },
+    {
+      "category": "📅 時間管理",
+      "title": "週目標設定",
+      "prompt": "請幫我設定本週目標：\n\n上週完成情況：\n本週可用時間：\n優先順序：\n\n請用 OKR 格式呈現",
+      "tags": ["目標", "OKR", "規劃"]
+    },
+    {
+      "category": "📅 時間管理",
+      "title": "任務優先排序",
+      "prompt": "請幫我排序以下任務的優先順序：\n\n任務清單：\n1. \n2. \n3. \n4. \n\n我的截止日期：\n我的角色/職責：\n\n請用艾森豪矩陣分類並說明理由",
+      "tags": ["排序", "優先", "效率"]
+    }
+  ]
+}
