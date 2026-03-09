@@ -761,7 +761,7 @@
     let appData = {};
 
     // Load data
-    fetch('promptsguide_data.json')
+    fetch('./promptsguide_data.json')
       .then(res => res.json())
       .then(data => {
         appData = data;
