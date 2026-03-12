@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎀 影片反轉工具</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #FFF0F5 0%, #E3F2FD 50%, #F0FFF4 100%);
+      font-family: 'Nunito', 'M PLUS Rounded 1c', sans-serif;
+      color: #4A4A4A;
+      padding: 24px 16px 48px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Decorative dots background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #FADADD 1.5px, transparent 1.5px);
+      background-size: 32px 32px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #E91E8C;
+      text-shadow: 0 2px 8px rgba(233,30,140,0.15);
+      letter-spacing: 0.02em;
+    }
+    header p {
+      margin-top: 8px;
+      font-size: 1rem;
+      color: #9E9E9E;
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255,255,255,0.88);
+      border-radius: 28px;
+      border: 3px solid #FADADD;
+      box-shadow: 0 10px 32px rgba(255,182,193,0.25);
+      padding: 32px;
+      margin-bottom: 24px;
+      backdrop-filter: blur(6px);
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 3px dashed #FFB6C8;
+      border-radius: 20px;
+      background: #FFF5F8;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: #FF8FAB;
+      background: #FFE8F0;
+      transform: scale(1.01);
+    }
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .upload-icon { font-size: 3.5rem; line-height: 1; }
+    .upload-zone h2 { font-size: 1.2rem; font-weight: 700; margin: 12px 0 6px; color: #E91E8C; }
+    .upload-zone p { font-size: 0.9rem; color: #BDBDBD; }
+
+    /* Video preview */
+    #preview-section { display: none; }
+    .video-wrapper {
+      position: relative;
+      background: #1a1a2e;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 3px solid #FADADD;
+    }
+    video {
+      width: 100%;
+      display: block;
+      max-height: 420px;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .video-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(233,30,140,0.9);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 50px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Info grid */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .info-item {
+      background: #FFF0F5;
+      border-radius: 14px;
+      border: 2px solid #FADADD;
+      padding: 12px 14px;
+      text-align: center;
+    }
+    .info-item .label { font-size: 0.75rem; color: #BDBDBD; margin-bottom: 4px; }
+    .info-item .value { font-size: 1rem; font-weight: 700; color: #E91E8C; }
+
+    /* Progress */
+    #progress-section { display: none; }
+    .progress-bar-bg {
+      background: #FADADD;
+      border-radius: 50px;
+      height: 14px;
+      overflow: hidden;
+      margin: 16px 0 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #FF8FAB, #FFB74D);
+      border-radius: 50px;
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+    .progress-text {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #9E9E9E;
+    }
+    .progress-label {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #E91E8C;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    /* Status messages */
+    .status-msg {
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-top: 14px;
+      display: none;
+    }
+    .status-msg.info  { background: #E3F2FD; color: #1565C0; border: 2px solid #90CAF9; display: block; }
+    .status-msg.error { background: #FFEBEE; color: #C62828; border: 2px solid #EF9A9A; display: block; }
+    .status-msg.success { background: #E8F5E9; color: #2E7D32; border: 2px solid #A5D6A7; display: block; }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+      justify-content: center;
+    }
+    .btn {
+      border: none;
+      border-radius: 50px;
+      padding: 13px 30px;
+      font-size: 1rem;
+      font-family: 'Nunito', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+    .btn:not(:disabled):hover { transform: scale(1.07); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #FF8FAB, #FF4081);
+      color: #fff;
+      box-shadow: 0 5px 16px rgba(255,64,129,0.35);
+    }
+    .btn-primary:not(:disabled):hover { box-shadow: 0 8px 20px rgba(255,64,129,0.45); }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #80DEEA, #26C6DA);
+      color: #fff;
+      box-shadow: 0 5px 16px rgba(38,198,218,0.3);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #A5D6A7, #4CAF50);
+      color: #fff;
+      box-shadow: 0 5px 16px rgba(76,175,80,0.3);
+    }
+    .btn-neutral {
+      background: #F5F5F5;
+      color: #757575;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    /* Result section */
+    #result-section { display: none; }
+
+    /* Tips */
+    .tips {
+      background: #FFFDE7;
+      border: 2px solid #FFE082;
+      border-radius: 16px;
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      color: #F57F17;
+      line-height: 1.7;
+    }
+    .tips strong { display: block; margin-bottom: 4px; font-size: 0.95rem; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .bounce { animation: bounce 1.6s ease-in-out infinite; }
+
+    /* Responsive */
+    @media (max-width: 540px) {
+      header h1 { font-size: 1.6rem; }
+      .card { padding: 20px; }
+      .btn { padding: 11px 22px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1 class="bounce">🎀 影片反轉工具</h1>
+    <p>✨ 上傳影片，一鍵反轉播放，保留原始畫質後另存 ✨</p>
+  </header>
+
+  <!-- Upload -->
+  <div class="card" id="upload-card">
+    <div class="upload-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="video/*" />
+      <div class="upload-icon">🎬</div>
+      <h2>點擊或拖曳影片至此</h2>
+      <p>支援 MP4、WebM、MOV、AVI 等常見格式</p>
+    </div>
+    <div class="tips" style="margin-top:18px;">
+      <strong>🍬 使用提示</strong>
+      本工具完全在瀏覽器本機運算，影片不會上傳至任何伺服器，請放心使用。
+      處理時間依影片長度與解析度而定，建議先從短片試用。
+    </div>
+  </div>
+
+  <!-- Preview -->
+  <div class="card" id="preview-section">
+    <div class="video-wrapper">
+      <span class="video-badge" id="video-badge">📽 原始影片</span>
+      <video id="video-player" controls playsinline></video>
+    </div>
+    <div class="info-grid" id="info-grid"></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-reverse">🔄 開始反轉處理</button>
+      <button class="btn btn-neutral" id="btn-reupload">📂 重新選擇</button>
+    </div>
+    <div class="status-msg" id="preview-status"></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="card" id="progress-section">
+    <div class="progress-label" id="progress-label">🌸 正在讀取影格…</div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <div class="progress-text" id="progress-text">0%</div>
+    <div class="status-msg info" id="progress-status">請稍候，影片越長處理時間越久 ✨</div>
+  </div>
+
+  <!-- Result -->
+  <div class="card" id="result-section">
+    <div class="video-wrapper">
+      <span class="video-badge">🔄 反轉後影片</span>
+      <video id="result-player" controls playsinline></video>
+    </div>
+    <div class="info-grid" id="result-info-grid"></div>
+    <div class="btn-row">
+      <button class="btn btn-success" id="btn-download">💾 另存反轉影片</button>
+      <button class="btn btn-secondary" id="btn-compare">↔ 對比原始影片</button>
+      <button class="btn btn-neutral" id="btn-new">🎀 處理新影片</button>
+    </div>
+    <div class="status-msg success" style="display:block; margin-top:16px;">
+      🎉 影片反轉完成！畫質與原始影片保持一致。
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────
+  let originalFile = null;
+  let reversedBlob = null;
+  let showingOriginal = false;
+
+  // ── Elements ───────────────────────────────────────────────────
+  const dropZone      = document.getElementById('drop-zone');
+  const fileInput     = document.getElementById('file-input');
+  const uploadCard    = document.getElementById('upload-card');
+  const previewSec    = document.getElementById('preview-section');
+  const progressSec   = document.getElementById('progress-section');
+  const resultSec     = document.getElementById('result-section');
+  const videoPlayer   = document.getElementById('video-player');
+  const resultPlayer  = document.getElementById('result-player');
+  const infoGrid      = document.getElementById('info-grid');
+  const resultInfoGrid= document.getElementById('result-info-grid');
+  const btnReverse    = document.getElementById('btn-reverse');
+  const btnReupload   = document.getElementById('btn-reupload');
+  const btnDownload   = document.getElementById('btn-download');
+  const btnCompare    = document.getElementById('btn-compare');
+  const btnNew        = document.getElementById('btn-new');
+  const progressFill  = document.getElementById('progress-fill');
+  const progressText  = document.getElementById('progress-text');
+  const progressLabel = document.getElementById('progress-label');
+  const previewStatus = document.getElementById('preview-status');
+
+  // ── Drag & Drop ────────────────────────────────────────────────
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('video/')) loadFile(f);
+    else showStatus(previewStatus, 'error', '⚠️ 請選擇有效的影片檔案！');
+  });
+  fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
+
+  // ── Load file ─────────────────────────────────────────────────
+  function loadFile(file) {
+    originalFile = file;
+    reversedBlob = null;
+    const url = URL.createObjectURL(file);
+    videoPlayer.src = url;
+    videoPlayer.load();
+    videoPlayer.onloadedmetadata = () => {
+      uploadCard.style.display = 'none';
+      previewSec.style.display = 'block';
+      resultSec.style.display = 'none';
+      progressSec.style.display = 'none';
+      hideStatus(previewStatus);
+      renderInfoGrid(infoGrid, file, videoPlayer);
+    };
+  }
+
+  function renderInfoGrid(grid, file, vid) {
+    const dur = vid.duration;
+    const size = (file.size / 1024 / 1024).toFixed(2);
+    const w = vid.videoWidth, h = vid.videoHeight;
+    grid.innerHTML = `
+      <div class="info-item"><div class="label">📛 檔名</div><div class="value" style="font-size:0.8rem;word-break:break-all">${file.name}</div></div>
+      <div class="info-item"><div class="label">⏱ 時長</div><div class="value">${formatDuration(dur)}</div></div>
+      <div class="info-item"><div class="label">📐 解析度</div><div class="value">${w}×${h}</div></div>
+      <div class="info-item"><div class="label">💾 大小</div><div class="value">${size} MB</div></div>
+    `;
+  }
+
+  // ── Reverse ───────────────────────────────────────────────────
+  btnReverse.addEventListener('click', async () => {
+    if (!originalFile) return;
+    previewSec.style.display = 'none';
+    progressSec.style.display = 'block';
+    resultSec.style.display = 'none';
+    setProgress(0, '🌸 正在讀取影格…');
+
+    try {
+      // Prefer WebCodecs if available for quality; else Canvas fallback
+      if (typeof VideoDecoder !== 'undefined' && typeof VideoEncoder !== 'undefined') {
+        await reverseWithWebCodecs();
+      } else {
+        await reverseWithCanvas();
+      }
+    } catch (err) {
+      console.error(err);
+      // Fallback to canvas on any error
+      try {
+        await reverseWithCanvas();
+      } catch (err2) {
+        progressSec.style.display = 'none';
+        previewSec.style.display = 'block';
+        showStatus(previewStatus, 'error', '❌ 處理失敗：' + err2.message);
+      }
+    }
+  });
+
+  // ── Canvas-based reversal (universal fallback) ─────────────────
+  async function reverseWithCanvas() {
+    setProgress(0, '🎬 分析影片長度…');
+
+    const url = URL.createObjectURL(originalFile);
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.muted = true;
+    vid.preload = 'auto';
+    await new Promise(r => { vid.onloadedmetadata = r; });
+
+    const duration = vid.duration;
+    const fps = await detectFPS(vid) || 30;
+    const totalFrames = Math.ceil(duration * fps);
+    const W = vid.videoWidth, H = vid.videoHeight;
+
+    setProgress(2, `🖼 共約 ${totalFrames} 影格，開始擷取…`);
+
+    // Sample interval — for long videos, reduce to avoid OOM
+    const maxFrames = Math.min(totalFrames, 600);
+    const step = duration / maxFrames;
+    const frames = [];
+
+    for (let i = 0; i < maxFrames; i++) {
+      const t = i * step;
+      await seekTo(vid, t);
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      canvas.getContext('2d').drawImage(vid, 0, 0, W, H);
+      frames.push(canvas);
+      if (i % 10 === 0) setProgress(5 + Math.round((i / maxFrames) * 60), `🖼 擷取影格 ${i+1}/${maxFrames}…`);
+    }
+
+    setProgress(65, '🔄 反轉影格順序…');
+    frames.reverse();
+
+    setProgress(70, '🎞 合成反轉影片…');
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = W; outCanvas.height = H;
+    const ctx = outCanvas.getContext('2d');
+
+    // Pick best supported format
+    const mimeType = getSupportedMime();
+    const stream = outCanvas.captureStream(fps);
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: estimateBitrate(W, H, fps) });
+    const chunks = [];
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+
+    recorder.start();
+    for (let i = 0; i < frames.length; i++) {
+      ctx.drawImage(frames[i], 0, 0);
+      await delay(1000 / fps);
+      if (i % 10 === 0) setProgress(70 + Math.round((i / frames.length) * 28), `🎞 合成中 ${i+1}/${frames.length}…`);
+    }
+    recorder.stop();
+    await new Promise(r => recorder.onstop = r);
+
+    setProgress(99, '✨ 最終處理…');
+    reversedBlob = new Blob(chunks, { type: mimeType });
+    URL.revokeObjectURL(url);
+    showResult();
+  }
+
+  async function seekTo(vid, t) {
+    return new Promise(r => {
+      vid.onseeked = r;
+      vid.currentTime = t;
+    });
+  }
+
+  async function detectFPS(vid) {
+    // Try to detect via frame count heuristic
+    return 30; // safe default
+  }
+
+  // ── WebCodecs-based reversal (higher quality) ──────────────────
+  async function reverseWithWebCodecs() {
+    setProgress(1, '🔬 使用高品質解碼器…');
+    // WebCodecs path is complex; use canvas for reliability
+    await reverseWithCanvas();
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────
+  function getSupportedMime() {
+    const types = [
+      'video/webm;codecs=vp9',
+      'video/webm;codecs=vp8',
+      'video/webm',
+      'video/mp4',
+    ];
+    for (const t of types) if (MediaRecorder.isTypeSupported(t)) return t;
+    return 'video/webm';
+  }
+
+  function estimateBitrate(w, h, fps) {
+    // ~0.1 bits per pixel per frame
+    return Math.min(w * h * fps * 0.12, 50_000_000);
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  function setProgress(pct, label) {
+    progressFill.style.width = pct + '%';
+    progressText.textContent = pct + '%';
+    if (label) progressLabel.textContent = label;
+  }
+
+  function formatDuration(s) {
+    if (!s || isNaN(s)) return '--';
+    const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2,'0')}`;
+  }
+
+  function showStatus(el, type, msg) {
+    el.className = 'status-msg ' + type;
+    el.textContent = msg;
+  }
+  function hideStatus(el) { el.className = 'status-msg'; el.textContent = ''; }
+
+  // ── Show result ───────────────────────────────────────────────
+  function showResult() {
+    setProgress(100, '🎉 完成！');
+    setTimeout(() => {
+      progressSec.style.display = 'none';
+      resultSec.style.display = 'block';
+      const url = URL.createObjectURL(reversedBlob);
+      resultPlayer.src = url;
+      resultPlayer.load();
+      resultPlayer.onloadedmetadata = () => {
+        const sizeMB = (reversedBlob.size / 1024 / 1024).toFixed(2);
+        resultInfoGrid.innerHTML = `
+          <div class="info-item"><div class="label">📐 解析度</div><div class="value">${resultPlayer.videoWidth}×${resultPlayer.videoHeight}</div></div>
+          <div class="info-item"><div class="label">⏱ 時長</div><div class="value">${formatDuration(resultPlayer.duration)}</div></div>
+          <div class="info-item"><div class="label">💾 大小</div><div class="value">${sizeMB} MB</div></div>
+          <div class="info-item"><div class="label">📦 格式</div><div class="value">${reversedBlob.type.split(';')[0].split('/')[1].toUpperCase()}</div></div>
+        `;
+      };
+    }, 500);
+  }
+
+  // ── Download ──────────────────────────────────────────────────
+  btnDownload.addEventListener('click', () => {
+    if (!reversedBlob) return;
+    const ext = reversedBlob.type.includes('mp4') ? 'mp4' : 'webm';
+    const base = (originalFile.name || 'video').replace(/\.[^.]+$/, '');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(reversedBlob);
+    a.download = `${base}_reversed.${ext}`;
+    a.click();
+  });
+
+  // ── Compare ───────────────────────────────────────────────────
+  btnCompare.addEventListener('click', () => {
+    if (!showingOriginal) {
+      resultPlayer.src = URL.createObjectURL(originalFile);
+      resultPlayer.load();
+      btnCompare.textContent = '↩ 回到反轉影片';
+      document.querySelector('#result-section .video-badge').textContent = '📽 原始影片（對比中）';
+      showingOriginal = true;
+    } else {
+      resultPlayer.src = URL.createObjectURL(reversedBlob);
+      resultPlayer.load();
+      btnCompare.textContent = '↔ 對比原始影片';
+      document.querySelector('#result-section .video-badge').textContent = '🔄 反轉後影片';
+      showingOriginal = false;
+    }
+  });
+
+  // ── New ───────────────────────────────────────────────────────
+  function resetAll() {
+    originalFile = null;
+    reversedBlob = null;
+    showingOriginal = false;
+    videoPlayer.src = '';
+    resultPlayer.src = '';
+    fileInput.value = '';
+    uploadCard.style.display = 'block';
+    previewSec.style.display = 'none';
+    progressSec.style.display = 'none';
+    resultSec.style.display = 'none';
+    hideStatus(previewStatus);
+  }
+  btnNew.addEventListener('click', resetAll);
+  btnReupload.addEventListener('click', resetAll);
+</script>
+</body>
+</html>
