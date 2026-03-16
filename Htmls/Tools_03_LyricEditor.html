@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎵 歌詞時間軸編輯器</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ───────────────────────────────────────────────── */
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --pink:       #FF8FAB;
+      --pink-light: #FFB3C6;
+      --pink-soft:  #FADADD;
+      --pink-bg:    #FFF0F5;
+      --blue-bg:    #E3F2FD;
+      --mint-bg:    #F0FFF4;
+      --text:       #4A4A4A;
+      --text-soft:  #9E9E9E;
+      --green:      #56C176;
+      --orange:     #FFB74D;
+      --dark:       #16213E;
+      --dark2:      #0F3460;
+    }
+
+    body {
+      font-family: 'Nunito', 'M PLUS Rounded 1c', sans-serif;
+      background: linear-gradient(135deg, var(--pink-bg) 0%, var(--blue-bg) 55%, var(--mint-bg) 100%);
+      min-height: 100vh;
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       UPLOAD SCREEN
+    ══════════════════════════════════════════════════════════ */
+    #upload-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      gap: 22px;
+      padding: 40px;
+    }
+
+    .hero-badge {
+      background: white;
+      border: 3px solid var(--pink-soft);
+      border-radius: 50px;
+      padding: 14px 36px;
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: var(--pink);
+      box-shadow: 0 6px 20px rgba(255,143,171,0.22);
+      letter-spacing: 1px;
+    }
+
+    .hero-sub {
+      color: var(--text-soft);
+      font-size: 0.95rem;
+      text-align: center;
+      line-height: 1.75;
+      max-width: 560px;
+    }
+
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      width: 100%;
+      max-width: 680px;
+    }
+
+    .upload-zone {
+      background: white;
+      border: 3px dashed var(--pink-soft);
+      border-radius: 22px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      position: relative;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--pink);
+      background: var(--pink-bg);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(255,143,171,0.22);
+    }
+    .upload-zone.loaded {
+      border-style: solid;
+      border-color: var(--green);
+      background: #F4FFF7;
+    }
+    .upload-zone input[type="file"] {
+      position: absolute; inset: 0;
+      opacity: 0; cursor: pointer;
+      width: 100%; height: 100%;
+    }
+    .up-icon  { font-size: 2.6rem; margin-bottom: 10px; }
+    .up-label { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 5px; }
+    .up-hint  { font-size: 0.8rem; color: var(--text-soft); }
+    .up-file  { font-size: 0.82rem; color: var(--green); font-weight: 700; margin-top: 8px; word-break: break-all; }
+
+    .start-btn {
+      background: linear-gradient(135deg, var(--pink), #FF6B9D);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 15px 52px;
+      font-size: 1.08rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 6px 22px rgba(255,143,171,0.42);
+      transition: all 0.2s;
+      font-family: inherit;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .start-btn.ready { opacity:1; pointer-events:all; }
+    .start-btn.ready:hover { transform: scale(1.06); box-shadow: 0 8px 28px rgba(255,143,171,0.55); }
+
+    /* ══════════════════════════════════════════════════════════
+       EDITOR SCREEN
+    ══════════════════════════════════════════════════════════ */
+    #editor-screen {
+      display: none;
+      height: 100vh;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .editor-header {
+      background: white;
+      border-bottom: 2px solid var(--pink-soft);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(255,143,171,0.12);
+    }
+    .editor-title { font-size: 1.08rem; font-weight: 800; color: var(--pink); }
+    #song-name {
+      flex: 1; text-align: center; font-size: 0.88rem; color: var(--text-soft);
+      font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 12px;
+    }
+    .header-btns { display: flex; gap: 8px; }
+    .btn {
+      border: none; border-radius: 50px;
+      padding: 7px 18px; font-size: 0.84rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all 0.18s;
+    }
+    .btn-pink    { background: var(--pink); color: white; box-shadow: 0 3px 10px rgba(255,143,171,0.38); }
+    .btn-pink:hover    { transform: scale(1.05); }
+    .btn-green   { background: var(--green); color: white; box-shadow: 0 3px 10px rgba(86,193,118,0.38); }
+    .btn-green:hover   { transform: scale(1.05); }
+    .btn-outline { background: white; color: var(--pink); border: 2px solid var(--pink-soft); }
+    .btn-outline:hover { background: var(--pink-bg); }
+    .btn-danger  { background: #EF9A9A; color: white; }
+    .btn-danger:hover  { transform: scale(1.05); }
+    .btn-blue    { background: #5B8DEF; color: white; box-shadow: 0 3px 10px rgba(91,141,239,0.38); }
+    .btn-blue:hover    { transform: scale(1.05); }
+    .btn-purple  { background: #9C6FDE; color: white; box-shadow: 0 3px 10px rgba(156,111,222,0.38); }
+    .btn-purple:hover  { transform: scale(1.05); }
+
+    /* Main layout */
+    .editor-main {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Left: Player Panel ──────────────────────────────── */
+    .player-panel {
+      background: var(--dark);
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .video-wrapper {
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      flex-shrink: 0;
+    }
+    #player-el {
+      width: 100%; height: 100%;
+      object-fit: contain; display: block;
+    }
+    .audio-placeholder {
+      display: flex; align-items: center; justify-content: center;
+      height: 100%;
+      background: linear-gradient(135deg, var(--dark2), var(--dark));
+      font-size: 2.5rem; border-radius: 14px;
+    }
+
+    /* Time display */
+    .time-display {
+      text-align: center;
+      background: rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 8px 12px;
+    }
+    #cur-time {
+      font-size: 1.9rem; font-weight: 800;
+      color: var(--pink); letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+    }
+    #tot-time { font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+    /* Seek bar */
+    #seek-bar {
+      width: 100%; height: 5px;
+      appearance: none; -webkit-appearance: none;
+      background: rgba(255,255,255,0.18);
+      border-radius: 3px; cursor: pointer; outline: none;
+    }
+    #seek-bar::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 15px; height: 15px;
+      border-radius: 50%; background: var(--pink);
+      cursor: pointer; box-shadow: 0 0 6px rgba(255,143,171,0.7);
+    }
+
+    /* Playback row */
+    .play-row {
+      display: flex; align-items: center;
+      justify-content: center; gap: 6px;
+    }
+    .ctrl {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px;
+      color: white; padding: 7px 13px;
+      font-size: 0.8rem; cursor: pointer;
+      font-family: inherit; font-weight: 600;
+      transition: all 0.15s;
+    }
+    .ctrl:hover { background: rgba(255,255,255,0.2); }
+    .ctrl-play {
+      background: var(--pink); border-color: var(--pink);
+      padding: 9px 26px; font-size: 1rem; border-radius: 50px;
+    }
+    .ctrl-play:hover { background: #FF6B9D; transform: scale(1.04); }
+
+    /* Mode toggle */
+    .mode-row {
+      display: flex; background: rgba(255,255,255,0.07);
+      border-radius: 11px; padding: 3px; gap: 3px;
+    }
+    .mode-btn {
+      flex: 1; background: transparent; border: none;
+      border-radius: 8px; padding: 6px 8px;
+      font-size: 0.76rem; font-weight: 700;
+      color: rgba(255,255,255,0.45); cursor: pointer;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .mode-btn.active {
+      background: var(--pink); color: white;
+      box-shadow: 0 2px 8px rgba(255,143,171,0.4);
+    }
+
+    /* Shortcuts */
+    .shortcut-box {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px; padding: 10px 13px;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.76rem; line-height: 1.85;
+      flex: 1; overflow-y: auto;
+    }
+    .shortcut-box::-webkit-scrollbar { width: 4px; }
+    .shortcut-box::-webkit-scrollbar-thumb { background: rgba(255,143,171,0.3); border-radius: 2px; }
+    .sc-title { font-weight: 800; color: var(--pink); margin-bottom: 5px; font-size: 0.82rem; }
+    .sc-row { display: flex; justify-content: space-between; padding: 1px 0; gap: 8px; }
+    .sc-key {
+      background: rgba(255,255,255,0.11); border-radius: 5px;
+      padding: 1px 7px; font-family: monospace; font-size: 0.78rem;
+      color: rgba(255,255,255,0.9); white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* ── Right: Lyrics Panel ─────────────────────────────── */
+    .lyrics-panel {
+      background: white; display: flex;
+      flex-direction: column; overflow: hidden;
+    }
+
+    .lyrics-toolbar {
+      padding: 10px 16px;
+      border-bottom: 2px solid var(--pink-soft);
+      display: flex; align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      background: var(--pink-bg);
+    }
+    .lyrics-toolbar-title { font-weight: 800; font-size: 0.92rem; color: var(--pink); }
+    #progress-text { font-size: 0.8rem; color: var(--text-soft); font-weight: 600; }
+    #progress-text b { color: var(--green); }
+
+    #lyrics-list {
+      flex: 1; overflow-y: auto;
+      padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    #lyrics-list::-webkit-scrollbar { width: 5px; }
+    #lyrics-list::-webkit-scrollbar-thumb { background: var(--pink-soft); border-radius: 3px; }
+
+    /* Lyric item */
+    .lyric-item {
+      border: 2px solid #EEEEEE;
+      border-radius: 14px;
+      padding: 9px 12px;
+      display: grid;
+      grid-template-columns: 32px 1fr;
+      gap: 9px;
+      cursor: pointer;
+      transition: all 0.17s;
+      background: white;
+    }
+    .lyric-item:hover { border-color: var(--pink-soft); background: var(--pink-bg); }
+    .lyric-item.active {
+      border-color: var(--pink);
+      background: var(--pink-bg);
+      box-shadow: 0 3px 14px rgba(255,143,171,0.22);
+      animation: glow 2s ease-in-out infinite;
+    }
+    .lyric-item.done  { border-color: #C8E6C9; background: #F7FFF8; }
+    .lyric-item.half  { border-color: #FFE0B2; background: #FFFDF5; }
+    .lyric-item.active.done { border-color: var(--green); }
+
+    @keyframes glow {
+      0%,100% { box-shadow: 0 3px 14px rgba(255,143,171,0.22); }
+      50%      { box-shadow: 0 3px 22px rgba(255,143,171,0.42); }
+    }
+
+    .lnum {
+      font-size: 0.75rem; font-weight: 800; color: var(--text-soft);
+      background: #F3F3F3; border-radius: 8px;
+      padding: 3px 4px; text-align: center;
+      align-self: flex-start; margin-top: 2px;
+      min-width: 28px;
+    }
+    .lyric-item.active .lnum { background: var(--pink); color: white; }
+
+    .lcontent { display: flex; flex-direction: column; gap: 5px; }
+    .ltext {
+      font-size: 0.93rem; font-weight: 600;
+      color: var(--text); line-height: 1.5; word-break: break-all;
+    }
+
+    .ltiming {
+      display: flex; gap: 7px; align-items: center; flex-wrap: wrap;
+    }
+    .tbadge { display: flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 700; }
+    .tval {
+      background: #F2F2F2; border-radius: 7px;
+      padding: 3px 9px; font-variant-numeric: tabular-nums;
+      color: var(--text-soft); min-width: 78px; text-align: center;
+      cursor: pointer; border: 1.5px solid transparent;
+      transition: all 0.15s; font-size: 0.78rem;
+    }
+    .tval:hover { border-color: #DDD; }
+    .tval.ts { background: var(--pink-bg); color: var(--pink); border-color: var(--pink-soft); }
+    .tval.te { background: #F0FFF4; color: var(--green); border-color: #C8E6C9; }
+    .tdur   { font-size: 0.72rem; color: #BDBDBD; }
+
+    /* Action buttons (visible on active) */
+    .lactions { display: none; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
+    .lyric-item.active .lactions { display: flex; }
+    .ab {
+      border: none; border-radius: 16px;
+      padding: 4px 11px; font-size: 0.74rem; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all 0.15s; color: white;
+    }
+    .ab:hover { transform: scale(1.06); }
+    .ab-s     { background: var(--pink); }
+    .ab-e     { background: var(--green); }
+    .ab-jump  { background: var(--orange); }
+    .ab-clear { background: #EF9A9A; }
+
+    /* Bottom hint */
+    .mode-hint {
+      padding: 8px 16px;
+      background: linear-gradient(90deg, var(--pink-bg), var(--blue-bg));
+      border-top: 2px solid var(--pink-soft);
+      font-size: 0.79rem; color: var(--text-soft);
+      text-align: center; font-weight: 600; flex-shrink: 0;
+    }
+    .mode-hint b { color: var(--pink); }
+
+    /* Status bar */
+    .status-bar {
+      padding: 5px 18px;
+      background: #111827;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.75rem;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    #status-msg { color: rgba(255,255,255,0.8); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     UPLOAD SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="upload-screen">
+  <div class="hero-badge">🎵 歌詞時間軸編輯器</div>
+  <p class="hero-sub">
+    上傳音樂或影片與歌詞文字檔，手動標記每句歌詞的開始時間<br>
+    匯出精確的 <b>.lrc</b> 時間戳記檔案，再搭配 lyric_video_maker.py 使用
+  </p>
+
+  <div class="upload-grid">
+    <div class="upload-zone" id="vzone">
+      <input type="file" id="vinput" accept="video/*,audio/*">
+      <div class="up-icon">🎬</div>
+      <div class="up-label">影片 / 音樂</div>
+      <div class="up-hint">MP4、MP3、WAV、M4A…</div>
+      <div class="up-file" id="vname"></div>
+    </div>
+    <div class="upload-zone" id="lzone">
+      <input type="file" id="linput" accept=".txt,.lrc,text/*">
+      <div class="up-icon">📝</div>
+      <div class="up-label">歌詞文字檔</div>
+      <div class="up-hint">.txt 或 .lrc，每行一句歌詞</div>
+      <div class="up-file" id="lname"></div>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="enterEditor()">✨ 開始標記歌詞</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     EDITOR SCREEN
+══════════════════════════════════════════════════════ -->
+<div id="editor-screen">
+
+  <!-- Header -->
+  <div class="editor-header">
+    <div class="editor-title">🎵 歌詞時間軸編輯器</div>
+    <div id="song-name"></div>
+    <div class="header-btns">
+      <button class="btn btn-purple"  onclick="triggerImport()">📂 匯入 LRC/SRT</button>
+      <button class="btn btn-danger"  onclick="clearAll()">🗑️ 清除全部</button>
+      <button class="btn btn-green"   onclick="exportLRC()">💾 匯出 LRC</button>
+      <button class="btn btn-blue"    onclick="exportSRT()">💾 匯出 SRT</button>
+      <button class="btn btn-outline" onclick="goBack()">← 返回</button>
+      <input type="file" id="import-input" accept=".lrc,.srt" style="display:none;">
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="editor-main">
+
+    <!-- LEFT: Player -->
+    <div class="player-panel">
+
+      <div class="video-wrapper" id="vwrap">
+        <video id="player-el" preload="metadata" style="width:100%;height:100%;object-fit:contain;display:block;"></video>
+      </div>
+
+      <div class="time-display">
+        <div id="cur-time">00:00.00</div>
+        <div id="tot-time">/ 00:00</div>
+      </div>
+
+      <input type="range" id="seek-bar" value="0" min="0" max="10000" step="1">
+
+      <div class="play-row">
+        <button class="ctrl" onclick="seek(-10)">«10s</button>
+        <button class="ctrl" onclick="seek(-1)">«1s</button>
+        <button class="ctrl ctrl-play" id="play-btn" onclick="togglePlay()">▶ 播放</button>
+        <button class="ctrl" onclick="seek(1)">1s»</button>
+        <button class="ctrl" onclick="seek(10)">10s»</button>
+      </div>
+
+      <!-- Speed control -->
+      <div style="display:flex;align-items:center;gap:8px;justify-content:center;">
+        <span style="color:rgba(255,255,255,0.5);font-size:0.78rem;">速度</span>
+        <button class="ctrl" onclick="setRate(0.5)"  id="r05">0.5×</button>
+        <button class="ctrl" onclick="setRate(0.75)" id="r075">0.75×</button>
+        <button class="ctrl" onclick="setRate(1.0)"  id="r1"  style="background:rgba(255,143,171,0.3);">1×</button>
+        <button class="ctrl" onclick="setRate(1.5)"  id="r15">1.5×</button>
+      </div>
+
+      <div class="mode-row">
+        <button class="mode-btn active" id="m-quick"   onclick="setMode('quick')">⚡ 快速模式</button>
+        <button class="mode-btn"        id="m-precise" onclick="setMode('precise')">🎯 精確模式</button>
+      </div>
+
+      <div class="shortcut-box">
+        <div class="sc-title">⌨️ 快捷鍵</div>
+        <div id="sc-content"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Lyrics -->
+    <div class="lyrics-panel">
+      <div class="lyrics-toolbar">
+        <div class="lyrics-toolbar-title">📜 歌詞列表</div>
+        <div id="progress-text">已標記 <b id="tc">0</b> / <b id="tn">0</b> 行</div>
+      </div>
+
+      <div id="lyrics-list"></div>
+
+      <div class="mode-hint" id="hint">
+        ⚡ <b>快速模式</b>：播放音樂，每句歌詞開始時按 <b>Enter</b> 快速標記並跳至下一行
+      </div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span id="status-msg">✅ 就緒</span>
+    <span>Space 播放/暫停 ｜ ↑↓ 選歌詞 ｜ ←→ ±1秒 ｜ Shift+←→ ±5秒 ｜ Z/X 微調開始 ｜ C/V 微調結束</span>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════════════
+let lyrics   = [];       // [{text, start, end}]
+let sel      = 0;        // selected index
+let player   = null;
+let mode     = 'quick';  // 'quick' | 'precise'
+let vFile    = null;
+let lText    = '';
+let vObjURL  = null;
+
+const SC = {
+  quick: [
+    ['Space',      '播放 / 暫停'],
+    ['Enter',      '標記當前行開始 → 跳下一行'],
+    ['S',          '設定當前行 開始時間'],
+    ['E',          '設定當前行 結束時間'],
+    ['↑ / ↓',     '選擇上/下一行歌詞'],
+    ['← / →',     '跳轉 ±1 秒'],
+    ['Shift+←→',  '跳轉 ±5 秒'],
+    ['Z / X',      '開始時間 −0.1s / +0.1s'],
+    ['C / V',      '結束時間 −0.1s / +0.1s'],
+    ['[ / ]',      '跳到當前行開始/結束'],
+    ['Delete',     '清除當前行時間'],
+  ],
+  precise: [
+    ['Space',      '播放 / 暫停'],
+    ['S',          '設定當前行 開始時間'],
+    ['E',          '設定當前行 結束時間'],
+    ['↑ / ↓',     '選擇上/下一行歌詞'],
+    ['← / →',     '跳轉 ±1 秒'],
+    ['Shift+←→',  '跳轉 ±5 秒'],
+    ['Z / X',      '開始時間 −0.1s / +0.1s'],
+    ['C / V',      '結束時間 −0.1s / +0.1s'],
+    ['[ / ]',      '跳到當前行開始/結束'],
+    ['Delete',     '清除當前行時間'],
+  ]
+};
+
+// ══════════════════════════════════════════════════════════════
+// Upload handlers
+// ══════════════════════════════════════════════════════════════
+document.getElementById('vinput').onchange = function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  vFile = f;
+  document.getElementById('vname').textContent = '✅ ' + f.name;
+  document.getElementById('vzone').classList.add('loaded');
+  checkReady();
+};
+
+document.getElementById('linput').onchange = function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    lText = ev.target.result;
+    document.getElementById('lname').textContent = '✅ ' + f.name;
+    document.getElementById('lzone').classList.add('loaded');
+    checkReady();
+  };
+  r.readAsText(f, 'UTF-8');
+};
+
+function checkReady() {
+  if (vFile && lText) document.getElementById('start-btn').classList.add('ready');
+}
+
+// Drag & drop
+['vzone', 'lzone'].forEach(id => {
+  const z = document.getElementById(id);
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+  z.addEventListener('drop', e => {
+    e.preventDefault(); z.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    const inp = document.getElementById(id === 'vzone' ? 'vinput' : 'linput');
+    const dt = new DataTransfer(); dt.items.add(f); inp.files = dt.files;
+    inp.dispatchEvent(new Event('change'));
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+// Enter Editor
+// ══════════════════════════════════════════════════════════════
+function enterEditor() {
+  // Parse lyrics — strip LRC timestamps, skip metadata lines, split by newline
+  const raw = lText.split('\n')
+    .map(l => l.replace(/^\[(?:\d+:\d+[.:]\d+|ti:|ar:|al:|by:|offset:)[^\]]*\]/gi, '').trim())
+    .filter(l => l.length > 0);
+
+  lyrics = raw.map(text => ({ text, start: null, end: null }));
+  sel = 0;
+
+  player = document.getElementById('player-el');
+  vObjURL = URL.createObjectURL(vFile);
+  player.src = vObjURL;
+
+  // Audio-only: change video wrapper appearance
+  if (vFile.type.startsWith('audio/')) {
+    const w = document.getElementById('vwrap');
+    w.style.aspectRatio = 'auto';
+    w.style.height = '70px';
+    w.style.background = 'linear-gradient(135deg, #302b63, #0f0c29)';
+    w.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:2rem;">🎵</div>';
+  }
+
+  document.getElementById('song-name').textContent = vFile.name;
+
+  // Switch screens
+  document.getElementById('upload-screen').style.display = 'none';
+  const es = document.getElementById('editor-screen');
+  es.style.display = 'flex';
+
+  // Player events
+  player.addEventListener('timeupdate', onTimeUpdate);
+  player.addEventListener('loadedmetadata', () => {
+    document.getElementById('tot-time').textContent = '/ ' + fmtMS(player.duration);
+    document.getElementById('seek-bar').max = Math.floor(player.duration * 100);
+  });
+
+  document.getElementById('seek-bar').addEventListener('input', function() {
+    player.currentTime = this.value / 100;
+  });
+
+  renderAll();
+  updateShortcuts();
+  updateProgress();
+  setMode('quick');
+  setStatus('📂 檔案載入完成，可以開始標記了！');
+  setTimeout(scrollActive, 150);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Player
+// ══════════════════════════════════════════════════════════════
+function togglePlay() {
+  if (!player) return;
+  if (player.paused) { player.play(); document.getElementById('play-btn').textContent = '⏸ 暫停'; }
+  else               { player.pause(); document.getElementById('play-btn').textContent = '▶ 播放'; }
+}
+
+function seek(delta) {
+  if (!player) return;
+  player.currentTime = Math.max(0, Math.min(player.duration || 0, player.currentTime + delta));
+}
+
+function setRate(r) {
+  if (!player) return;
+  player.playbackRate = r;
+  ['r05','r075','r1','r15'].forEach(id => {
+    document.getElementById(id).style.background = 'rgba(255,255,255,0.1)';
+  });
+  const map = {0.5:'r05', 0.75:'r075', 1.0:'r1', 1.5:'r15'};
+  if (map[r]) document.getElementById(map[r]).style.background = 'rgba(255,143,171,0.4)';
+}
+
+function onTimeUpdate() {
+  if (!player) return;
+  const t = player.currentTime;
+  document.getElementById('cur-time').textContent = fmtMScs(t);
+  document.getElementById('seek-bar').value = Math.floor(t * 100);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Lyric Timing Actions
+// ══════════════════════════════════════════════════════════════
+function setStart(idx) {
+  if (idx === undefined) idx = sel;
+  const t = player.currentTime;
+  lyrics[idx].start = parseFloat(t.toFixed(2));
+
+  // Auto-fill end of previous line if missing
+  if (idx > 0 && lyrics[idx-1].end === null && lyrics[idx-1].start !== null) {
+    lyrics[idx-1].end = parseFloat(t.toFixed(2));
+    renderItem(idx - 1);
+  }
+  renderItem(idx);
+  updateProgress();
+  setStatus(`▶ 行 ${idx+1} 開始 → ${fmtLRC(lyrics[idx].start)}`);
+}
+
+function setEnd(idx) {
+  if (idx === undefined) idx = sel;
+  const t = player.currentTime;
+  if (lyrics[idx].start === null) { setStatus('⚠️ 請先設定開始時間'); return; }
+  if (t <= lyrics[idx].start)     { setStatus('⚠️ 結束時間必須在開始之後'); return; }
+  lyrics[idx].end = parseFloat(t.toFixed(2));
+  renderItem(idx);
+  updateProgress();
+  setStatus(`◀ 行 ${idx+1} 結束 → ${fmtLRC(lyrics[idx].end)}`);
+  if (mode === 'precise' && idx + 1 < lyrics.length) selectLine(idx + 1);
+}
+
+function quickMark() {
+  // Set start of current line, move to next
+  setStart(sel);
+  if (sel + 1 < lyrics.length) selectLine(sel + 1);
+}
+
+function adjustTime(type, delta) {
+  const L = lyrics[sel];
+  if (type === 's' && L.start !== null) {
+    L.start = Math.max(0, parseFloat((L.start + delta).toFixed(2)));
+    renderItem(sel);
+    setStatus(`微調 開始 ${delta > 0 ? '+' : ''}${delta}s → ${fmtLRC(L.start)}`);
+  } else if (type === 'e' && L.end !== null) {
+    L.end = Math.max(0, parseFloat((L.end + delta).toFixed(2)));
+    renderItem(sel);
+    setStatus(`微調 結束 ${delta > 0 ? '+' : ''}${delta}s → ${fmtLRC(L.end)}`);
+  }
+}
+
+function clearItem(idx) {
+  if (idx === undefined) idx = sel;
+  lyrics[idx].start = null; lyrics[idx].end = null;
+  renderItem(idx); updateProgress();
+  setStatus(`🗑️ 清除行 ${idx+1} 的時間`);
+}
+
+function clearAll() {
+  if (!confirm('確定要清除所有行的時間標記嗎？')) return;
+  lyrics.forEach(l => { l.start = null; l.end = null; });
+  renderAll(); updateProgress();
+  setStatus('🗑️ 已清除所有時間標記');
+}
+
+function jumpStart(idx) {
+  if (idx === undefined) idx = sel;
+  if (lyrics[idx].start !== null) player.currentTime = lyrics[idx].start;
+}
+
+function jumpEnd(idx) {
+  if (idx === undefined) idx = sel;
+  if (lyrics[idx].end !== null) player.currentTime = lyrics[idx].end;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Selection
+// ══════════════════════════════════════════════════════════════
+function selectLine(idx) {
+  if (idx < 0 || idx >= lyrics.length) return;
+  const prev = sel; sel = idx;
+  renderItem(prev); renderItem(sel);
+  scrollActive();
+}
+
+function scrollActive() {
+  const el = document.getElementById('li' + sel);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ══════════════════════════════════════════════════════════════
+// Render
+// ══════════════════════════════════════════════════════════════
+function renderAll() {
+  const list = document.getElementById('lyrics-list');
+  list.innerHTML = '';
+  lyrics.forEach((_, i) => {
+    const el = document.createElement('div');
+    el.id = 'li' + i;
+    list.appendChild(el);
+    renderItem(i);
+  });
+}
+
+function renderItem(i) {
+  const el = document.getElementById('li' + i);
+  if (!el) return;
+  const L = lyrics[i];
+  const isA = (i === sel);
+  const hs = L.start !== null, he = L.end !== null;
+
+  let cls = 'lyric-item';
+  if (isA)       cls += ' active';
+  if (hs && he)  cls += ' done';
+  else if (hs)   cls += ' half';
+
+  const sv = hs ? fmtLRC(L.start) : '--:--.--';
+  const ev = he ? fmtLRC(L.end)   : '--:--.--';
+  const dur = (hs && he) ? `<span class="tdur">⏱ ${(L.end - L.start).toFixed(1)}s</span>` : '';
+
+  const actBtns = isA ? `
+    <div class="lactions">
+      <button class="ab ab-s" onclick="event.stopPropagation();setStart(${i})">▶ 設開始 [S]</button>
+      <button class="ab ab-e" onclick="event.stopPropagation();setEnd(${i})">◀ 設結束 [E]</button>
+      ${hs ? `<button class="ab ab-jump" onclick="event.stopPropagation();jumpStart(${i})">⤸ 跳開始</button>` : ''}
+      ${he ? `<button class="ab ab-jump" onclick="event.stopPropagation();jumpEnd(${i})">⤸ 跳結束</button>` : ''}
+      ${(hs||he) ? `<button class="ab ab-clear" onclick="event.stopPropagation();clearItem(${i})">✕ 清除</button>` : ''}
+    </div>` : '';
+
+  el.className = cls;
+  el.onclick = () => selectLine(i);
+  el.innerHTML = `
+    <div class="lnum">${i + 1}</div>
+    <div class="lcontent">
+      <div class="ltext">${escH(L.text)}</div>
+      <div class="ltiming">
+        <div class="tbadge">
+          <span style="color:var(--pink);font-size:0.8rem;">▶</span>
+          <span class="tval ${hs ? 'ts' : ''}"
+                title="點擊跳至開始"
+                onclick="event.stopPropagation();jumpStart(${i})">${sv}</span>
+        </div>
+        <div class="tbadge">
+          <span style="color:var(--green);font-size:0.8rem;">◀</span>
+          <span class="tval ${he ? 'te' : ''}"
+                title="點擊跳至結束"
+                onclick="event.stopPropagation();jumpEnd(${i})">${ev}</span>
+        </div>
+        ${dur}
+      </div>
+      ${actBtns}
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Progress / Status / Mode
+// ══════════════════════════════════════════════════════════════
+function updateProgress() {
+  const t = lyrics.filter(l => l.start !== null).length;
+  document.getElementById('tc').textContent = t;
+  document.getElementById('tn').textContent = lyrics.length;
+}
+
+function setStatus(msg) { document.getElementById('status-msg').textContent = msg; }
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('m-quick').classList.toggle('active',   m === 'quick');
+  document.getElementById('m-precise').classList.toggle('active', m === 'precise');
+  updateShortcuts();
+  const hint = document.getElementById('hint');
+  if (m === 'quick') {
+    hint.innerHTML = '⚡ <b>快速模式</b>：播放音樂，每句歌詞開始時按 <b>Enter</b> 快速標記並跳至下一行 ｜ 用 <b>0.75×</b> 慢速也很方便';
+  } else {
+    hint.innerHTML = '🎯 <b>精確模式</b>：用 <b>↑↓</b> 選擇歌詞，<b>S</b> 設開始，<b>E</b> 設結束 ｜ <b>[ ]</b> 跳到該行開始/結束位置';
+  }
+}
+
+function updateShortcuts() {
+  document.getElementById('sc-content').innerHTML = SC[mode].map(([k, d]) =>
+    `<div class="sc-row"><span class="sc-key">${k}</span><span>${d}</span></div>`
+  ).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Import LRC / SRT
+// ══════════════════════════════════════════════════════════════
+function triggerImport() {
+  document.getElementById('import-input').click();
+}
+
+document.getElementById('import-input').addEventListener('change', function(e) {
+  const f = e.target.files[0]; if (!f) return;
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (ext !== 'lrc' && ext !== 'srt') { alert('⚠️ 僅支援 .lrc 或 .srt 檔案'); return; }
+  const r = new FileReader();
+  r.onload = ev => {
+    const text = ev.target.result;
+    const imported = ext === 'lrc' ? parseLRC(text) : parseSRT(text);
+    if (imported.length === 0) { alert('⚠️ 未能解析到任何時間資料，請確認檔案格式正確。'); return; }
+    applyImported(imported, f.name);
+  };
+  r.readAsText(f, 'UTF-8');
+  this.value = ''; // 允許重複匯入同一檔案
+});
+
+function parseLRC(text) {
+  // 解析 LRC：[MM:SS.cs]歌詞 或 [MM:SS:cs]
+  const re = /^\[(\d{1,3}):(\d{2})[.:](\d{2,3})\](.+)$/;
+  const entries = [];
+  text.split('\n').forEach(line => {
+    const m = line.trim().match(re);
+    if (!m) return;
+    const cs  = m[3].length === 3 ? parseInt(m[3]) / 1000 : parseInt(m[3]) / 100;
+    const t   = parseInt(m[1]) * 60 + parseInt(m[2]) + cs;
+    const txt = m[4].trim();
+    if (txt) entries.push({ text: txt, start: parseFloat(t.toFixed(3)), end: null });
+  });
+  // LRC 無結束時間，以下一行開始補齊
+  entries.forEach((e, i) => {
+    if (i + 1 < entries.length) e.end = entries[i + 1].start;
+  });
+  return entries;
+}
+
+function parseSRT(text) {
+  // 解析 SRT：序號 \n HH:MM:SS,ms --> HH:MM:SS,ms \n 文字
+  const entries = [];
+  const blocks  = text.trim().split(/\n\s*\n/);
+  const timeRe  = /(\d{2}):(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})[,.](\d{3})/;
+  const toSec   = (h, m, s, ms) => parseInt(h)*3600 + parseInt(m)*60 + parseInt(s) + parseInt(ms)/1000;
+  blocks.forEach(block => {
+    const lines = block.trim().split('\n');
+    if (lines.length < 3) return;
+    const m = lines[1].match(timeRe);
+    if (!m) return;
+    const txt = lines.slice(2).join(' ').trim();
+    if (txt) entries.push({
+      text:  txt,
+      start: parseFloat(toSec(m[1],m[2],m[3],m[4]).toFixed(3)),
+      end:   parseFloat(toSec(m[5],m[6],m[7],m[8]).toFixed(3))
+    });
+  });
+  return entries;
+}
+
+function applyImported(imported, filename) {
+  // 建立文字 → 時間的對照表（優先完整比對，其次去空白比對）
+  const importMap = new Map();
+  imported.forEach(e => {
+    if (!importMap.has(e.text))        importMap.set(e.text, e);
+    if (!importMap.has(e.text.trim())) importMap.set(e.text.trim(), e);
+  });
+
+  let matched = 0;
+  lyrics.forEach(L => {
+    const entry = importMap.get(L.text) || importMap.get(L.text.trim());
+    if (entry) {
+      L.start = entry.start;
+      L.end   = entry.end;
+      matched++;
+    }
+  });
+
+  renderAll();
+  updateProgress();
+
+  const miss = lyrics.length - matched;
+  if (miss > 0) {
+    setStatus(`📂 匯入完成：${matched} 行已還原，${miss} 行未找到對應（${filename}）`);
+  } else {
+    setStatus(`✅ 匯入完成：全部 ${matched} 行時間已還原（${filename}）`);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Export LRC
+// ══════════════════════════════════════════════════════════════
+function exportLRC() {
+  const timedLines = lyrics.filter(l => l.start !== null);
+  if (timedLines.length === 0) { alert('⚠️ 尚未標記任何時間！'); return; }
+
+  const fname = vFile ? vFile.name.replace(/\.[^.]+$/, '') : 'lyrics';
+  let lrc = `[ti:${fname}]\n[by:LRC Editor]\n\n`;
+  lyrics.forEach(L => {
+    if (L.start !== null) lrc += `[${fmtLRC(L.start)}]${L.text}\n`;
+  });
+
+  const blob = new Blob([lrc], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = fname + '.lrc'; a.click();
+  URL.revokeObjectURL(url);
+  setStatus(`✅ 已匯出 ${timedLines.length} 行的 LRC 檔案：${fname}.lrc`);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Export SRT
+// ══════════════════════════════════════════════════════════════
+function exportSRT() {
+  const timedLines = lyrics.filter(l => l.start !== null);
+  if (timedLines.length === 0) { alert('⚠️ 尚未標記任何時間！'); return; }
+
+  const fname = vFile ? vFile.name.replace(/\.[^.]+$/, '') : 'lyrics';
+  let srt = '';
+  let idx = 1;
+
+  lyrics.forEach((L, i) => {
+    if (L.start === null) return;
+
+    // 決定結束時間：已標記 > 下一行開始 > 當前開始 + 3秒
+    let endTime = L.end;
+    if (endTime === null) {
+      for (let j = i + 1; j < lyrics.length; j++) {
+        if (lyrics[j].start !== null) { endTime = lyrics[j].start; break; }
+      }
+      if (endTime === null) endTime = L.start + 3.0;
+    }
+
+    srt += `${idx}\n`;
+    srt += `${fmtSRT(L.start)} --> ${fmtSRT(endTime)}\n`;
+    srt += `${L.text}\n\n`;
+    idx++;
+  });
+
+  const blob = new Blob([srt], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = fname + '.srt'; a.click();
+  URL.revokeObjectURL(url);
+  setStatus(`✅ 已匯出 ${timedLines.length} 行的 SRT 檔案：${fname}.srt`);
+}
+
+function goBack() {
+  if (lyrics.some(l => l.start !== null)) {
+    if (!confirm('返回將失去未匯出的進度，確定嗎？')) return;
+  }
+  if (vObjURL) URL.revokeObjectURL(vObjURL);
+  document.getElementById('editor-screen').style.display = 'none';
+  document.getElementById('upload-screen').style.display = 'flex';
+}
+
+// ══════════════════════════════════════════════════════════════
+// Utilities
+// ══════════════════════════════════════════════════════════════
+function fmtSRT(s) {
+  if (s == null) return '00:00:00,000';
+  const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(Math.floor(s % 60)).padStart(2, '0');
+  const ms = String(Math.floor((s % 1) * 1000)).padStart(3, '0');
+  return `${hh}:${mm}:${ss},${ms}`;
+}
+function fmtLRC(s) {
+  if (s == null) return '--:--.--';
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(Math.floor(s % 60)).padStart(2, '0');
+  const cs = String(Math.floor((s % 1) * 100)).padStart(2, '0');
+  return `${mm}:${ss}.${cs}`;
+}
+function fmtMScs(s) {
+  const mm = String(Math.floor(s / 60)).padStart(2, '0');
+  const ss = String(Math.floor(s % 60)).padStart(2, '0');
+  const cs = String(Math.floor((s % 1) * 100)).padStart(2, '0');
+  return `${mm}:${ss}.${cs}`;
+}
+function fmtMS(s) {
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+}
+function escH(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Keyboard Shortcuts
+// ══════════════════════════════════════════════════════════════
+document.addEventListener('keydown', function(e) {
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if (document.getElementById('upload-screen').style.display !== 'none') return;
+
+  switch (e.code) {
+    case 'Space':
+      e.preventDefault(); togglePlay(); break;
+
+    case 'Enter':
+      e.preventDefault(); quickMark(); break;
+
+    case 'KeyS':
+      e.preventDefault(); setStart(); break;
+
+    case 'KeyE':
+      e.preventDefault(); setEnd(); break;
+
+    case 'ArrowDown':
+      e.preventDefault(); selectLine(sel + 1); break;
+
+    case 'ArrowUp':
+      e.preventDefault(); selectLine(sel - 1); break;
+
+    case 'ArrowLeft':
+      e.preventDefault(); seek(e.shiftKey ? -5 : -1); break;
+
+    case 'ArrowRight':
+      e.preventDefault(); seek(e.shiftKey ? 5 : 1); break;
+
+    case 'KeyZ':
+      e.preventDefault(); adjustTime('s', -0.1); break;
+
+    case 'KeyX':
+      e.preventDefault(); adjustTime('s', +0.1); break;
+
+    case 'KeyC':
+      e.preventDefault(); adjustTime('e', -0.1); break;
+
+    case 'KeyV':
+      e.preventDefault(); adjustTime('e', +0.1); break;
+
+    case 'BracketLeft':
+      e.preventDefault(); jumpStart(); break;
+
+    case 'BracketRight':
+      e.preventDefault(); jumpEnd(); break;
+
+    case 'Delete':
+      e.preventDefault(); clearItem(); break;
+  }
+});
+</script>
+</body>
+</html>
