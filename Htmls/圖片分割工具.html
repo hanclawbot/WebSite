@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教學圖片輔助工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        .image-splitter-container {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            user-select: none;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .image-splitter-container img {
+            display: block;
+            max-width: 100%;
+            pointer-events: none;
+        }
+        #linesLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        .line-h, .line-v {
+            position: absolute;
+            background-color: #ef4444;
+            z-index: 10;
+        }
+        .line-h {
+            width: 100%;
+            height: 2px;
+            cursor: ns-resize;
+            transform: translateY(-50%);
+        }
+        .line-v {
+            height: 100%;
+            width: 2px;
+            cursor: ew-resize;
+            transform: translateX(-50%);
+            top: 0;
+        }
+        .line-h::after, .line-v::after {
+            content: '';
+            position: absolute;
+            background: transparent;
+        }
+        .line-h::after {
+            top: -5px; bottom: -5px; left: 0; right: 0;
+        }
+        .line-v::after {
+            left: -5px; right: -5px; top: 0; bottom: 0;
+        }
+        .custom-box {
+            position: absolute;
+            border: 2px dashed #3b82f6;
+            background-color: rgba(59, 130, 246, 0.2);
+            z-index: 10;
+        }
+        .box-close {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 20px;
+            height: 20px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            font-weight: bold;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 p-6 font-sans text-gray-800 min-h-screen">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">教學圖片輔助工具</h1>
+        
+        <div class="flex justify-center mb-8">
+            <div class="bg-white rounded-lg p-1 shadow-sm border border-gray-200 inline-flex">
+                <button id="tabBtnGenerator" class="flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors bg-blue-50 text-blue-700 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    圖案提示詞產生器
+                </button>
+                <button id="tabBtnSplitter" class="flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 mr-2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    圖片分割工具
+                </button>
+            </div>
+        </div>
+
+        <!-- 模組 1: 圖案提示詞產生器 -->
+        <div id="moduleGenerator" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">圖案元素設定</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">主要主題</label>
+                        <input type="text" id="mainTheme" placeholder="例如：園遊會、電腦課、萬聖節..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">圖像風格</label>
+                        <select id="selectedStyle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">自訂額外要求</label>
+                        <input type="text" id="customRequirement" placeholder="例如：主色調為粉色與藍色..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">產生的提示詞 (Prompt)</h2>
+                <div class="flex-grow bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 relative">
+                    <textarea id="promptOutput" readonly class="w-full h-full bg-transparent resize-none outline-none text-gray-700 text-sm leading-relaxed min-h-[250px]"></textarea>
+                </div>
+                <button id="copyBtn" class="w-full py-3 rounded-lg font-medium flex items-center justify-center transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700">
+                    <svg id="copyIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    <svg id="checkIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2 hidden"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span id="copyText">複製提示詞</span>
+                </button>
+                <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer" class="w-full mt-4 py-3 rounded-lg font-medium flex items-center justify-center transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    前往 Google Gemini 產生圖片
+                </a>
+            </div>
+        </div>
+
+        <!-- 模組 2: 圖片分割工具 -->
+        <div id="moduleSplitter" class="hidden bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+                <div class="col-span-1 lg:col-span-5 flex gap-6 pb-2 border-b">
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="splitMode" value="grid" checked class="mr-2 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-sm font-bold text-gray-800">網格分割</span>
+                    </label>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <input type="radio" name="splitMode" value="custom" class="mr-2 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                        <span class="text-sm font-bold text-gray-800">自訂框選</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 items-end">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">上傳圖片</label>
+                    <input type="file" id="fileInput" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                </div>
+                <div id="vLinesContainer">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">直線數量 (縱切)</label>
+                    <input type="number" id="vLinesInput" min="0" value="1" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div id="hLinesContainer">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">橫線數量 (橫切)</label>
+                    <input type="number" id="hLinesInput" min="0" value="1" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">檔案前綴詞</label>
+                    <input type="text" id="prefixInput" placeholder="例如：男孩" value="圖片" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div>
+                    <button id="downloadBtn" disabled class="w-full bg-blue-600 text-white font-medium py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm h-[38px]">
+                        下載壓縮檔
+                    </button>
+                </div>
+            </div>
+
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 flex justify-center items-center overflow-auto min-h-[400px]" id="workspace">
+                <p class="text-gray-400" id="placeholder">尚未選擇圖片</p>
+                <div class="image-splitter-container hidden" id="imageContainer">
+                    <img id="sourceImage" src="" alt="Source">
+                    <div id="linesLayer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 頁籤切換邏輯 ---
+        const tabBtnGenerator = document.getElementById('tabBtnGenerator');
+        const tabBtnSplitter = document.getElementById('tabBtnSplitter');
+        const moduleGenerator = document.getElementById('moduleGenerator');
+        const moduleSplitter = document.getElementById('moduleSplitter');
+
+        function switchTab(tab) {
+            if (tab === 'generator') {
+                moduleGenerator.classList.remove('hidden');
+                moduleSplitter.classList.add('hidden');
+                tabBtnGenerator.className = "flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors bg-blue-50 text-blue-700 shadow-sm";
+                tabBtnSplitter.className = "flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50";
+            } else {
+                moduleGenerator.classList.add('hidden');
+                moduleSplitter.classList.remove('hidden');
+                tabBtnSplitter.className = "flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors bg-blue-50 text-blue-700 shadow-sm";
+                tabBtnGenerator.className = "flex items-center px-6 py-2.5 rounded-md text-sm font-medium transition-colors text-gray-600 hover:text-gray-900 hover:bg-gray-50";
+            }
+        }
+
+        tabBtnGenerator.addEventListener('click', () => switchTab('generator'));
+        tabBtnSplitter.addEventListener('click', () => switchTab('splitter'));
+
+        // --- 圖案提示詞產生器邏輯 ---
+        const STYLES = [
+            { name: "可愛向量插畫", prompt: "可愛的卡通向量插圖，平塗色彩，清晰的輪廓線，適合兒童電腦課程使用的無版權風格。" },
+            { name: "水彩繪本風", prompt: "柔和的水彩繪本風格，溫暖的色調，手繪質感，適合兒童故事書的無版權風格。" },
+            { name: "像素藝術", prompt: "復古 8-bit 像素藝術風格，色彩鮮明，適合遊戲設計課程的無版權風格。" },
+            { name: "日系動漫風", prompt: "日系動漫賽璐璐風格，精緻的線條與明亮的色彩，適合學生的無版權風格。" },
+            { name: "3D黏土風", prompt: "3D黏土渲染風格，可愛圓潤的立體造型，柔和的光影，適合兒童教材的無版權風格。" }
+        ];
+
+        const LAYOUT_PROMPT = "【排版極度重要要求】：請在一張圖片中產生精確的 3x3 網格排列，總共 9 個獨立的圖案。每個圖案之間必須有充足的空白間距，絕對不可互相遮疊。每個圖案都必須是完整的，不可觸碰圖片邊界或被裁切邊緣。純白色背景。";
+        const NO_TEXT_PROMPT = "【禁止內容】：圖片中絕對不要包含任何文字、字母、數字、浮水印或無意義的符號。";
+        const EN_KEYWORDS = "English keywords for enforcement: cute cartoon vector icon sheet, strict 3x3 grid layout, exactly 9 isolated objects, wide spacing, no overlapping, fully visible objects, no cropped edges, solid white background, no text, no letters, no words, no watermark, no symbols.";
+
+        const mainThemeInput = document.getElementById('mainTheme');
+        const selectedStyleSelect = document.getElementById('selectedStyle');
+        const customReqInput = document.getElementById('customRequirement');
+        const promptOutput = document.getElementById('promptOutput');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyIcon = document.getElementById('copyIcon');
+        const checkIcon = document.getElementById('checkIcon');
+        const copyText = document.getElementById('copyText');
+
+        STYLES.forEach((style, index) => {
+            const option = document.createElement('option');
+            option.value = style.prompt;
+            option.textContent = style.name;
+            selectedStyleSelect.appendChild(option);
+        });
+
+        function generatePrompt() {
+            const theme = mainThemeInput.value.trim();
+            const themeString = theme 
+                ? `主要主題：【${theme}】。請根據此單一主題，自動發想並繪製 9 個完全不同但相關的元素（可包含人物、物件、自然特效等）。` 
+                : "請自動發想 9 個完全不同、適合教學使用的多樣化元素。";
+            
+            const customReq = customReqInput.value.trim();
+            const customString = customReq ? `額外要求：${customReq}。` : "";
+
+            const finalPrompt = `${selectedStyleSelect.value}\n${themeString}\n${customString}\n${LAYOUT_PROMPT}\n${NO_TEXT_PROMPT}\n${EN_KEYWORDS}`.replace(/\n{2,}/g, '\n');
+            promptOutput.value = finalPrompt;
+            return finalPrompt;
+        }
+
+        mainThemeInput.addEventListener('input', generatePrompt);
+        selectedStyleSelect.addEventListener('change', generatePrompt);
+        customReqInput.addEventListener('input', generatePrompt);
+        generatePrompt();
+
+        copyBtn.addEventListener('click', async () => {
+            const textToCopy = promptOutput.value;
+            try {
+                await navigator.clipboard.writeText(textToCopy);
+                showCopied();
+            } catch (err) {
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopied();
+                } catch (e) {}
+                document.body.removeChild(textArea);
+            }
+        });
+
+        function showCopied() {
+            copyBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            copyBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+            copyIcon.classList.add('hidden');
+            checkIcon.classList.remove('hidden');
+            copyText.textContent = '已複製';
+            
+            setTimeout(() => {
+                copyBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                copyBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                copyIcon.classList.remove('hidden');
+                checkIcon.classList.add('hidden');
+                copyText.textContent = '複製提示詞';
+            }, 2000);
+        }
+
+        // --- 圖片分割工具邏輯 ---
+        let splitMode = 'grid'; // 'grid' | 'custom'
+        const fileInput = document.getElementById('fileInput');
+        const vLinesContainer = document.getElementById('vLinesContainer');
+        const hLinesContainer = document.getElementById('hLinesContainer');
+        const vLinesInput = document.getElementById('vLinesInput');
+        const hLinesInput = document.getElementById('hLinesInput');
+        const prefixInput = document.getElementById('prefixInput');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const placeholder = document.getElementById('placeholder');
+        const imageContainer = document.getElementById('imageContainer');
+        const sourceImage = document.getElementById('sourceImage');
+        const linesLayer = document.getElementById('linesLayer');
+
+        let imageObj = null;
+        let vLines = []; 
+        let hLines = []; 
+        let customBoxes = []; 
+        
+        // Drag logic
+        let isDragging = false;
+        let currentDrag = null; 
+        
+        // Draw logic
+        let isDrawingBox = false;
+        let drawStartBox = null;
+        let tempBoxElement = null;
+
+        // Mode switch
+        document.getElementsByName('splitMode').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                splitMode = e.target.value;
+                if (splitMode === 'grid') {
+                    vLinesContainer.classList.remove('hidden');
+                    hLinesContainer.classList.remove('hidden');
+                    linesLayer.style.cursor = 'crosshair';
+                    updateGrid();
+                } else {
+                    vLinesContainer.classList.add('hidden');
+                    hLinesContainer.classList.add('hidden');
+                    linesLayer.style.cursor = 'crosshair';
+                    renderCustomBoxes();
+                }
+            });
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            prefixInput.value = fileNameWithoutExt;
+
+            const url = URL.createObjectURL(file);
+            imageObj = new Image();
+            imageObj.onload = () => {
+                sourceImage.src = url;
+                placeholder.classList.add('hidden');
+                imageContainer.classList.remove('hidden');
+                downloadBtn.disabled = false;
+                if (splitMode === 'grid') updateGrid();
+                else renderCustomBoxes();
+            };
+            imageObj.src = url;
+        });
+
+        vLinesInput.addEventListener('input', updateGrid);
+        hLinesInput.addEventListener('input', updateGrid);
+
+        function updateGrid() {
+            if (!imageObj || splitMode !== 'grid') return;
+            const vCount = parseInt(vLinesInput.value) || 0;
+            const hCount = parseInt(hLinesInput.value) || 0;
+
+            vLines = Array.from({length: vCount}, (_, i) => (i + 1) / (vCount + 1));
+            hLines = Array.from({length: hCount}, (_, i) => (i + 1) / (hCount + 1));
+            renderLines();
+        }
+
+        function renderLines() {
+            linesLayer.innerHTML = '';
+            
+            hLines.forEach((pos, i) => {
+                const line = document.createElement('div');
+                line.className = 'line-h';
+                line.style.top = `${pos * 100}%`;
+                line.addEventListener('mousedown', (e) => startDrag(e, 'h', i));
+                linesLayer.appendChild(line);
+            });
+
+            vLines.forEach((pos, i) => {
+                const line = document.createElement('div');
+                line.className = 'line-v';
+                line.style.left = `${pos * 100}%`;
+                line.addEventListener('mousedown', (e) => startDrag(e, 'v', i));
+                linesLayer.appendChild(line);
+            });
+        }
+
+        function renderCustomBoxes() {
+            linesLayer.innerHTML = '';
+            customBoxes.forEach((box, index) => {
+                const boxEl = document.createElement('div');
+                boxEl.className = 'custom-box';
+                boxEl.style.left = `${box.left * 100}%`;
+                boxEl.style.top = `${box.top * 100}%`;
+                boxEl.style.width = `${box.width * 100}%`;
+                boxEl.style.height = `${box.height * 100}%`;
+
+                const closeBtn = document.createElement('div');
+                closeBtn.className = 'box-close';
+                closeBtn.innerHTML = '×';
+                closeBtn.addEventListener('mousedown', (e) => e.stopPropagation());
+                closeBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    customBoxes.splice(index, 1);
+                    renderCustomBoxes();
+                });
+
+                boxEl.appendChild(closeBtn);
+                linesLayer.appendChild(boxEl);
+            });
+        }
+
+        function startDrag(e, type, index) {
+            if (splitMode !== 'grid') return;
+            e.preventDefault();
+            e.stopPropagation();
+            isDragging = true;
+            currentDrag = { type, index };
+            document.body.style.cursor = type === 'h' ? 'ns-resize' : 'ew-resize';
+        }
+
+        linesLayer.addEventListener('mousedown', (e) => {
+            if (splitMode === 'custom' && !e.target.classList.contains('box-close')) {
+                e.preventDefault();
+                const rect = imageContainer.getBoundingClientRect();
+                isDrawingBox = true;
+                let startX = (e.clientX - rect.left) / rect.width;
+                let startY = (e.clientY - rect.top) / rect.height;
+                drawStartBox = { x: startX, y: startY };
+
+                tempBoxElement = document.createElement('div');
+                tempBoxElement.className = 'custom-box';
+                tempBoxElement.style.left = `${startX * 100}%`;
+                tempBoxElement.style.top = `${startY * 100}%`;
+                tempBoxElement.style.width = '0%';
+                tempBoxElement.style.height = '0%';
+                linesLayer.appendChild(tempBoxElement);
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDragging && currentDrag && splitMode === 'grid') {
+                const rect = imageContainer.getBoundingClientRect();
+                if (currentDrag.type === 'h') {
+                    let y = e.clientY - rect.top;
+                    let pos = y / rect.height;
+                    const min = currentDrag.index > 0 ? hLines[currentDrag.index - 1] + 0.01 : 0;
+                    const max = currentDrag.index < hLines.length - 1 ? hLines[currentDrag.index + 1] - 0.01 : 1;
+                    hLines[currentDrag.index] = Math.max(min, Math.min(max, pos));
+                    linesLayer.children[currentDrag.index].style.top = `${hLines[currentDrag.index] * 100}%`;
+                } else {
+                    let x = e.clientX - rect.left;
+                    let pos = x / rect.width;
+                    const min = currentDrag.index > 0 ? vLines[currentDrag.index - 1] + 0.01 : 0;
+                    const max = currentDrag.index < vLines.length - 1 ? vLines[currentDrag.index + 1] - 0.01 : 1;
+                    vLines[currentDrag.index] = Math.max(min, Math.min(max, pos));
+                    linesLayer.children[hLines.length + currentDrag.index].style.left = `${vLines[currentDrag.index] * 100}%`;
+                }
+            } else if (isDrawingBox && splitMode === 'custom' && tempBoxElement && drawStartBox) {
+                const rect = imageContainer.getBoundingClientRect();
+                let curX = (e.clientX - rect.left) / rect.width;
+                let curY = (e.clientY - rect.top) / rect.height;
+                curX = Math.max(0, Math.min(1, curX));
+                curY = Math.max(0, Math.min(1, curY));
+
+                let left = Math.min(drawStartBox.x, curX);
+                let top = Math.min(drawStartBox.y, curY);
+                let width = Math.abs(curX - drawStartBox.x);
+                let height = Math.abs(curY - drawStartBox.y);
+
+                tempBoxElement.style.left = `${left * 100}%`;
+                tempBoxElement.style.top = `${top * 100}%`;
+                tempBoxElement.style.width = `${width * 100}%`;
+                tempBoxElement.style.height = `${height * 100}%`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                currentDrag = null;
+                document.body.style.cursor = 'default';
+            }
+            if (isDrawingBox) {
+                isDrawingBox = false;
+                if (tempBoxElement && drawStartBox) {
+                    let left = parseFloat(tempBoxElement.style.left) / 100;
+                    let top = parseFloat(tempBoxElement.style.top) / 100;
+                    let width = parseFloat(tempBoxElement.style.width) / 100;
+                    let height = parseFloat(tempBoxElement.style.height) / 100;
+
+                    tempBoxElement.remove();
+                    tempBoxElement = null;
+
+                    if (width > 0.01 && height > 0.01) {
+                        customBoxes.push({ left, top, width, height });
+                    }
+                    renderCustomBoxes();
+                }
+            }
+        });
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!imageObj || !window.JSZip) return;
+            
+            downloadBtn.disabled = true;
+            const originalText = downloadBtn.innerText;
+            downloadBtn.innerText = '處理中...';
+
+            try {
+                const zip = new JSZip();
+                const prefix = prefixInput.value.trim() || '圖片';
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                let count = 1;
+
+                if (splitMode === 'grid') {
+                    const totalPieces = (hLines.length + 1) * (vLines.length + 1);
+                    const padLength = totalPieces.toString().length < 2 ? 2 : totalPieces.toString().length;
+                    const xCoords = [0, ...[...vLines].sort((a, b) => a - b), 1];
+                    const yCoords = [0, ...[...hLines].sort((a, b) => a - b), 1];
+
+                    for (let i = 0; i < yCoords.length - 1; i++) {
+                        for (let j = 0; j < xCoords.length - 1; j++) {
+                            const sx = xCoords[j] * imageObj.naturalWidth;
+                            const sy = yCoords[i] * imageObj.naturalHeight;
+                            const sWidth = (xCoords[j+1] - xCoords[j]) * imageObj.naturalWidth;
+                            const sHeight = (yCoords[i+1] - yCoords[i]) * imageObj.naturalHeight;
+
+                            canvas.width = sWidth;
+                            canvas.height = sHeight;
+                            ctx.drawImage(imageObj, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+
+                            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                            const fileName = `${prefix}-${String(count).padStart(padLength, '0')}.jpg`;
+                            zip.file(fileName, blob);
+                            count++;
+                        }
+                    }
+                } else if (splitMode === 'custom') {
+                    if (customBoxes.length === 0) {
+                        downloadBtn.innerText = originalText;
+                        downloadBtn.disabled = false;
+                        return;
+                    }
+                    const totalPieces = customBoxes.length;
+                    const padLength = totalPieces.toString().length < 2 ? 2 : totalPieces.toString().length;
+
+                    for (const box of customBoxes) {
+                        const sx = box.left * imageObj.naturalWidth;
+                        const sy = box.top * imageObj.naturalHeight;
+                        const sWidth = box.width * imageObj.naturalWidth;
+                        const sHeight = box.height * imageObj.naturalHeight;
+
+                        canvas.width = sWidth;
+                        canvas.height = sHeight;
+                        ctx.drawImage(imageObj, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                        const fileName = `${prefix}-${String(count).padStart(padLength, '0')}.jpg`;
+                        zip.file(fileName, blob);
+                        count++;
+                    }
+                }
+
+                const content = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${prefix}_批次分割.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error("ZIP 生成失敗", error);
+            } finally {
+                downloadBtn.innerText = originalText;
+                downloadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
