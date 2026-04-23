@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>獎勵小舖</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Nunito:wght@400;600;700;800&display=swap');
+
+        /* ── CSS 主題變數（Sharon 預設粉色，Mark 覆蓋為綠色）── */
+        :root {
+            --c-primary:        #ff9a9e;
+            --c-primary2:       #fecfef;
+            --c-accent:         #764ba2;
+            --c-accent-light:   #f0e6ff;
+            --c-accent-bg:      rgba(118,75,162,0.1);
+            --c-balance1:       #667eea;
+            --c-balance2:       #764ba2;
+            --c-balance-shadow: rgba(102,126,234,0.4);
+            --c-header-shadow:  rgba(255,154,158,0.3);
+            --c-submit-shadow:  rgba(255,154,158,0.4);
+        }
+
+        body.mark-theme {
+            --c-primary:        #43e97b;
+            --c-primary2:       #a8edbc;
+            --c-accent:         #0d6e5f;
+            --c-accent-light:   #d1fae5;
+            --c-accent-bg:      rgba(13,110,95,0.1);
+            --c-balance1:       #11998e;
+            --c-balance2:       #38ef7d;
+            --c-balance-shadow: rgba(17,153,142,0.4);
+            --c-header-shadow:  rgba(67,233,123,0.3);
+            --c-submit-shadow:  rgba(67,233,123,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #fff5f5 0%, #fff0f5 30%, #f5f0ff 60%, #f0f5ff 100%);
+            color: #4a4a4a;
+            overflow-x: hidden;
+        }
+
+        body.mark-theme {
+            background: linear-gradient(135deg, #f0fff4 0%, #ecfdf5 30%, #f0fdf4 60%, #f7fffe 100%);
+        }
+
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(255,182,193,0.3) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(173,216,230,0.3) 0%, transparent 20%),
+                radial-gradient(circle at 80% 10%, rgba(255,218,185,0.3) 0%, transparent 15%),
+                radial-gradient(circle at 20% 90%, rgba(221,160,221,0.3) 0%, transparent 15%);
+            pointer-events: none; z-index: 0;
+            transition: opacity 0.5s;
+        }
+
+        body.mark-theme::before {
+            background:
+                radial-gradient(circle at 10% 20%, rgba(134,239,172,0.3) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(110,231,183,0.3) 0%, transparent 20%),
+                radial-gradient(circle at 80% 10%, rgba(187,247,208,0.3) 0%, transparent 15%),
+                radial-gradient(circle at 20% 90%, rgba(52,211,153,0.2) 0%, transparent 15%);
+        }
+
+        /* ══════════════════════════════
+           選人畫面
+        ══════════════════════════════ */
+        #childSelect {
+            position: fixed; inset: 0;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 500; padding: 20px;
+        }
+
+        .select-title {
+            font-size: 2.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ff9a9e, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+
+        .select-sub {
+            font-size: 1.1rem;
+            color: #999;
+            margin-bottom: 50px;
+            font-weight: 600;
+        }
+
+        .child-cards {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .child-card {
+            width: 200px;
+            padding: 40px 20px;
+            border-radius: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 4px solid transparent;
+        }
+
+        .child-card:hover {
+            transform: translateY(-10px) scale(1.04);
+        }
+
+        .child-card.sharon {
+            background: linear-gradient(160deg, #fff0f5 0%, #fce4ec 100%);
+            border-color: #ffb3c1;
+        }
+
+        .child-card.sharon:hover {
+            box-shadow: 0 20px 50px rgba(255,154,158,0.35);
+        }
+
+        .child-card.mark {
+            background: linear-gradient(160deg, #f0fff4 0%, #d1fae5 100%);
+            border-color: #6ee7b7;
+        }
+
+        .child-card.mark:hover {
+            box-shadow: 0 20px 50px rgba(67,233,123,0.35);
+        }
+
+        .child-avatar {
+            font-size: 5rem;
+            margin-bottom: 15px;
+            line-height: 1;
+        }
+
+        .child-name {
+            font-size: 1.8rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .child-card.sharon .child-name { color: #d63384; }
+        .child-card.mark   .child-name { color: #0d6e5f; }
+
+        .child-tag {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 5px 16px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .child-card.sharon .child-tag {
+            background: rgba(255,154,158,0.2);
+            color: #d63384;
+        }
+
+        .child-card.mark .child-tag {
+            background: rgba(67,233,123,0.2);
+            color: #0d6e5f;
+        }
+
+        /* ══════════════════════════════
+           主應用
+        ══════════════════════════════ */
+        #mainApp { display: none; }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 頁首 */
+        .header {
+            text-align: center;
+            padding: 22px 20px;
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary2) 50%, var(--c-primary2) 100%);
+            border-radius: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px var(--c-header-shadow);
+            animation: headerFloat 3s ease-in-out infinite;
+            position: relative;
+        }
+
+        @keyframes headerFloat {
+            0%, 100% { transform: translateY(0); }
+            50%       { transform: translateY(-5px); }
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.15);
+            letter-spacing: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.9);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .stars {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .star { font-size: 1.4rem; animation: starBounce 1s ease-in-out infinite; }
+        .star:nth-child(1) { animation-delay: 0s; }
+        .star:nth-child(2) { animation-delay: 0.2s; }
+        .star:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes starBounce {
+            0%, 100% { transform: scale(1); }
+            50%       { transform: scale(1.2); }
+        }
+
+        /* 切換按鈕（右上角） */
+        .switch-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.25);
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 20px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .switch-btn:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* 餘額卡片 */
+        .balance-card {
+            background: linear-gradient(135deg, var(--c-balance1) 0%, var(--c-balance2) 100%);
+            border-radius: 25px;
+            padding: 28px 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 15px 35px var(--c-balance-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            transition: background 0.5s;
+        }
+
+        .balance-info { color: #fff; }
+
+        .balance-label { font-size: 1rem; opacity: 0.9; margin-bottom: 5px; }
+
+        .balance-amount {
+            font-size: 3rem; font-weight: 800;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .balance-amount .coin { font-size: 2.5rem; }
+
+        .sync-status {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 18px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 15px;
+            color: #fff; font-size: 0.9rem; font-weight: 700;
+        }
+
+        .sync-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%; background: #7bed9f; flex-shrink: 0;
+        }
+
+        .sync-dot.syncing { background: #ffd700; animation: pulse 1s ease-in-out infinite; }
+        .sync-dot.error   { background: #ff6b6b; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%       { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        /* 分頁 */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+
+        .tab {
+            flex: 1; min-width: 120px;
+            padding: 15px 20px; border: none; border-radius: 20px;
+            font-family: inherit; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s ease;
+            background: #fff; color: #888;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .tab:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary2) 100%);
+            color: #fff;
+        }
+
+        .tab .tab-icon { font-size: 1.3rem; display: block; margin-bottom: 5px; }
+
+        /* 內容卡片 */
+        .content-card {
+            background: #fff; border-radius: 25px; padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            margin-bottom: 20px; animation: cardAppear 0.5s ease;
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-size: 1.4rem; font-weight: 700;
+            color: var(--c-accent);
+            margin-bottom: 20px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .section-title::before {
+            content: ''; width: 5px; height: 25px;
+            background: linear-gradient(180deg, var(--c-primary), var(--c-accent));
+            border-radius: 3px;
+        }
+
+        /* 表單 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full-width { grid-column: 1 / -1; }
+
+        .form-label { font-size: 0.95rem; font-weight: 700; color: #666; margin-bottom: 8px; }
+        .form-label .required { color: #ff6b6b; }
+
+        .form-input, .form-select {
+            padding: 14px 18px;
+            border: 3px solid var(--c-accent-light);
+            border-radius: 15px;
+            font-family: inherit; font-size: 1rem;
+            transition: all 0.3s; background: #fafafa;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--c-accent);
+            background: #fff;
+            box-shadow: 0 0 0 4px var(--c-accent-bg);
+        }
+
+        .form-select {
+            cursor: pointer; appearance: none;
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            padding-right: 50px;
+        }
+
+        body:not(.mark-theme) .form-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23764ba2' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        body.mark-theme .form-select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230d6e5f' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        /* 金額按鈕 */
+        .amount-options { display: flex; flex-wrap: wrap; gap: 10px; }
+
+        .amount-btn {
+            padding: 12px 20px;
+            border: 3px solid var(--c-accent-light);
+            border-radius: 15px;
+            background: #fff; font-family: inherit;
+            font-size: 1rem; font-weight: 700;
+            color: var(--c-accent); cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .amount-btn:hover { border-color: var(--c-accent); transform: translateY(-2px); }
+
+        .amount-btn.selected {
+            background: linear-gradient(135deg, var(--c-balance1) 0%, var(--c-balance2) 100%);
+            border-color: transparent; color: #fff; transform: scale(1.05);
+        }
+
+        /* 確認者 */
+        .approver-options { display: flex; gap: 15px; }
+
+        .approver-btn {
+            flex: 1; padding: 15px;
+            border: 3px solid var(--c-accent-light);
+            border-radius: 15px; background: #fff;
+            font-family: inherit; font-size: 1.1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+
+        .approver-btn:hover { border-color: var(--c-accent); transform: translateY(-2px); }
+
+        .approver-btn.selected {
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary2) 100%);
+            border-color: transparent; color: #fff;
+        }
+
+        /* 提交 */
+        .submit-section { margin-top: 25px; text-align: center; }
+
+        .submit-btn {
+            padding: 18px 50px; border: none; border-radius: 50px;
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-primary2) 100%);
+            color: #fff; font-family: inherit;
+            font-size: 1.3rem; font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 8px 25px var(--c-submit-shadow);
+            transition: all 0.3s; letter-spacing: 3px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px var(--c-submit-shadow);
+        }
+
+        .submit-btn:active  { transform: translateY(0) scale(0.98); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* 記錄 */
+        .records-list { display: flex; flex-direction: column; gap: 15px; }
+
+        .record-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 18px;
+            background: linear-gradient(135deg, #f8f5ff 0%, #fff 100%);
+            border-radius: 20px;
+            border: 2px solid var(--c-accent-light);
+            transition: all 0.3s;
+        }
+
+        body.mark-theme .record-item {
+            background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%);
+        }
+
+        .record-item:hover { transform: translateX(5px); border-color: var(--c-accent); }
+
+        .record-icon {
+            width: 55px; height: 55px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; flex-shrink: 0;
+        }
+
+        .record-info { flex: 1; }
+        .record-title { font-weight: 700; font-size: 1.05rem; color: #333; margin-bottom: 5px; }
+
+        .record-meta {
+            font-size: 0.85rem; color: #888;
+            display: flex; flex-wrap: wrap; gap: 8px;
+        }
+
+        .record-meta span {
+            background: var(--c-accent-bg);
+            padding: 3px 10px; border-radius: 10px;
+        }
+
+        .record-amount {
+            font-size: 1.5rem; font-weight: 800;
+            color: var(--c-accent);
+            display: flex; align-items: center; gap: 5px;
+        }
+
+        .record-delete {
+            width: 40px; height: 40px; border: none; border-radius: 50%;
+            background: #fff; color: #ff6b6b;
+            font-size: 1.2rem; cursor: pointer;
+            transition: all 0.3s; flex-shrink: 0;
+        }
+
+        .record-delete:hover { background: #ff6b6b; color: #fff; transform: scale(1.1); }
+
+        /* 空狀態 */
+        .empty-state { text-align: center; padding: 50px 20px; color: #aaa; }
+        .empty-state .icon { font-size: 4rem; margin-bottom: 15px; opacity: 0.5; }
+        .empty-state p { font-size: 1.1rem; }
+
+        /* 彈窗 */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none; justify-content: center; align-items: center;
+            z-index: 1000; backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: #fff; border-radius: 30px; padding: 40px;
+            max-width: 400px; width: 90%;
+            text-align: center; animation: modalPop 0.4s ease;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .modal.success .modal-icon {
+            font-size: 5rem; margin-bottom: 20px;
+            animation: successBounce 0.6s ease;
+        }
+
+        @keyframes successBounce {
+            0%   { transform: scale(0); }
+            50%  { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .modal h3 { font-size: 1.5rem; color: var(--c-accent); margin-bottom: 10px; }
+        .modal p  { color: #888; margin-bottom: 25px; }
+
+        .modal-btn {
+            padding: 15px 40px; border: none; border-radius: 25px;
+            background: linear-gradient(135deg, var(--c-balance1) 0%, var(--c-balance2) 100%);
+            color: #fff; font-family: inherit;
+            font-size: 1.1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s;
+        }
+
+        .modal-btn:hover { transform: scale(1.05); }
+
+        /* 響應式 */
+        @media (max-width: 600px) {
+            .header h1     { font-size: 1.8rem; }
+            .balance-amount { font-size: 2.2rem; }
+            .form-grid     { grid-template-columns: 1fr; }
+            .record-item   { flex-wrap: wrap; }
+            .record-amount { width: 100%; justify-content: flex-end; margin-top: 10px; }
+            .child-cards   { gap: 20px; }
+            .child-card    { width: 160px; padding: 30px 15px; }
+            .child-avatar  { font-size: 4rem; }
+            .child-name    { font-size: 1.5rem; }
+        }
+
+        /* 彩帶 */
+        .confetti {
+            position: fixed; width: 12px; height: 12px;
+            border-radius: 3px; pointer-events: none;
+            z-index: 999; animation: confettiFall 2s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0%   { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- ══ 選人畫面 ══════════════════════════════════ -->
+    <div id="childSelect">
+        <div class="select-title">🏆 獎勵小舖</div>
+        <div class="select-sub">請選擇你的帳戶</div>
+        <div class="child-cards">
+            <div class="child-card mark" onclick="selectChild('Mark')">
+                <div class="child-avatar">🌿</div>
+                <div class="child-name">Mark</div>
+                <div class="child-tag">綠色主題</div>
+            </div>
+            <div class="child-card sharon" onclick="selectChild('Sharon')">
+                <div class="child-avatar">🌸</div>
+                <div class="child-name">Sharon</div>
+                <div class="child-tag">粉色主題</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ 主應用 ════════════════════════════════════ -->
+    <div id="mainApp">
+        <div class="container">
+
+            <!-- 頁首 -->
+            <div class="header">
+                <button class="switch-btn" onclick="backToSelect()">🔄 切換</button>
+                <h1 id="headerTitle">獎勵小舖</h1>
+                <div class="subtitle" id="headerSubtitle">小朋友的專屬獎勵系統</div>
+                <div class="stars">
+                    <span class="star" id="star1">⭐</span>
+                    <span class="star" id="star2">🌟</span>
+                    <span class="star" id="star3">⭐</span>
+                </div>
+            </div>
+
+            <!-- 餘額卡片 -->
+            <div class="balance-card">
+                <div class="balance-info">
+                    <div class="balance-label">目前可用獎勵金</div>
+                    <div class="balance-amount">
+                        <span class="coin">🪙</span>
+                        <span id="totalBalance">--</span>
+                    </div>
+                </div>
+                <div class="sync-status">
+                    <div class="sync-dot syncing" id="syncDot"></div>
+                    <span id="syncText">連線中...</span>
+                </div>
+            </div>
+
+            <!-- 分頁 -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('add')">
+                    <span class="tab-icon">➕</span>新增獎勵
+                </button>
+                <button class="tab" onclick="switchTab('records')">
+                    <span class="tab-icon">📋</span>領獎紀錄
+                </button>
+            </div>
+
+            <!-- 新增獎勵 -->
+            <div class="tab-content active" id="tab-add">
+                <div class="content-card">
+                    <div class="section-title">新增考試獎勵</div>
+                    <form id="rewardForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">考試日期 <span class="required">*</span></label>
+                                <input type="date" class="form-input" id="examDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">科目 <span class="required">*</span></label>
+                                <select class="form-select" id="subject" required>
+                                    <option value="">請選擇科目</option>
+                                    <option value="國語">國語</option>
+                                    <option value="數學">數學</option>
+                                    <option value="社會">社會</option>
+                                    <option value="自然">自然</option>
+                                    <option value="英文">英文</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">考試類型 <span class="required">*</span></label>
+                                <select class="form-select" id="examType" required>
+                                    <option value="">請選擇類型</option>
+                                    <option value="聽寫">聽寫</option>
+                                    <option value="小考">小考</option>
+                                    <option value="期中考">期中考</option>
+                                    <option value="期末考">期末考</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label">獎勵金額 <span class="required">*</span></label>
+                                <div class="amount-options">
+                                    <button type="button" class="amount-btn" data-amount="5">5元</button>
+                                    <button type="button" class="amount-btn" data-amount="10">10元</button>
+                                    <button type="button" class="amount-btn" data-amount="50">50元</button>
+                                    <button type="button" class="amount-btn" data-amount="100">100元</button>
+                                    <button type="button" class="amount-btn" data-amount="300">300元</button>
+                                    <button type="button" class="amount-btn" data-amount="500">500元</button>
+                                </div>
+                                <input type="number" class="form-input" id="customAmount"
+                                    placeholder="或輸入自訂金額" min="1" style="margin-top: 12px;">
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label">確認者 <span class="required">*</span></label>
+                                <div class="approver-options">
+                                    <button type="button" class="approver-btn" data-approver="爸比">👨 爸比</button>
+                                    <button type="button" class="approver-btn" data-approver="媽咪">👩 媽咪</button>
+                                </div>
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label">備註（選填）</label>
+                                <input type="text" class="form-input" id="note" placeholder="例如：100分！太棒了！">
+                            </div>
+                        </div>
+                        <div class="submit-section">
+                            <button type="submit" class="submit-btn" id="submitBtn">✨ 領 取 獎 勵 ✨</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 領獎紀錄 -->
+            <div class="tab-content" id="tab-records">
+                <div class="content-card">
+                    <div class="section-title">領獎紀錄</div>
+                    <div class="records-list" id="recordsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成功彈窗 -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal success">
+            <div class="modal-icon">🎉</div>
+            <h3>領取成功！</h3>
+            <p id="modalMessage">太棒了！獎勵已入帳！</p>
+            <button class="modal-btn" onclick="closeModal()">好棒！</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // ── Firebase 設定 ──────────────────────────────
+        const firebaseConfig = {
+            apiKey: "AIzaSyDItLIJMdvUcMjOgMOfrsGs4dbj88InwV4",
+            authDomain: "kidsaward-a9b4c.firebaseapp.com",
+            projectId: "kidsaward-a9b4c",
+            storageBucket: "kidsaward-a9b4c.firebasestorage.app",
+            messagingSenderId: "865855125359",
+            appId: "1:865855125359:web:404d428547d7e602581a9a"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+        const rewardsCol = firestore.collection('rewards');
+
+        // ── 狀態 ──────────────────────────────────────
+        let currentChild   = null;
+        let selectedAmount = 0;
+        let selectedApprover = '';
+        let unsubscribe    = null;   // Firestore 監聽取消用
+
+        // ── 選人 ──────────────────────────────────────
+        function selectChild(name) {
+            currentChild = name;
+
+            // 套用主題
+            if (name === 'Mark') {
+                document.body.classList.add('mark-theme');
+                document.getElementById('headerTitle').textContent    = '🌿 Mark 的獎勵小舖';
+                document.getElementById('headerSubtitle').textContent = 'Mark 加油！繼續努力！';
+                document.getElementById('star1').textContent = '🍀';
+                document.getElementById('star2').textContent = '⭐';
+                document.getElementById('star3').textContent = '🍀';
+            } else {
+                document.body.classList.remove('mark-theme');
+                document.getElementById('headerTitle').textContent    = '🌸 Sharon 的獎勵小舖';
+                document.getElementById('headerSubtitle').textContent = 'Sharon 加油！繼續努力！';
+                document.getElementById('star1').textContent = '⭐';
+                document.getElementById('star2').textContent = '🌟';
+                document.getElementById('star3').textContent = '⭐';
+            }
+
+            // 切換畫面
+            document.getElementById('childSelect').style.display = 'none';
+            document.getElementById('mainApp').style.display     = 'block';
+
+            // 重置表單狀態
+            selectedAmount   = 0;
+            selectedApprover = '';
+            document.querySelectorAll('.amount-btn, .approver-btn')
+                .forEach(b => b.classList.remove('selected'));
+            document.getElementById('examDate').valueAsDate = new Date();
+            switchTab('add');
+
+            // 啟動即時監聽
+            initRealtime();
+        }
+
+        // ── 回到選人畫面 ──────────────────────────────
+        function backToSelect() {
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            document.getElementById('mainApp').style.display     = 'none';
+            document.getElementById('childSelect').style.display = 'flex';
+            currentChild = null;
+        }
+
+        // ── 同步狀態 ──────────────────────────────────
+        function setSyncStatus(state) {
+            const dot  = document.getElementById('syncDot');
+            const text = document.getElementById('syncText');
+            dot.className = 'sync-dot';
+            if (state === 'ok') {
+                text.textContent = '☁️ 已同步';
+            } else if (state === 'syncing') {
+                dot.classList.add('syncing');
+                text.textContent = '同步中...';
+            } else {
+                dot.classList.add('error');
+                text.textContent = '⚠️ 連線失敗';
+            }
+        }
+
+        // ── 即時監聽（依 child 過濾）─────────────────
+        function initRealtime() {
+            if (unsubscribe) unsubscribe();
+            setSyncStatus('syncing');
+
+            unsubscribe = rewardsCol
+                .where('child', '==', currentChild)
+                .onSnapshot(
+                    snapshot => {
+                        const records = snapshot.docs
+                            .map(doc => ({ id: doc.id, ...doc.data() }))
+                            .sort((a, b) => {
+                                const ta = a.created_at?.toMillis?.() ?? 0;
+                                const tb = b.created_at?.toMillis?.() ?? 0;
+                                return tb - ta;
+                            });
+                        updateBalance(records);
+                        renderRecords(records);
+                        setSyncStatus('ok');
+                    },
+                    err => {
+                        console.error('Firestore 錯誤:', err);
+                        setSyncStatus('error');
+                    }
+                );
+        }
+
+        // ── 更新餘額 ──────────────────────────────────
+        function updateBalance(records) {
+            const total = records.reduce((sum, r) => sum + (r.amount || 0), 0);
+            document.getElementById('totalBalance').textContent = total.toLocaleString();
+        }
+
+        // ── 切換分頁 ──────────────────────────────────
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'add') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('tab-add').classList.add('active');
+            } else {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('tab-records').classList.add('active');
+            }
+        }
+
+        // ── 金額按鈕 ──────────────────────────────────
+        document.querySelectorAll('.amount-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedAmount = parseInt(this.dataset.amount);
+                document.getElementById('customAmount').value = '';
+            });
+        });
+
+        document.getElementById('customAmount').addEventListener('input', function() {
+            if (this.value) {
+                document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                selectedAmount = parseInt(this.value);
+            }
+        });
+
+        // ── 確認者按鈕 ────────────────────────────────
+        document.querySelectorAll('.approver-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.approver-btn').forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedApprover = this.dataset.approver;
+            });
+        });
+
+        // ── 提交表單 ──────────────────────────────────
+        document.getElementById('rewardForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (selectedAmount <= 0) { alert('請選擇或輸入獎勵金額！'); return; }
+            if (!selectedApprover)   { alert('請選擇確認者！'); return; }
+
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = '儲存中...';
+
+            try {
+                await rewardsCol.add({
+                    child:      currentChild,
+                    date:       document.getElementById('examDate').value,
+                    subject:    document.getElementById('subject').value,
+                    exam_type:  document.getElementById('examType').value,
+                    amount:     selectedAmount,
+                    approver:   selectedApprover,
+                    note:       document.getElementById('note').value || '',
+                    created_at: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                showModal(`${currentChild} 獲得 ${selectedAmount} 元獎勵！`);
+                createConfetti();
+
+                this.reset();
+                selectedAmount = 0;
+                selectedApprover = '';
+                document.querySelectorAll('.amount-btn, .approver-btn')
+                    .forEach(b => b.classList.remove('selected'));
+                document.getElementById('examDate').valueAsDate = new Date();
+
+            } catch (err) {
+                alert('儲存失敗，請確認網路連線。');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ 領 取 獎 勵 ✨';
+            }
+        });
+
+        // ── 渲染記錄 ──────────────────────────────────
+        function renderRecords(records) {
+            const list = document.getElementById('recordsList');
+
+            if (records.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>還沒有領獎紀錄</p>
+                        <p>快去參加考試領獎勵吧！</p>
+                    </div>`;
+                return;
+            }
+
+            const icons = { '國語':'📝','數學':'🔢','社會':'🌍','自然':'🔬','英文':'📖','其他':'📚' };
+            const iconBg = currentChild === 'Mark'
+                ? 'linear-gradient(135deg, #43e97b, #a8edbc)'
+                : 'linear-gradient(135deg, #ff9a9e, #fecfef)';
+
+            list.innerHTML = records.map(r => `
+                <div class="record-item">
+                    <div class="record-icon" style="background:${iconBg};">
+                        ${icons[r.subject] || '📚'}
+                    </div>
+                    <div class="record-info">
+                        <div class="record-title">${r.subject} - ${r.exam_type}</div>
+                        <div class="record-meta">
+                            <span>📅 ${r.date}</span>
+                            <span>👤 ${r.approver}</span>
+                            ${r.note ? `<span>📝 ${r.note}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="record-amount">+${r.amount}</div>
+                    <button class="record-delete" onclick="deleteRecord('${r.id}')" title="刪除">✕</button>
+                </div>
+            `).join('');
+        }
+
+        // ── 刪除記錄 ──────────────────────────────────
+        async function deleteRecord(id) {
+            if (!confirm('確定要刪除這筆記錄嗎？')) return;
+            try {
+                await rewardsCol.doc(id).delete();
+            } catch (err) {
+                alert('刪除失敗，請確認網路連線。');
+            }
+        }
+
+        // ── 彈窗 ──────────────────────────────────────
+        function showModal(message) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('successModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('successModal').classList.remove('show');
+        }
+
+        document.getElementById('successModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ── 彩帶 ──────────────────────────────────────
+        function createConfetti() {
+            const sharonColors = ['#ff9a9e','#fecfef','#667eea','#764ba2','#ffd700','#ff6b6b','#7bed9f'];
+            const markColors   = ['#43e97b','#a8edbc','#11998e','#38ef7d','#ffd700','#86efac','#6ee7b7'];
+            const colors = currentChild === 'Mark' ? markColors : sharonColors;
+
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.className = 'confetti';
+                    el.style.left = Math.random() * 100 + 'vw';
+                    el.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    el.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
+                    document.body.appendChild(el);
+                    setTimeout(() => el.remove(), 3000);
+                }, i * 30);
+            }
+        }
+    </script>
+</body>
+</html>
