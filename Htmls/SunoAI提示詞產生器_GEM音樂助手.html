@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNO AI 音樂提示詞產生器</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Nunito:wght@400;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            padding: 20px 20px 40px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        /* ── Header ── */
+        .header { text-align: center; padding: 28px 20px 18px; }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #ff6b9d 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        .header p { color: rgba(255,255,255,0.6); font-size: 0.97rem; }
+
+        /* ── Mode Switcher ── */
+        .mode-switcher {
+            display: flex;
+            justify-content: center;
+            margin: 18px auto 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50px;
+            padding: 5px;
+            width: fit-content;
+            gap: 4px;
+        }
+        .mode-btn {
+            padding: 11px 38px;
+            border: none;
+            border-radius: 50px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            color: rgba(255,255,255,0.45);
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.45);
+        }
+        .mode-btn:not(.active):hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.07); }
+
+        .mode-desc {
+            text-align: center;
+            color: rgba(255,255,255,0.42);
+            font-size: 0.87rem;
+            margin-bottom: 22px;
+            min-height: 20px;
+        }
+
+        /* ── 3-column grid ── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            align-items: start;
+            margin-bottom: 18px;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 22px;
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.45s ease;
+        }
+        .card-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .card-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(180deg, #667eea, #764ba2);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        /* ── Template buttons ── */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .template-btn {
+            padding: 10px 6px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+        .template-btn:hover { border-color: #667eea; background: rgba(102,126,234,0.18); transform: translateY(-2px); }
+        .template-btn.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.4), rgba(118,75,162,0.4));
+            box-shadow: 0 0 14px rgba(102,126,234,0.3);
+        }
+        .template-btn .emoji { font-size: 1.2rem; display: block; margin-bottom: 3px; }
+
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.13), transparent);
+            margin: 14px 0;
+        }
+
+        /* ── Option group ── */
+        .option-group { margin-bottom: 13px; }
+        .option-label { font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.75); margin-bottom: 7px; display: block; }
+        .option-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.88rem;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 11px center;
+        }
+        .option-select option { background: #1a1a2e; color: #fff; }
+
+        /* ── Tags ── */
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+        .tag {
+            padding: 5px 10px;
+            background: rgba(102,126,234,0.14);
+            border: 1px solid rgba(102,126,234,0.24);
+            border-radius: 20px;
+            font-size: 0.76rem;
+            color: #a0d8ef;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .tag:hover { background: rgba(102,126,234,0.32); transform: scale(1.05); }
+        .tag.selected {
+            background: linear-gradient(135deg, rgba(102,126,234,0.58), rgba(118,75,162,0.58));
+            border-color: #667eea;
+            color: #fff;
+            box-shadow: 0 0 9px rgba(102,126,234,0.35);
+            transform: scale(1.05);
+        }
+        .tag.title-tag { cursor: pointer; }
+
+        /* ── Language selector ── */
+        .lang-section-hint {
+            font-size: 0.82rem;
+            color: rgba(255,255,255,0.45);
+            margin-bottom: 13px;
+            line-height: 1.65;
+        }
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 9px;
+            margin-bottom: 11px;
+        }
+        .lang-btn {
+            padding: 13px 8px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.04);
+            color: rgba(255,255,255,0.65);
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+        .lang-btn:hover:not(.disabled) {
+            border-color: #667eea;
+            background: rgba(102,126,234,0.2);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+        .lang-btn.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102,126,234,0.5), rgba(118,75,162,0.5));
+            color: #fff;
+            box-shadow: 0 0 12px rgba(102,126,234,0.3);
+        }
+        .lang-btn.disabled {
+            opacity: 0.32;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        .lang-input {
+            width: 100%;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.87rem;
+            color: #fff;
+            transition: border-color 0.25s;
+            margin-top: 10px;
+        }
+        .lang-input:focus { outline: none; border-color: rgba(102,126,234,0.5); }
+        .lang-input::placeholder { color: rgba(255,255,255,0.25); }
+        .lang-max-hint {
+            font-size: 0.8rem;
+            color: #f5576c;
+            margin-top: 9px;
+            display: none;
+            font-weight: 700;
+        }
+        .lang-max-hint.show { display: block; }
+
+        /* ── Theme selector ── */
+        .theme-section-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 5px;
+        }
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 7px;
+            margin-bottom: 10px;
+        }
+        .theme-btn {
+            padding: 9px 6px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.62);
+            font-family: inherit;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            text-align: center;
+            line-height: 1.3;
+        }
+        .theme-btn:hover {
+            border-color: #a78bfa;
+            background: rgba(167,139,250,0.18);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        .theme-btn.selected {
+            border-color: #a78bfa;
+            background: linear-gradient(135deg, rgba(118,75,162,0.5), rgba(167,139,250,0.4));
+            color: #fff;
+            box-shadow: 0 0 10px rgba(167,139,250,0.3);
+        }
+
+        /* ── Lyrics ── */
+        .lyrics-checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 13px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.03);
+            transition: background 0.2s;
+        }
+        .lyrics-checkbox-row:hover { background: rgba(255,255,255,0.06); }
+        .lyrics-checkbox-row input[type="checkbox"] { width: 17px; height: 17px; accent-color: #667eea; cursor: pointer; }
+        .lyrics-checkbox-row span { font-size: 0.92rem; font-weight: 700; color: rgba(255,255,255,0.82); }
+
+        .lyrics-area {
+            width: 100%;
+            min-height: 300px;
+            padding: 13px;
+            background: rgba(0,0,0,0.25);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.75;
+            color: #a0d8ef;
+            resize: vertical;
+            transition: border-color 0.25s;
+        }
+        .lyrics-area:focus { outline: none; border-color: rgba(102,126,234,0.5); }
+
+        .lyrics-placeholder {
+            text-align: center;
+            padding: 55px 20px;
+            color: rgba(255,255,255,0.22);
+        }
+        .lyrics-placeholder .ph-icon { font-size: 2.8rem; margin-bottom: 12px; }
+        .lyrics-placeholder p { font-size: 0.87rem; line-height: 1.7; }
+
+        /* ── Output boxes ── */
+        .output-box {
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(102,126,234,0.22);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+        .output-label { font-size: 0.76rem; color: rgba(255,255,255,0.45); margin-bottom: 7px; font-weight: 700; letter-spacing: 0.04em; }
+        .output-text { font-size: 0.9rem; line-height: 1.85; color: #ddd; word-break: break-word; min-height: 44px; }
+
+        /* ── Styles textarea (Custom) ── */
+        .styles-textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 13px;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 0.87rem;
+            line-height: 1.85;
+            color: #ddd;
+            resize: vertical;
+            transition: border-color 0.25s;
+        }
+        .styles-textarea:focus { outline: none; border-color: rgba(102,126,234,0.5); }
+        .styles-textarea::placeholder { color: rgba(255,255,255,0.22); }
+
+        /* ── Song Title (Custom) ── */
+        .title-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(0,0,0,0.22);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            font-family: 'Nunito', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            transition: border-color 0.25s;
+            margin-bottom: 14px;
+        }
+        .title-input:focus { outline: none; border-color: rgba(102,126,234,0.55); }
+        .title-input::placeholder { color: rgba(255,255,255,0.22); font-weight: 400; font-size: 0.95rem; }
+
+        /* ── Buttons ── */
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 13px; }
+        .btn-group.top { margin-top: 0; margin-bottom: 16px; }
+
+        .action-btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,0.3); }
+        .action-btn:active { transform: translateY(0); }
+
+        .btn-en     { background: linear-gradient(135deg, #11998e, #38ef7d); color: #fff; }
+        .btn-zh     { background: linear-gradient(135deg, #4776e6, #8e54e9); color: #fff; }
+        .btn-lyrics { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; }
+        .btn-reset  { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1a1a2e; }
+        .btn-styles { background: linear-gradient(135deg, #43e97b, #38f9d7); color: #1a1a2e; }
+        .btn-title  { background: linear-gradient(135deg, #fa709a, #fee140); color: #1a1a2e; }
+        .btn-gemini {
+            background: linear-gradient(135deg, #1a73e8 0%, #7c3aed 100%);
+            color: #fff;
+            position: relative;
+        }
+        .btn-gemini::after {
+            content: '↗';
+            font-size: 0.75rem;
+            margin-left: 2px;
+            opacity: 0.8;
+        }
+
+        /* ── Guide ── */
+        .guide-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .guide-list { font-size: 0.87rem; line-height: 1.95; color: rgba(255,255,255,0.78); padding-left: 17px; }
+        .guide-formula {
+            background: rgba(0,0,0,0.28);
+            padding: 13px 16px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            line-height: 1.85;
+            color: #a0d8ef;
+            font-family: 'Courier New', monospace;
+            margin-top: 8px;
+        }
+        .guide-note { font-size: 0.8rem; color: rgba(255,255,255,0.45); margin-top: 11px; line-height: 1.75; }
+        .guide-sub { font-size: 0.88rem; font-weight: 700; color: #667eea; margin-bottom: 8px; }
+
+        /* ── Hint text ── */
+        .hint { font-size: 0.8rem; color: rgba(255,255,255,0.38); margin-bottom: 13px; line-height: 1.6; }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed;
+            top: 22px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-110px);
+            opacity: 0;
+            transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.28s ease;
+            z-index: 9999;
+            padding: 14px 34px;
+            border-radius: 50px;
+            font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+            font-weight: 700;
+            font-size: 0.97rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+            pointer-events: none;
+            box-shadow: 0 10px 36px rgba(0,0,0,0.35);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-copy  { background: linear-gradient(135deg, #11998e, #38ef7d); color: #fff; }
+        .toast-reset { background: linear-gradient(135deg, #f7971e, #ffd200); color: #1a1a2e; }
+        .toast-warn  { background: linear-gradient(135deg, #f5576c, #f093fb); color: #fff; }
+        .toast-icon  { font-size: 1.2rem; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1000px) {
+            .main-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 660px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .template-grid { grid-template-columns: repeat(4, 1fr); }
+            .guide-grid { grid-template-columns: 1fr; }
+            .mode-btn { padding: 10px 24px; font-size: 0.9rem; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ══ Header ══ -->
+    <div class="header">
+        <h1>🎵 SUNO AI 音樂提示詞產生器</h1>
+        <p>選擇 Simple 或 Custom 模式，快速生成 SUNO AI 所需的提示詞</p>
+    </div>
+
+    <!-- ══ Mode Switcher ══ -->
+    <div class="mode-switcher">
+        <button class="mode-btn active" onclick="setMode('simple')">🎵 Simple 模式</button>
+        <button class="mode-btn"        onclick="setMode('custom')">🎨 Custom 模式</button>
+    </div>
+    <div class="mode-desc" id="modeDesc">
+        使用預設模板與選項自動生成風格提示詞，填入免費版的 <strong>Style of Music</strong> 欄位
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SIMPLE MODE  (左：模板+選項 / 中：歌詞 / 右：輸出)
+    ══════════════════════════════════════════ -->
+    <div id="simpleMode" class="main-grid">
+
+        <!-- ── LEFT：選擇模板 + 自訂選項 ── -->
+        <div class="card">
+            <div class="card-title">選擇音樂模板</div>
+            <div class="template-grid">
+                <button class="template-btn" onclick="selectTemplate(this,'pop')">
+                    <span class="emoji">🎵</span>流行音樂
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'rock')">
+                    <span class="emoji">🎸</span>搖滾音樂
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'edm')">
+                    <span class="emoji">🎹</span>電子舞曲
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'jazz')">
+                    <span class="emoji">🎷</span>爵士藍調
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'classical')">
+                    <span class="emoji">🎻</span>古典管弦
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'folk')">
+                    <span class="emoji">🪕</span>民謠鄉村
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'hiphop')">
+                    <span class="emoji">🎤</span>嘻哈說唱
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'ambient')">
+                    <span class="emoji">🌙</span>氛圍音樂
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'anime')">
+                    <span class="emoji">🌸</span>動漫風格
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'cinematic')">
+                    <span class="emoji">🎬</span>電影配樂
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'drama_op')">
+                    <span class="emoji">📺</span>戲劇 OP
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'drama_ed')">
+                    <span class="emoji">🌃</span>戲劇 ED
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'synthwave')">
+                    <span class="emoji">👾</span>賽博龐克
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'rnb')">
+                    <span class="emoji">🍷</span>R&B 靈魂
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'metal')">
+                    <span class="emoji">🤘</span>重金屬
+                </button>
+                <button class="template-btn" onclick="selectTemplate(this,'bossa_nova')">
+                    <span class="emoji">🏖️</span>巴薩諾瓦
+                </button>
+            </div>
+
+            <div class="divider"></div>
+            <div class="card-title" style="font-size:0.95rem; margin-bottom:12px;">自訂選項</div>
+
+            <div class="option-group">
+                <label class="option-label">情緒氛圍</label>
+                <select class="option-select" id="mood" onchange="updatePrompt()">
+                    <option value="">請選擇情緒</option>
+                    <optgroup label="正面">
+                        <option value="upbeat, joyful, energetic">歡快振奮</option>
+                        <option value="cheerful, lively, vibrant">輕快活潑</option>
+                        <option value="euphoric, euphoric, exciting">歡欣喜悅</option>
+                    </optgroup>
+                    <optgroup label="感傷">
+                        <option value="melancholic, bittersweet, nostalgic">憂鬱感傷</option>
+                        <option value="sad, somber, emotional">悲傷沉重</option>
+                        <option value="wistful, longing, tender">悵惘思念</option>
+                    </optgroup>
+                    <optgroup label="浪漫">
+                        <option value="romantic, warm, tender">浪漫溫暖</option>
+                        <option value="dreamy, intimate, sensual">夢幻親密</option>
+                        <option value="passionate, intense, fiery">激情熱烈</option>
+                    </optgroup>
+                    <optgroup label="史 वैभव">
+                        <option value="epic, majestic, triumphant">史詩壯闊</option>
+                        <option value="powerful, anthemic, bold">有力激昂</option>
+                        <option value="dramatic, cinematic, orchestral">電影史詩</option>
+                    </optgroup>
+                    <optgroup label="神秘">
+                        <option value="mysterious, dark, eerie">神秘黑暗</option>
+                        <option value="haunting, ominous, ethereal">空靈詭譎</option>
+                        <option value="ambient, atmospheric, meditative">氛圍冥想</option>
+                    </optgroup>
+                    <optgroup label="輕鬆">
+                        <option value="relaxing, peaceful, serene">放鬆寧靜</option>
+                        <option value="chill, laid-back, mellow">慵懶愜意</option>
+                        <option value="lo-fi, cozy, nostalgic">Lo-Fi 舒適</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">節奏速度</label>
+                <select class="option-select" id="tempo" onchange="updatePrompt()">
+                    <option value="">請選擇速度</option>
+                    <option value="slow, 60-80 bpm, adagio">慢板 (60-80 BPM)</option>
+                    <option value="moderate, 80-100 bpm, andante">中板 (80-100 BPM)</option>
+                    <option value="moderate-fast, 100-120 bpm, moderato">中快板 (100-120 BPM)</option>
+                    <option value="fast, 120-150 bpm, allegro">快板 (120-150 BPM)</option>
+                    <option value="very fast, 150-200 bpm, presto">急板 (150-200 BPM)</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">人聲類型</label>
+                <select class="option-select" id="vocal" onchange="updatePrompt()">
+                    <option value="">請選擇人聲</option>
+                    <option value="female vocals, clear, bright tone">女聲・清亮</option>
+                    <option value="female vocals, warm, emotional">女聲・溫暖</option>
+                    <option value="male vocals, deep, resonant">男聲・低沉</option>
+                    <option value="male vocals, raspy, soulful">男聲・沙啞</option>
+                    <option value="duet vocals, male and female">男女合唱</option>
+                    <option value="choir, backing vocals, harmony">合唱團</option>
+                    <option value="instrumental, no vocals">純音樂</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">年代風格</label>
+                <select class="option-select" id="era" onchange="updatePrompt()">
+                    <option value="">請選擇年代</option>
+                    <option value="modern, contemporary, 2024 sound">現代風格</option>
+                    <option value="80s synthpop, retro, new wave">80年代 Synthpop</option>
+                    <option value="90s R&B, 90s pop, grunge">90年代流行</option>
+                    <option value="2000s pop punk, early 2000s">2000年代</option>
+                    <option value="70s funk, disco, classic rock">70年代 Funk</option>
+                    <option value="vintage, retro, classic feel">復古經典</option>
+                </select>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">主要樂器（可多選）</label>
+                <div class="tag-cloud">
+                    <span class="tag" onclick="toggleTag(this,'piano','鋼琴')">鋼琴</span>
+                    <span class="tag" onclick="toggleTag(this,'guitar','吉他')">吉他</span>
+                    <span class="tag" onclick="toggleTag(this,'electric guitar','電吉他')">電吉他</span>
+                    <span class="tag" onclick="toggleTag(this,'drums','鼓組')">鼓組</span>
+                    <span class="tag" onclick="toggleTag(this,'bass','貝斯')">貝斯</span>
+                    <span class="tag" onclick="toggleTag(this,'strings','弦樂')">弦樂</span>
+                    <span class="tag" onclick="toggleTag(this,'synth','合成器')">合成器</span>
+                    <span class="tag" onclick="toggleTag(this,'saxophone','薩克斯風')">薩克斯風</span>
+                    <span class="tag" onclick="toggleTag(this,'violin','小提琴')">小提琴</span>
+                    <span class="tag" onclick="toggleTag(this,'orchestra','管弦樂')">管弦樂</span>
+                    <span class="tag" onclick="toggleTag(this,'synth lead','合成器主奏')">合成器主奏</span>
+                    <span class="tag" onclick="toggleTag(this,'brass','銅管')">銅管</span>
+                </div>
+            </div>
+
+            <div class="option-group">
+                <label class="option-label">混音效果（可多選）</label>
+                <div class="tag-cloud">
+                    <span class="tag" onclick="toggleTag(this,'clean production','乾淨製作')">乾淨製作</span>
+                    <span class="tag" onclick="toggleTag(this,'reverb-heavy','豐富殘響')">豐富殘響</span>
+                    <span class="tag" onclick="toggleTag(this,'lo-fi','Lo-Fi')">Lo-Fi</span>
+                    <span class="tag" onclick="toggleTag(this,'warm production','溫暖音色')">溫暖音色</span>
+                    <span class="tag" onclick="toggleTag(this,'punchy drums','強悍鼓組')">強悍鼓組</span>
+                    <span class="tag" onclick="toggleTag(this,'wide stereo','寬廣立體聲')">寬廣立體聲</span>
+                    <span class="tag" onclick="toggleTag(this,'vintage','復古處理')">復古處理</span>
+                    <span class="tag" onclick="toggleTag(this,'modern','現代製作')">現代製作</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── CENTER：歌詞（可選） ── -->
+        <div class="card">
+            <div class="card-title">歌詞 Lyrics</div>
+
+            <label class="lyrics-checkbox-row" for="useLyrics">
+                <input type="checkbox" id="useLyrics" onchange="toggleLyrics()">
+                <span>包含歌詞段落範本</span>
+            </label>
+
+            <div id="lyricsSection" class="hidden">
+                <textarea class="lyrics-area" id="lyricsText">[Intro]
+（純音樂前奏）
+
+[Verse 1]
+在這裡填入主歌歌詞
+描述故事場景與情緒
+每行建議 8-12 個字
+
+[Pre-Chorus]
+情緒推進的過渡段落
+為副歌做準備
+
+[Chorus]
+副歌曲目 最易記憶
+重複性高 情感強烈
+這裡放最重要的旋律鉤子
+
+[Verse 2]
+故事延續 加入新細節
+與第一段主歌呼應但有變化
+
+[Chorus]
+（重複副歌或新版本）
+
+[Bridge]
+提供對比與轉折
+音樂或情緒上的改變
+
+[Chorus × 2]
+最後副歌加強印象
+
+[Outro]
+（音樂漸弱結束）</textarea>
+                <div class="btn-group">
+                    <button class="action-btn btn-lyrics" onclick="copySimpleLyrics()">📋 複製歌詞</button>
+                    <button class="action-btn btn-gemini" onclick="window.open('https://gemini.google.com/gem/11-86qKv4TLDafPxdkM6LzLsCG1Mu1qPk?usp=sharing','_blank')">✨ Gemini 歌詞助手</button>
+                </div>
+            </div>
+
+            <div id="lyricsPlaceholder">
+                <p class="lang-section-hint">未使用歌詞範本時，可指定演唱語言（最多 3 種），選擇後自動加入提示詞</p>
+                <div class="lang-grid">
+                    <button class="lang-btn" onclick="toggleLang(this,'mandarin')">🇹🇼 國語</button>
+                    <button class="lang-btn" onclick="toggleLang(this,'english')">🇺🇸 英文</button>
+                    <button class="lang-btn" onclick="toggleLang(this,'japanese')">🇯🇵 日文</button>
+                    <button class="lang-btn" onclick="toggleLang(this,'korean')">🇰🇷 韓語</button>
+                    <button class="lang-btn" onclick="toggleLang(this,'other')" style="grid-column: 1 / -1;">🌐 其他語言</button>
+                </div>
+                <div id="otherLangInput" class="hidden">
+                    <input type="text" class="lang-input" id="otherLangText"
+                           placeholder="輸入語言名稱（英文），例：French、Spanish、Thai"
+                           oninput="updateOtherLang()">
+                </div>
+                <p class="lang-max-hint" id="langMaxHint">⚠ 已達 3 種上限，請先取消已選項目</p>
+
+                <div class="divider" style="margin: 16px 0 13px;"></div>
+                <p class="theme-section-title">🎯 主題發想 Theme</p>
+                <p class="lang-section-hint" style="margin-bottom: 10px;">選擇範本或自訂主題（單選），自動加入提示詞</p>
+                <div class="theme-grid">
+                    <button class="theme-btn" onclick="selectTheme(this,'heartbreak')">💔 愛情失落</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'firstlove')">🌸 初戀甜蜜</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'longing')">🌙 思念遠方</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'hometown')">🏡 思鄉情懷</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'dreams')">⭐ 夢想追求</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'courage')">🔥 勵志奮鬥</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'friendship')">🤝 友情珍貴</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'family')">👨‍👩‍👧 家庭溫情</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'nature')">🌿 自然美景</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'youth')">🌟 青春記憶</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'celebration')">🎉 歡慶節日</button>
+                    <button class="theme-btn" onclick="selectTheme(this,'healing')">🌈 心靈療癒</button>
+                </div>
+                <input type="text" class="lang-input" id="customThemeInput"
+                       placeholder="✏️ 自訂主題，例：城市孤獨、海邊漫步..."
+                       oninput="updateCustomTheme()">
+            </div>
+        </div>
+
+        <!-- ── RIGHT：產生的提示詞 ── -->
+        <div class="card">
+            <div class="card-title">產生的提示詞</div>
+
+            <div class="btn-group top">
+                <button class="action-btn btn-en"    onclick="copyEnglish()">📋 複製英文提示詞</button>
+                <button class="action-btn btn-zh"    onclick="copyChinese()">📋 複製中文描述</button>
+                <button class="action-btn btn-reset" onclick="resetAll()">🔄 重置全部</button>
+            </div>
+
+            <div class="output-box">
+                <div class="output-label">STYLE OF MUSIC（英文，直接貼入 SUNO）</div>
+                <div class="output-text" id="outputEnglish">請選擇模板或自訂選項...</div>
+            </div>
+
+            <div class="output-box">
+                <div class="output-label">風格描述（中文參考）</div>
+                <div class="output-text" id="outputChinese">等待生成中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         CUSTOM MODE  (左：Lyrics / 中：Styles / 右：Song Title)
+    ══════════════════════════════════════════ -->
+    <div id="customMode" class="main-grid hidden">
+
+        <!-- ── LEFT：Lyrics ── -->
+        <div class="card">
+            <div class="card-title">歌詞 Lyrics</div>
+            <p class="hint">填寫完整歌詞後複製，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Lyrics</strong> 欄位</p>
+            <textarea class="lyrics-area" id="customLyrics" style="min-height:380px;">[Intro]
+（純音樂前奏）
+
+[Verse 1]
+在這裡填入主歌歌詞
+描述故事場景與情緒
+每行建議 8-12 個字
+
+[Pre-Chorus]
+情緒推進的過渡段落
+為副歌做準備
+
+[Chorus]
+副歌曲目 最易記憶
+重複性高 情感強烈
+這裡放最重要的旋律鉤子
+
+[Verse 2]
+故事延續 加入新細節
+與第一段主歌呼應但有變化
+
+[Chorus]
+（重複副歌或新版本）
+
+[Bridge]
+提供對比與轉折
+音樂或情緒上的改變
+
+[Chorus × 2]
+最後副歌加強印象
+
+[Outro]
+（音樂漸弱結束）</textarea>
+            <div class="btn-group">
+                <button class="action-btn btn-lyrics" onclick="copyCustomLyrics()">📋 複製歌詞</button>
+                <button class="action-btn btn-gemini" onclick="window.open('https://gemini.google.com/gem/11-86qKv4TLDafPxdkM6LzLsCG1Mu1qPk?usp=sharing','_blank')">✨ Gemini 歌詞助手</button>
+            </div>
+        </div>
+
+        <!-- ── CENTER：Styles ── -->
+        <div class="card">
+            <div class="card-title">風格描述 Styles</div>
+            <p class="hint">描述音樂風格、情緒、樂器與節奏，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Style of Music</strong> 欄位</p>
+            <textarea class="styles-textarea" id="customStyles"
+                placeholder="範例：&#10;Mandarin pop, upbeat and catchy, piano-driven, soft strings, 120 bpm, female vocals, modern production&#10;&#10;或：&#10;rock, distorted electric guitar, powerful drums, raspy male vocals, 130 bpm, energetic and raw, classic rock feel"></textarea>
+            <div class="btn-group">
+                <button class="action-btn btn-styles" onclick="copyCustomStyles()">📋 複製風格描述</button>
+            </div>
+        </div>
+
+        <!-- ── RIGHT：Song Title ── -->
+        <div class="card">
+            <div class="card-title">歌曲標題 Song Title</div>
+            <p class="hint">輸入歌名，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Title</strong> 欄位</p>
+            <input type="text" class="title-input" id="customTitle" placeholder="輸入歌曲標題...">
+
+            <div class="option-group">
+                <label class="option-label">靈感速選 — 點擊套用</label>
+                <div class="tag-cloud">
+                    <span class="tag title-tag" onclick="setTitle('星空下的約定')">星空下的約定</span>
+                    <span class="tag title-tag" onclick="setTitle('不滅的火焰')">不滅的火焰</span>
+                    <span class="tag title-tag" onclick="setTitle('回憶的味道')">回憶的味道</span>
+                    <span class="tag title-tag" onclick="setTitle('破曉時分')">破曉時分</span>
+                    <span class="tag title-tag" onclick="setTitle('漂流')">漂流</span>
+                    <span class="tag title-tag" onclick="setTitle('心之所向')">心之所向</span>
+                    <span class="tag title-tag" onclick="setTitle('最後的夏天')">最後的夏天</span>
+                    <span class="tag title-tag" onclick="setTitle('霓虹雨夜')">霓虹雨夜</span>
+                    <span class="tag title-tag" onclick="setTitle('無聲的告白')">無聲的告白</span>
+                    <span class="tag title-tag" onclick="setTitle('流光似夢')">流光似夢</span>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="action-btn btn-title" onclick="copyCustomTitle()">📋 複製標題</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ 提示詞結構指南 ══ -->
+    <div class="card" style="margin-top: 0;">
+        <div class="card-title">提示詞結構指南</div>
+        <div class="guide-grid">
+            <div>
+                <p class="guide-sub">六大核心要素</p>
+                <ul class="guide-list">
+                    <li><strong>風格標籤 (30%)</strong> — 核心流派如 Pop, Rock, EDM</li>
+                    <li><strong>情緒氛圍 (20%)</strong> — upbeat, melancholic, romantic</li>
+                    <li><strong>樂器配置 (20%)</strong> — piano, strings, synth bass</li>
+                    <li><strong>節奏速度 (15%)</strong> — 120 bpm, syncopated, groovy</li>
+                    <li><strong>人聲特質 (10%)</strong> — female vocals, falsetto</li>
+                    <li><strong>混音效果 (5%)</strong> — reverb-heavy, clean production</li>
+                </ul>
+            </div>
+            <div>
+                <p class="guide-sub">基礎公式</p>
+                <div class="guide-formula">
+                    [風格], [情緒], [樂器], [節奏], [人聲], [效果]
+                </div>
+                <p class="guide-note">
+                    <strong style="color:#a0d8ef;">Simple 模式</strong>：生成的英文提示詞 → 填入 Style of Music<br>
+                    <strong style="color:#a0d8ef;">Custom 模式</strong>：分別填入 Lyrics、Style of Music、Title 三個欄位
+                </p>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Toast 通知 -->
+<div id="toast" class="toast toast-copy">
+    <span class="toast-icon" id="toastIcon">✓</span>
+    <span id="toastMsg">已複製到剪貼簿</span>
+</div>
+
+<script>
+    // ── 模板資料 ──
+    const templates = {
+        pop: {
+            en: 'pop, upbeat and catchy, piano-driven, soft strings, electronic synth, 100-120 bpm, female vocals, clear and bright tone, modern production, verse-chorus structure',
+            zh: '流行音樂，歡快且朗朗上口，鋼琴主奏，柔和弦樂，電子合成器，100-120BPM，女聲，清亮音色，現代製作'
+        },
+        rock: {
+            en: 'rock, alternative rock, distorted electric guitar, powerful drum kit, raspy male vocals, driving 130 bpm, energetic and raw, anthemic chorus, classic rock feel',
+            zh: '搖滾，另類搖滾，破音電吉他，強力鼓組，沙啞男聲，130BPM，強烈原始，聖歌式副歌，經典搖滾感'
+        },
+        edm: {
+            en: 'EDM, electronic dance music, synth lead, four-on-the-floor kick, build and drop structure, 128-150 bpm, euphoric, pulsing bass, festival anthem, clean mixing',
+            zh: '電子舞曲，合成器主奏，四拍踢鼓，建立爆發結構，128-150BPM，歡欣喜悅，脈動低音，節慶讚歌，清晰混音'
+        },
+        jazz: {
+            en: 'smooth jazz, saxophone lead, piano accompaniment, upright bass, jazz brushes, slow 75 bpm, mellow and sultry, midnight bar atmosphere, instrumental',
+            zh: '平滑爵士，薩克斯風主奏，鋼琴伴奏，低音提琴，爵士鼓刷，慢板75BPM，柔和迷人，午夜酒吧氛圍，純音樂'
+        },
+        classical: {
+            en: 'neo-classical piano solo, melancholic and romantic, slow adagio, rich pedal reverb, cinematic, minimal and expressive, instrumental',
+            zh: '新古典主義鋼琴獨奏，憂鬱浪漫，慢板，豐富踏板殘響，電影感，簡約而富有表現力，純音樂'
+        },
+        folk: {
+            en: 'folk, indie folk, acoustic guitar, warm and nostalgic, storytelling vocals, gentle harmonica accents, moderate tempo, autumn and homesick feel, clean and simple production',
+            zh: '民謠，獨立民謠，原聲吉他，溫暖懷舊，講故事人聲，柔和口琴點綴，中板，秋日思鄉感，乾淨簡單製作'
+        },
+        hiphop: {
+            en: 'hip-hop, trap beat, 808 bass, rolling hi-hats, melodic piano sample, dark atmospheric mood, 70-90 bpm, modern trap production, instrumental',
+            zh: '嘻哈，陷阱節拍，808低音，滾動高帽，旋律鋼琴採樣，黑暗氛圍，70-90BPM，現代陷阱製作，純音樂'
+        },
+        ambient: {
+            en: 'lo-fi, chill, study music, warm piano melody, soft vinyl crackle, gentle jazz drums, slow 85 bpm, rainy coffee shop atmosphere, instrumental, relaxing',
+            zh: 'Lo-Fi，慵懶，讀書音樂，溫暖鋼琴旋律，柔和黑膠雜音，輕柔爵士鼓，慢板85BPM，雨天咖啡廳氛圍，純音樂，放鬆'
+        },
+        anime: {
+            en: 'J-pop, anime opening, high energy, fast tempo, electric guitar, bright synth, passionate vocals, 130-150 bpm, melodic, uplifting',
+            zh: 'J-pop，動漫片頭曲，高能量，快板，電吉他，明亮合成器，充滿激情的人聲，130-150BPM，旋律優美，振奮人心'
+        },
+        cinematic: {
+            en: 'cinematic film score, epic orchestral, massive brass, soaring strings, dramatic percussion, building tension, Hans Zimmer style, instrumental',
+            zh: '電影配樂，史詩管弦樂，宏大銅管，高昂弦樂，戲劇性打擊樂，張力遞增，Hans Zimmer風格，純音樂'
+        },
+        drama_op: {
+            en: 'K-pop ballad, TV drama opening, emotional pop, piano and strings building up, clear emotional vocals, dramatic chorus, 80-100 bpm',
+            zh: 'K-pop抒情，電視劇片頭，情感流行，鋼琴與弦樂層層遞進，清澈充滿情感的人聲，戲劇性副歌，80-100BPM'
+        },
+        drama_ed: {
+            en: 'acoustic ballad, TV drama ending, melancholic, intimate, fingerstyle guitar, soft delicate vocals, slow tempo, fading out',
+            zh: '原聲抒情，電視劇片尾，憂鬱感傷，親密氛圍，指彈吉他，輕柔細膩的人聲，慢板，漸弱結尾'
+        },
+        synthwave: {
+            en: 'synthwave, cyberpunk, 80s retro-futurism, driving synth bass, electronic drum machine, neon atmosphere, 110-130 bpm, instrumental',
+            zh: '合成器微波，賽博龐克，80年代復古未來主義，強烈合成器貝斯，電子鼓機，霓虹氛圍，110-130BPM，純音樂'
+        },
+        rnb: {
+            en: 'R&B, soul, smooth groove, electric piano, deep bass, sultry vocals, vocal runs, 70-90 bpm, modern R&B production',
+            zh: 'R&B，靈魂樂，平滑律動，電鋼琴，深沉貝斯，性感人聲，人聲轉音，70-90BPM，現代R&B製作'
+        },
+        metal: {
+            en: 'heavy metal, metalcore, heavily distorted guitars, blast beats, aggressive screaming and clean vocals, dark and heavy, 140-180 bpm',
+            zh: '重金屬，金屬蕊，重度破音吉他，疾速鼓擊，侵略性吼腔與清腔交替，黑暗沉重，140-180BPM'
+        },
+        bossa_nova: {
+            en: 'bossa nova, brazilian jazz, acoustic guitar, soft percussion, relaxed, breezy, 70-90 bpm, soothing vocals',
+            zh: '巴薩諾瓦，巴西爵士，原聲吉他，輕柔打擊樂，輕鬆，微風感，70-90BPM，舒緩人聲'
+        }
+    };
+
+    // 中文對照表
+    const moodZh = {
+        'upbeat, joyful, energetic': '歡快振奮',
+        'cheerful, lively, vibrant': '輕快活潑',
+        'euphoric, euphoric, exciting': '歡欣喜悅',
+        'melancholic, bittersweet, nostalgic': '憂鬱感傷',
+        'sad, somber, emotional': '悲傷沉重',
+        'wistful, longing, tender': '悵惘思念',
+        'romantic, warm, tender': '浪漫溫暖',
+        'dreamy, intimate, sensual': '夢幻親密',
+        'passionate, intense, fiery': '激情熱烈',
+        'epic, majestic, triumphant': '史詩壯闊',
+        'powerful, anthemic, bold': '有力激昂',
+        'dramatic, cinematic, orchestral': '電影史詩',
+        'mysterious, dark, eerie': '神秘黑暗',
+        'haunting, ominous, ethereal': '空靈詭譎',
+        'ambient, atmospheric, meditative': '氛圍冥想',
+        'relaxing, peaceful, serene': '放鬆寧靜',
+        'chill, laid-back, mellow': '慵懶愜意',
+        'lo-fi, cozy, nostalgic': 'Lo-Fi 舒適'
+    };
+    const tempoZh = {
+        'slow, 60-80 bpm, adagio': '慢板 60-80BPM',
+        'moderate, 80-100 bpm, andante': '中板 80-100BPM',
+        'moderate-fast, 100-120 bpm, moderato': '中快板 100-120BPM',
+        'fast, 120-150 bpm, allegro': '快板 120-150BPM',
+        'very fast, 150-200 bpm, presto': '急板 150-200BPM'
+    };
+    const vocalZh = {
+        'female vocals, clear, bright tone': '女聲・清亮',
+        'female vocals, warm, emotional': '女聲・溫暖',
+        'male vocals, deep, resonant': '男聲・低沉',
+        'male vocals, raspy, soulful': '男聲・沙啞',
+        'duet vocals, male and female': '男女合唱',
+        'choir, backing vocals, harmony': '合唱團',
+        'instrumental, no vocals': '純音樂'
+    };
+    const eraZh = {
+        'modern, contemporary, 2024 sound': '現代風格',
+        '80s synthpop, retro, new wave': '80年代 Synthpop',
+        '90s R&B, 90s pop, grunge': '90年代流行',
+        '2000s pop punk, early 2000s': '2000年代',
+        '70s funk, disco, classic rock': '70年代 Funk',
+        'vintage, retro, classic feel': '復古經典'
+    };
+
+    let selectedTemplate = '';
+    let selectedTags = [];
+    let selectedLangs = []; // { key, en, zh }
+    let selectedTheme = null; // { en, zh }
+
+    const themePresets = {
+        heartbreak:  { en: 'about heartbreak and lost love',           zh: '主題：愛情失落' },
+        firstlove:   { en: 'about sweet first love and romance',        zh: '主題：初戀甜蜜' },
+        longing:     { en: 'about longing and missing someone',         zh: '主題：思念遠方' },
+        hometown:    { en: 'about missing home and nostalgia',          zh: '主題：思鄉情懷' },
+        dreams:      { en: 'about chasing dreams and ambition',         zh: '主題：夢想追求' },
+        courage:     { en: 'about courage and overcoming challenges',   zh: '主題：勵志奮鬥' },
+        friendship:  { en: 'about friendship and companionship',        zh: '主題：友情珍貴' },
+        family:      { en: 'about family love and warmth',              zh: '主題：家庭溫情' },
+        nature:      { en: 'about the beauty of nature and seasons',    zh: '主題：自然美景' },
+        youth:       { en: 'about youth and precious memories',         zh: '主題：青春記憶' },
+        celebration: { en: 'about joy and celebration',                 zh: '主題：歡慶節日' },
+        healing:     { en: 'about healing and finding inner peace',     zh: '主題：心靈療癒' },
+    };
+
+    const langData = {
+        mandarin: { en: 'Mandarin Chinese lyrics', zh: '國語歌詞' },
+        english:  { en: 'English lyrics',          zh: '英文歌詞' },
+		japanese: { en: 'Japanese lyrics (use Kana/Kanji, strictly NO Romaji)', zh: '日文歌詞（使用日文文字，禁用羅馬拼音）' },
+        korean:   { en: 'Korean lyrics',            zh: '韓語歌詞' },
+        other:    { en: 'other language lyrics',    zh: '其他語言歌詞' }
+    };
+
+    // ── 模式切換 ──
+    function setMode(mode) {
+        const descs = {
+            simple: '使用預設模板與選項自動生成風格提示詞，填入免費版的 <strong>Style of Music</strong> 欄位',
+            custom: '分別填寫歌詞、風格描述、歌曲標題，逐一貼入 SUNO Custom 模式的 <strong>Lyrics</strong>、<strong>Style</strong>、<strong>Title</strong> 三個欄位'
+        };
+        document.querySelectorAll('.mode-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', (mode === 'simple' && i === 0) || (mode === 'custom' && i === 1));
+        });
+        document.getElementById('modeDesc').innerHTML = descs[mode];
+        document.getElementById('simpleMode').classList.toggle('hidden', mode !== 'simple');
+        document.getElementById('customMode').classList.toggle('hidden', mode !== 'custom');
+    }
+
+    // ── Simple 模式：模板與選項 ──
+    function selectTemplate(el, type) {
+        document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedTemplate = type;
+        updatePrompt();
+    }
+
+    function toggleTag(el, enTag, zhTag) {
+        el.classList.toggle('selected');
+        if (el.classList.contains('selected')) {
+            if (!selectedTags.find(t => t.en === enTag)) selectedTags.push({ en: enTag, zh: zhTag });
+        } else {
+            selectedTags = selectedTags.filter(t => t.en !== enTag);
+        }
+        updatePrompt();
+    }
+
+    function updatePrompt() {
+        let enParts = [], zhParts = [];
+
+        if (selectedTemplate && templates[selectedTemplate]) {
+            enParts.push(templates[selectedTemplate].en);
+            zhParts.push(templates[selectedTemplate].zh);
+        } else {
+            enParts.push('pop, modern, upbeat');
+            zhParts.push('流行音樂，現代風格，歡快');
+        }
+
+        const mood = document.getElementById('mood').value;
+        if (mood) { enParts.push(mood); if (moodZh[mood]) zhParts.push(moodZh[mood]); }
+
+        const tempo = document.getElementById('tempo').value;
+        if (tempo) { enParts.push(tempo); if (tempoZh[tempo]) zhParts.push(tempoZh[tempo]); }
+
+        const vocal = document.getElementById('vocal').value;
+        if (vocal) { enParts.push(vocal); if (vocalZh[vocal]) zhParts.push(vocalZh[vocal]); }
+
+        const era = document.getElementById('era').value;
+        if (era) { enParts.push(era); if (eraZh[era]) zhParts.push(eraZh[era]); }
+
+        if (selectedTags.length > 0) {
+            enParts.push(selectedTags.map(t => t.en).join(', '));
+            zhParts.push(selectedTags.map(t => t.zh).join('、'));
+        }
+
+        // 演唱語言（僅在未勾選歌詞時生效）
+        if (!document.getElementById('useLyrics').checked && selectedLangs.length > 0) {
+            const validLangs = selectedLangs.filter(l => l.en);
+            if (validLangs.length > 0) {
+                enParts.push(validLangs.map(l => l.en).join(', '));
+                zhParts.push(validLangs.map(l => l.zh).join('、'));
+            }
+        }
+
+        // 主題（僅在未勾選歌詞時生效）
+        if (!document.getElementById('useLyrics').checked && selectedTheme) {
+            enParts.push(selectedTheme.en);
+            zhParts.push(selectedTheme.zh);
+        }
+
+        document.getElementById('outputEnglish').textContent = enParts.join(', ');
+        document.getElementById('outputChinese').textContent = zhParts.join('，');
+    }
+
+    function toggleLyrics() {
+        const checked = document.getElementById('useLyrics').checked;
+        document.getElementById('lyricsSection').classList.toggle('hidden', !checked);
+        document.getElementById('lyricsPlaceholder').classList.toggle('hidden', checked);
+        updatePrompt();
+    }
+
+    // ── 語言選擇器 ──
+    function toggleLang(el, key) {
+        if (el.classList.contains('disabled')) return;
+        const isSelected = el.classList.contains('selected');
+
+        if (!isSelected && selectedLangs.length >= 3) {
+            document.getElementById('langMaxHint').classList.add('show');
+            showToast('最多選擇 3 種語言', 'warn');
+            return;
+        }
+
+        el.classList.toggle('selected');
+
+        if (el.classList.contains('selected')) {
+            selectedLangs.push({ key, ...langData[key] });
+            if (key === 'other') document.getElementById('otherLangInput').classList.remove('hidden');
+        } else {
+            selectedLangs = selectedLangs.filter(l => l.key !== key);
+            if (key === 'other') {
+                document.getElementById('otherLangInput').classList.add('hidden');
+                document.getElementById('otherLangText').value = '';
+            }
+        }
+
+        document.getElementById('langMaxHint').classList.toggle('show', selectedLangs.length >= 3);
+        updateLangButtonStates();
+        updatePrompt();
+    }
+
+    function updateLangButtonStates() {
+        const atMax = selectedLangs.length >= 3;
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            if (!btn.classList.contains('selected')) btn.classList.toggle('disabled', atMax);
+        });
+    }
+
+    function updateOtherLang() {
+        const val = document.getElementById('otherLangText').value.trim();
+        const idx = selectedLangs.findIndex(l => l.key === 'other');
+        if (idx !== -1) {
+            selectedLangs[idx].en = val ? `${val} lyrics` : '';
+            selectedLangs[idx].zh = val ? `${val}歌詞` : '';
+        }
+        updatePrompt();
+    }
+
+    // ── 主題選擇器 ──
+    function selectTheme(el, key) {
+        const isSelected = el.classList.contains('selected');
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById('customThemeInput').value = '';
+
+        if (!isSelected) {
+            el.classList.add('selected');
+            selectedTheme = themePresets[key];
+        } else {
+            selectedTheme = null;
+        }
+        updatePrompt();
+    }
+
+    function updateCustomTheme() {
+        const val = document.getElementById('customThemeInput').value.trim();
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('selected'));
+        selectedTheme = val ? { en: `about ${val}`, zh: `主題：${val}` } : null;
+        updatePrompt();
+    }
+
+    // ── Custom 模式：Song Title 速選 ──
+    function setTitle(title) {
+        document.getElementById('customTitle').value = title;
+    }
+
+    // ── 複製功能 ──
+    function copyEnglish() {
+        copy(document.getElementById('outputEnglish').textContent, '英文提示詞已複製到剪貼簿');
+    }
+    function copyChinese() {
+        copy(document.getElementById('outputChinese').textContent, '中文描述已複製到剪貼簿');
+    }
+    function copySimpleLyrics() {
+        copy(document.getElementById('lyricsText').value, '歌詞已複製到剪貼簿');
+    }
+    function copyCustomLyrics() {
+        copy(document.getElementById('customLyrics').value, '歌詞已複製到剪貼簿');
+    }
+    function copyCustomStyles() {
+        const text = document.getElementById('customStyles').value.trim();
+        if (!text) { showToast('請先輸入風格描述', 'warn'); return; }
+        copy(text, '風格描述已複製到剪貼簿');
+    }
+    function copyCustomTitle() {
+        const text = document.getElementById('customTitle').value.trim();
+        if (!text) { showToast('請先輸入歌曲標題', 'warn'); return; }
+        copy(text, '歌曲標題已複製到剪貼簿');
+    }
+
+    function copy(text, msg) {
+        // 使用 document.execCommand('copy') 來避免 iFrame 內 navigator.clipboard 權限被阻擋的問題
+        try {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // 將 textarea 隱藏，避免影響畫面配置
+            textArea.style.position = "fixed";
+            textArea.style.top = "-9999px";
+            textArea.style.left = "-9999px";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showToast(msg, 'copy');
+            } else {
+                showToast('複製失敗，請手動複製', 'warn');
+            }
+            
+            document.body.removeChild(textArea);
+        } catch (err) {
+            console.error('無法複製文字:', err);
+            showToast('複製發生錯誤，請手動複製', 'warn');
+        }
+    }
+
+    function resetAll() {
+        selectedTemplate = '';
+        selectedTags = [];
+        selectedLangs = [];
+        document.querySelectorAll('.template-btn').forEach(btn => btn.classList.remove('selected'));
+        document.querySelectorAll('#simpleMode .tag').forEach(tag => tag.classList.remove('selected'));
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('selected', 'disabled'));
+        ['mood','tempo','vocal','era'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('outputEnglish').textContent = '請選擇模板或自訂選項...';
+        document.getElementById('outputChinese').textContent = '等待生成中...';
+        document.getElementById('useLyrics').checked = false;
+        document.getElementById('lyricsSection').classList.add('hidden');
+        document.getElementById('lyricsPlaceholder').classList.remove('hidden');
+        document.getElementById('otherLangInput').classList.add('hidden');
+        document.getElementById('otherLangText').value = '';
+        document.getElementById('langMaxHint').classList.remove('show');
+        selectedTheme = null;
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('selected'));
+        document.getElementById('customThemeInput').value = '';
+        showToast('已重置所有選項', 'reset');
+    }
+
+    // ── Toast ──
+    let toastTimer = null;
+    function showToast(msg, type) {
+        const toast = document.getElementById('toast');
+        const icons = { copy: '✓', reset: '🔄', warn: '⚠️' };
+        toast.className = 'toast toast-' + type;
+        document.getElementById('toastMsg').textContent = msg;
+        document.getElementById('toastIcon').textContent = icons[type] || '✓';
+        toast.classList.add('show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2300);
+    }
+</script>
+</body>
+</html>
