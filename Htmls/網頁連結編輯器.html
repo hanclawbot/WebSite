@@ -29,6 +29,12 @@
         }
         .icon-bounce { transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); }
         .cute-card:hover .icon-bounce { transform: scale(1.15) rotate(5deg); }
+        
+        /* 公告區專屬樣式 */
+        .announcement-box {
+            box-shadow: 0 15px 30px -5px rgba(234, 179, 8, 0.3);
+            border-left-width: 12px;
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden bg-gray-50">
@@ -42,9 +48,43 @@
             </button>
         </div>
         
-        <div class="p-6 border-b bg-gray-50">
-            <label class="block text-sm font-bold text-gray-700 mb-1">主標題</label>
-            <input type="text" id="pageTitle" value="學習資源" oninput="renderPreview()" class="w-full border p-2 rounded focus:ring-2 focus:ring-pink-300 outline-none">
+        <div class="p-6 border-b bg-gray-50 space-y-4">
+            <div>
+                <label class="block text-sm font-bold text-gray-700 mb-1">主標題</label>
+                <input type="text" id="pageTitle" value="學習資源" oninput="renderPreview()" class="w-full border p-2 rounded focus:ring-2 focus:ring-pink-300 outline-none">
+            </div>
+
+            <!-- 公告設定 -->
+            <div class="border-t pt-4">
+                <label class="flex items-center space-x-2 text-sm font-bold text-gray-700 mb-2 cursor-pointer">
+                    <input type="checkbox" id="showAnnouncement" onchange="toggleAnnouncement()" class="w-4 h-4 text-pink-500 focus:ring-pink-400 border-gray-300 rounded">
+                    <span>顯示公告說明區塊</span>
+                </label>
+                
+                <div id="announcementSettings" class="hidden space-y-3 mt-3 bg-white p-3 border rounded shadow-inner">
+                    <div class="flex gap-2">
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">顯示位置</label>
+                            <select id="announcementPosition" onchange="renderPreview()" class="w-full border p-2 text-sm rounded outline-none focus:ring-1 focus:ring-pink-300">
+                                <option value="top">連結上方</option>
+                                <option value="bottom">連結下方</option>
+                            </select>
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs text-gray-500 mb-1">文字對齊</label>
+                            <select id="announcementAlign" onchange="renderPreview()" class="w-full border p-2 text-sm rounded outline-none focus:ring-1 focus:ring-pink-300">
+                                <option value="text-center">置中對齊</option>
+                                <option value="text-left">靠左對齊</option>
+                                <option value="text-right">靠右對齊</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">公告內容</label>
+                        <textarea id="announcementText" oninput="renderPreview()" rows="3" class="w-full border p-2 text-sm rounded outline-none focus:ring-1 focus:ring-pink-300 resize-y">這裡是一段重要公告或說明文字。支援多行顯示，字體將會大大明顯！</textarea>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="linkEditor" class="flex-1 overflow-y-auto p-6 space-y-6">
@@ -62,14 +102,20 @@
     <main class="flex-1 h-full overflow-y-auto preview-container flex flex-col items-center py-16 px-6 relative">
         <div class="absolute top-4 right-6 text-pink-400 font-bold opacity-50 tracking-widest uppercase pointer-events-none">Live Preview</div>
         
-        <header class="mb-14 text-center">
+        <header class="mb-10 text-center w-full">
             <h1 id="previewTitle" class="text-4xl md:text-5xl font-black text-pink-500 tracking-wide drop-shadow-sm mb-3"></h1>
             <div class="h-2 w-24 bg-pink-300 rounded-full mx-auto"></div>
         </header>
 
+        <!-- 預留公告位置 (上方) -->
+        <div id="announcementTop" class="w-full max-w-7xl flex justify-center"></div>
+
         <div id="previewGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-7xl w-full">
             <!-- 動態產生預覽 -->
         </div>
+
+        <!-- 預留公告位置 (下方) -->
+        <div id="announcementBottom" class="w-full max-w-7xl flex justify-center"></div>
     </main>
 
 <script>
@@ -109,14 +155,26 @@
         rose: { bg: 'bg-rose-100', text: 'text-rose-500', hex: '#f43f5e' }
     };
 
-    // 初始狀態
     let links = [
         { id: generateId(), name: 'Scratch', url: 'https://scratch.mit.edu/', icon: 'puzzle', theme: 'orange' },
         { id: generateId(), name: 'Hour of AI', url: 'https://code.org/zh-Hant/hour-of-ai', icon: 'robot', theme: 'blue' }
     ];
 
+    let showAnnounce = false;
+
     function generateId() {
         return Math.random().toString(36).substr(2, 9);
+    }
+
+    function toggleAnnouncement() {
+        showAnnounce = document.getElementById('showAnnouncement').checked;
+        const settings = document.getElementById('announcementSettings');
+        if (showAnnounce) {
+            settings.classList.remove('hidden');
+        } else {
+            settings.classList.add('hidden');
+        }
+        renderPreview();
     }
 
     function addLink() {
@@ -139,7 +197,6 @@
         }
     }
 
-    // 渲染左側編輯器表單
     function renderEditor() {
         const container = document.getElementById('linkEditor');
         container.innerHTML = '';
@@ -183,12 +240,9 @@
         });
     }
 
-    // 產生單張卡片的 HTML 結構
     function generateCardHTML(link) {
         const theme = THEMES[link.theme];
         const iconSVG = ICONS[link.icon].replace('currentColor', theme.hex);
-        
-        // 產生背景圓點的 SVG Base64 (與指定顏色相符)
         const dotColor = encodeURIComponent(theme.hex);
         const bgPattern = `data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="${dotColor}"/></svg>`;
 
@@ -208,19 +262,58 @@
         </a>`;
     }
 
-    // 渲染右側預覽
+    function getAnnouncementHTML(positionContext) {
+        if (!showAnnounce) return '';
+        const text = document.getElementById('announcementText').value.replace(/\n/g, '<br>');
+        const alignClass = document.getElementById('announcementAlign').value;
+        const marginClass = positionContext === 'top' ? 'mb-10' : 'mt-10';
+        
+        return `
+        <div class="w-full bg-yellow-50 text-yellow-900 border-yellow-400 p-8 md:p-10 rounded-2xl announcement-box relative overflow-hidden ${marginClass}">
+            <div class="absolute top-0 right-0 -mt-6 -mr-6 text-yellow-200 opacity-40 pointer-events-none">
+                <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            </div>
+            <div class="relative z-10 text-2xl md:text-3xl font-black leading-relaxed tracking-wide ${alignClass}">
+                ${text}
+            </div>
+        </div>`;
+    }
+
     function renderPreview() {
         const title = document.getElementById('pageTitle').value;
         document.getElementById('previewTitle').textContent = title;
         
         const container = document.getElementById('previewGrid');
         container.innerHTML = links.map(link => generateCardHTML(link)).join('');
+
+        const topContainer = document.getElementById('announcementTop');
+        const bottomContainer = document.getElementById('announcementBottom');
+        
+        topContainer.innerHTML = '';
+        bottomContainer.innerHTML = '';
+
+        if (showAnnounce) {
+            const pos = document.getElementById('announcementPosition').value;
+            if (pos === 'top') {
+                topContainer.innerHTML = getAnnouncementHTML('top');
+            } else {
+                bottomContainer.innerHTML = getAnnouncementHTML('bottom');
+            }
+        }
     }
 
-    // 匯出完整的 HTML 檔案
     function exportHTML() {
         const title = document.getElementById('pageTitle').value;
         const cardsHTML = links.map(link => generateCardHTML(link)).join('\n        ');
+        
+        let annTopHTML = '';
+        let annBottomHTML = '';
+        
+        if (showAnnounce) {
+            const pos = document.getElementById('announcementPosition').value;
+            if (pos === 'top') annTopHTML = getAnnouncementHTML('top');
+            if (pos === 'bottom') annBottomHTML = getAnnouncementHTML('bottom');
+        }
         
         const htmlContent = `<!DOCTYPE html>
 <html lang="zh-TW">
@@ -258,20 +351,29 @@
         .cute-card:hover .icon-bounce {
             transform: scale(1.15) rotate(5deg);
         }
+
+        .announcement-box {
+            box-shadow: 0 15px 30px -5px rgba(234, 179, 8, 0.3);
+            border-left-width: 12px;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center py-16 px-6">
 
-    <header class="mb-14 text-center">
+    <header class="mb-10 text-center w-full max-w-7xl">
         <h1 class="text-4xl md:text-5xl font-black text-pink-500 tracking-wide drop-shadow-sm mb-3">
             ${title}
         </h1>
         <div class="h-2 w-24 bg-pink-300 rounded-full mx-auto"></div>
     </header>
 
+    ${annTopHTML ? `<div class="w-full max-w-7xl flex justify-center">\n        ${annTopHTML}\n    </div>` : ''}
+
     <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full">
         ${cardsHTML}
     </main>
+
+    ${annBottomHTML ? `<div class="w-full max-w-7xl flex justify-center">\n        ${annBottomHTML}\n    </div>` : ''}
 
 </body>
 </html>`;
