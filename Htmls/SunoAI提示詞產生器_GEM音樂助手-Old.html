@@ -490,13 +490,13 @@
     <!-- ══ Header ══ -->
     <div class="header">
         <h1>🎵 SUNO AI 音樂提示詞產生器</h1>
-        <p>選擇 Simple 或 Advanced 模式，快速生成 SUNO AI 所需的提示詞</p>
+        <p>選擇 Simple 或 Custom 模式，快速生成 SUNO AI 所需的提示詞</p>
     </div>
 
     <!-- ══ Mode Switcher ══ -->
     <div class="mode-switcher">
         <button class="mode-btn active" onclick="setMode('simple')">🎵 Simple 模式</button>
-        <button class="mode-btn"        onclick="setMode('custom')">🎨 Advanced 模式</button>
+        <button class="mode-btn"        onclick="setMode('custom')">🎨 Custom 模式</button>
     </div>
     <div class="mode-desc" id="modeDesc">
         使用預設模板與選項自動生成風格提示詞，填入免費版的 <strong>Style of Music</strong> 欄位
@@ -560,11 +560,6 @@
                     <span class="emoji">🏖️</span>巴薩諾瓦
                 </button>
             </div>
-
-            <label class="lyrics-checkbox-row" for="instrumentalCheck" style="margin-top: 14px; margin-bottom: 0;">
-                <input type="checkbox" id="instrumentalCheck" onchange="updatePrompt()">
-                <span>🎼 純音樂 (Instrumental)</span>
-            </label>
 
             <div class="divider"></div>
             <div class="card-title" style="font-size:0.95rem; margin-bottom:12px;">自訂選項</div>
@@ -789,14 +784,14 @@
     </div>
 
     <!-- ══════════════════════════════════════════
-         ADVANCED MODE  (左：Lyrics / 中：Styles / 右：Song Title)
+         CUSTOM MODE  (左：Lyrics / 中：Styles / 右：Song Title)
     ══════════════════════════════════════════ -->
     <div id="customMode" class="main-grid hidden">
 
         <!-- ── LEFT：Lyrics ── -->
         <div class="card">
             <div class="card-title">歌詞 Lyrics</div>
-            <p class="hint">填寫完整歌詞後複製，貼入 SUNO Advanced 模式的 <strong style="color:#a0d8ef;">Lyrics</strong> 欄位</p>
+            <p class="hint">填寫完整歌詞後複製，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Lyrics</strong> 欄位</p>
             <textarea class="lyrics-area" id="customLyrics" style="min-height:380px;">[Intro]
 （純音樂前奏）
 
@@ -839,7 +834,7 @@
         <!-- ── CENTER：Styles ── -->
         <div class="card">
             <div class="card-title">風格描述 Styles</div>
-            <p class="hint">描述音樂風格、情緒、樂器與節奏，貼入 SUNO Advanced 模式的 <strong style="color:#a0d8ef;">Style of Music</strong> 欄位</p>
+            <p class="hint">描述音樂風格、情緒、樂器與節奏，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Style of Music</strong> 欄位</p>
             <textarea class="styles-textarea" id="customStyles"
                 placeholder="範例：&#10;Mandarin pop, upbeat and catchy, piano-driven, soft strings, 120 bpm, female vocals, modern production&#10;&#10;或：&#10;rock, distorted electric guitar, powerful drums, raspy male vocals, 130 bpm, energetic and raw, classic rock feel"></textarea>
             <div class="btn-group">
@@ -850,7 +845,7 @@
         <!-- ── RIGHT：Song Title ── -->
         <div class="card">
             <div class="card-title">歌曲標題 Song Title</div>
-            <p class="hint">輸入歌名，貼入 SUNO Advanced 模式的 <strong style="color:#a0d8ef;">Title</strong> 欄位</p>
+            <p class="hint">輸入歌名，貼入 SUNO Custom 模式的 <strong style="color:#a0d8ef;">Title</strong> 欄位</p>
             <input type="text" class="title-input" id="customTitle" placeholder="輸入歌曲標題...">
 
             <div class="option-group">
@@ -897,7 +892,7 @@
                 </div>
                 <p class="guide-note">
                     <strong style="color:#a0d8ef;">Simple 模式</strong>：生成的英文提示詞 → 填入 Style of Music<br>
-                    <strong style="color:#a0d8ef;">Advanced 模式</strong>：分別填入 Lyrics、Style of Music、Title 三個欄位
+                    <strong style="color:#a0d8ef;">Custom 模式</strong>：分別填入 Lyrics、Style of Music、Title 三個欄位
                 </p>
             </div>
         </div>
@@ -927,32 +922,32 @@
             zh: '電子舞曲，合成器主奏，四拍踢鼓，建立爆發結構，128-150BPM，歡欣喜悅，脈動低音，節慶讚歌，清晰混音'
         },
         jazz: {
-            en: 'smooth jazz, saxophone lead, piano accompaniment, upright bass, jazz brushes, slow 75 bpm, mellow and sultry, midnight bar atmosphere',
-            zh: '平滑爵士，薩克斯風主奏，鋼琴伴奏，低音提琴，爵士鼓刷，慢板75BPM，柔和迷人，午夜酒吧氛圍'
+            en: 'smooth jazz, saxophone lead, piano accompaniment, upright bass, jazz brushes, slow 75 bpm, mellow and sultry, midnight bar atmosphere, instrumental',
+            zh: '平滑爵士，薩克斯風主奏，鋼琴伴奏，低音提琴，爵士鼓刷，慢板75BPM，柔和迷人，午夜酒吧氛圍，純音樂'
         },
         classical: {
-            en: 'neo-classical piano solo, melancholic and romantic, slow adagio, rich pedal reverb, cinematic, minimal and expressive',
-            zh: '新古典主義鋼琴獨奏，憂鬱浪漫，慢板，豐富踏板殘響，電影感，簡約而富有表現力'
+            en: 'neo-classical piano solo, melancholic and romantic, slow adagio, rich pedal reverb, cinematic, minimal and expressive, instrumental',
+            zh: '新古典主義鋼琴獨奏，憂鬱浪漫，慢板，豐富踏板殘響，電影感，簡約而富有表現力，純音樂'
         },
         folk: {
             en: 'folk, indie folk, acoustic guitar, warm and nostalgic, storytelling vocals, gentle harmonica accents, moderate tempo, autumn and homesick feel, clean and simple production',
             zh: '民謠，獨立民謠，原聲吉他，溫暖懷舊，講故事人聲，柔和口琴點綴，中板，秋日思鄉感，乾淨簡單製作'
         },
         hiphop: {
-            en: 'hip-hop, trap beat, 808 bass, rolling hi-hats, melodic piano sample, dark atmospheric mood, 70-90 bpm, modern trap production',
-            zh: '嘻哈，陷阱節拍，808低音，滾動高帽，旋律鋼琴採樣，黑暗氛圍，70-90BPM，現代陷阱製作'
+            en: 'hip-hop, trap beat, 808 bass, rolling hi-hats, melodic piano sample, dark atmospheric mood, 70-90 bpm, modern trap production, instrumental',
+            zh: '嘻哈，陷阱節拍，808低音，滾動高帽，旋律鋼琴採樣，黑暗氛圍，70-90BPM，現代陷阱製作，純音樂'
         },
         ambient: {
-            en: 'lo-fi, chill, study music, warm piano melody, soft vinyl crackle, gentle jazz drums, slow 85 bpm, rainy coffee shop atmosphere, relaxing',
-            zh: 'Lo-Fi，慵懶，讀書音樂，溫暖鋼琴旋律，柔和黑膠雜音，輕柔爵士鼓，慢板85BPM，雨天咖啡廳氛圍，放鬆'
+            en: 'lo-fi, chill, study music, warm piano melody, soft vinyl crackle, gentle jazz drums, slow 85 bpm, rainy coffee shop atmosphere, instrumental, relaxing',
+            zh: 'Lo-Fi，慵懶，讀書音樂，溫暖鋼琴旋律，柔和黑膠雜音，輕柔爵士鼓，慢板85BPM，雨天咖啡廳氛圍，純音樂，放鬆'
         },
         anime: {
             en: 'J-pop, anime opening, high energy, fast tempo, electric guitar, bright synth, passionate vocals, 130-150 bpm, melodic, uplifting',
             zh: 'J-pop，動漫片頭曲，高能量，快板，電吉他，明亮合成器，充滿激情的人聲，130-150BPM，旋律優美，振奮人心'
         },
         cinematic: {
-            en: 'cinematic film score, epic orchestral, massive brass, soaring strings, dramatic percussion, building tension, Hans Zimmer style',
-            zh: '電影配樂，史詩管弦樂，宏大銅管，高昂弦樂，戲劇性打擊樂，張力遞增，Hans Zimmer風格'
+            en: 'cinematic film score, epic orchestral, massive brass, soaring strings, dramatic percussion, building tension, Hans Zimmer style, instrumental',
+            zh: '電影配樂，史詩管弦樂，宏大銅管，高昂弦樂，戲劇性打擊樂，張力遞增，Hans Zimmer風格，純音樂'
         },
         drama_op: {
             en: 'K-pop ballad, TV drama opening, emotional pop, piano and strings building up, clear emotional vocals, dramatic chorus, 80-100 bpm',
@@ -963,8 +958,8 @@
             zh: '原聲抒情，電視劇片尾，憂鬱感傷，親密氛圍，指彈吉他，輕柔細膩的人聲，慢板，漸弱結尾'
         },
         synthwave: {
-            en: 'synthwave, cyberpunk, 80s retro-futurism, driving synth bass, electronic drum machine, neon atmosphere, 110-130 bpm',
-            zh: '合成器微波，賽博龐克，80年代復古未來主義，強烈合成器貝斯，電子鼓機，霓虹氛圍，110-130BPM'
+            en: 'synthwave, cyberpunk, 80s retro-futurism, driving synth bass, electronic drum machine, neon atmosphere, 110-130 bpm, instrumental',
+            zh: '合成器微波，賽博龐克，80年代復古未來主義，強烈合成器貝斯，電子鼓機，霓虹氛圍，110-130BPM，純音樂'
         },
         rnb: {
             en: 'R&B, soul, smooth groove, electric piano, deep bass, sultry vocals, vocal runs, 70-90 bpm, modern R&B production',
@@ -1058,7 +1053,7 @@
     function setMode(mode) {
         const descs = {
             simple: '使用預設模板與選項自動生成風格提示詞，填入免費版的 <strong>Style of Music</strong> 欄位',
-            custom: '分別填寫歌詞、風格描述、歌曲標題，逐一貼入 SUNO Advanced 模式的 <strong>Lyrics</strong>、<strong>Style</strong>、<strong>Title</strong> 三個欄位'
+            custom: '分別填寫歌詞、風格描述、歌曲標題，逐一貼入 SUNO Custom 模式的 <strong>Lyrics</strong>、<strong>Style</strong>、<strong>Title</strong> 三個欄位'
         };
         document.querySelectorAll('.mode-btn').forEach((btn, i) => {
             btn.classList.toggle('active', (mode === 'simple' && i === 0) || (mode === 'custom' && i === 1));
@@ -1112,13 +1107,6 @@
         if (selectedTags.length > 0) {
             enParts.push(selectedTags.map(t => t.en).join(', '));
             zhParts.push(selectedTags.map(t => t.zh).join('、'));
-        }
-
-        // 純音樂勾選（獨立於模板，勾選後在提示詞末端加入）
-        const instrumentalEl = document.getElementById('instrumentalCheck');
-        if (instrumentalEl && instrumentalEl.checked) {
-            enParts.push('instrumental, no vocals');
-            zhParts.push('純音樂');
         }
 
         // 演唱語言（僅在未勾選歌詞時生效）
@@ -1249,12 +1237,12 @@
         try {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-
+            
             // 將 textarea 隱藏，避免影響畫面配置
             textArea.style.position = "fixed";
             textArea.style.top = "-9999px";
             textArea.style.left = "-9999px";
-
+            
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
@@ -1265,7 +1253,7 @@
             } else {
                 showToast('複製失敗，請手動複製', 'warn');
             }
-
+            
             document.body.removeChild(textArea);
         } catch (err) {
             console.error('無法複製文字:', err);
@@ -1289,8 +1277,6 @@
         document.getElementById('otherLangInput').classList.add('hidden');
         document.getElementById('otherLangText').value = '';
         document.getElementById('langMaxHint').classList.remove('show');
-        const instrumentalEl = document.getElementById('instrumentalCheck');
-        if (instrumentalEl) instrumentalEl.checked = false;
         selectedTheme = null;
         document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('selected'));
         document.getElementById('customThemeInput').value = '';
