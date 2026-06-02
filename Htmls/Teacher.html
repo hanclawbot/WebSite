@@ -210,6 +210,16 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
   <div class="modal">
     <div class="modal-hd"><h3>📋 匯入教師名單</h3><button class="modal-x" onclick="closeM('m-import-t')">✕</button></div>
     <div class="modal-body">
+      <!-- 範本下載區 -->
+      <div style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1.5px solid #bfdbfe;border-radius:10px;padding:13px 15px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:1.6rem;flex-shrink:0;">👥</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.85rem;font-weight:800;color:#1e40af;margin-bottom:3px;">下載預設名單範本</div>
+          <div style="font-size:.76rem;color:#475569;line-height:1.5;">內含 <span id="tmpl-teacher-cnt"></span> 位教師姓名的 TXT 範本<br>修改後直接上傳或貼上即可匯入</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="downloadTeacherTemplate()" style="flex-shrink:0;">⬇ 下載範本</button>
+      </div>
+
       <div class="upload-zone" onclick="document.getElementById('fi-t').click()">
         <div class="ico">📄</div><div>點擊上傳 CSV / TXT 檔案</div>
         <small>或直接在下方貼上名單</small>
@@ -225,6 +235,7 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
       </div>
     </div>
     <div class="modal-ft">
+      <button class="btn btn-green" style="margin-right:auto" onclick="loadTeacherTemplate()">📋 載入範本</button>
       <button class="btn btn-ghost" onclick="closeM('m-import-t')">取消</button>
       <button class="btn btn-primary" onclick="importTeachers()">確認匯入</button>
     </div>
@@ -236,18 +247,29 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
   <div class="modal">
     <div class="modal-hd"><h3>🏢 匯入職務結構</h3><button class="modal-x" onclick="closeM('m-import-a')">✕</button></div>
     <div class="modal-body">
+      <!-- 範本下載區 -->
+      <div style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1.5px solid #bfdbfe;border-radius:10px;padding:13px 15px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:1.6rem;flex-shrink:0;">📋</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.85rem;font-weight:800;color:#1e40af;margin-bottom:3px;">下載預設範本</div>
+          <div style="font-size:.76rem;color:#475569;line-height:1.5;">包含六年級導師、科任、行政職務的完整範本 CSV<br>用 Excel 或記事本修改後再匯入</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="downloadTemplate()" style="flex-shrink:0;">⬇ 下載範本</button>
+      </div>
+
       <div class="upload-zone" onclick="document.getElementById('fi-a').click()">
-        <div class="ico">📄</div><div>點擊上傳 CSV 檔案</div>
+        <div class="ico">📄</div><div>點擊上傳已修改的 CSV 檔案</div>
         <small>格式：區塊名稱,子分類,職務名稱</small>
         <input type="file" id="fi-a" accept=".csv,.txt" style="display:none" onchange="readFile(event,'a-text')">
       </div>
       <div class="fg">
-        <label>職務結構（CSV，三欄）</label>
+        <label>或直接貼上 CSV 內容（三欄）</label>
         <textarea class="ftextarea" id="a-text" placeholder="區塊,子分類,職務&#10;導師班級,一年級,1班&#10;導師班級,一年級,2班&#10;行政職務,教務處,主任&#10;行政職務,教務處,教學組長"></textarea>
-        <div class="fhint">第一欄：區塊名稱 ／ 第二欄：子分類名稱 ／ 第三欄：職務名稱<br>相同區塊名稱自動合併為一個區塊</div>
+        <div class="fhint">第一欄：區塊名稱 ／ 第二欄：子分類名稱 ／ 第三欄：職務名稱<br>相同區塊名稱自動合併為一個區塊；# 開頭的行為註解，匯入時忽略</div>
       </div>
     </div>
     <div class="modal-ft">
+      <button class="btn btn-green" style="margin-right:auto" onclick="loadStructureTemplate()">📋 載入範本</button>
       <button class="btn btn-ghost" onclick="closeM('m-import-a')">取消</button>
       <button class="btn btn-warn" onclick="importStructure()">確認匯入（取代現有職務）</button>
     </div>
@@ -335,11 +357,21 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/drag-drop-touch/1.3.0/drag-drop-touch.esm.min.js" type="module"></script>
 <script>
 // ═══════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════
+// ── 教師名單範本（每年直接修改此陣列即可）──
+const TEACHER_NAMES=[
+  '陳瑞惠','許瑞津','蘇琬淳','陳裕隆','吳淑鈴','蘇楣雅','黃千芸','邱惠琦','吳恣蓉','呂芬芳',
+  '吳惠雯','張般若','洪婉萍','賴玫伶','黃靜琚','葉佳蓉','陳嫻玲','吳杭彌','童筠瑋','楊慧秀',
+  '范慧芳','廖家芳','鄭玟君','翁培倫','鄭旭村','蔡思秀','曾文正','雷彩紅','朱言晞','蘇毓絢',
+  '顏妏伶','沈文悅','林冠綾','嚴嘉妮','周成美','許音婷','陳軍翰','蔡宛蓁','莊俐瑩','陳宜君',
+  '葉昭吟','廖小萍','陳姿庭','葉純卉','葉佳珊','林西南','黃煜修'
+];
+
 let S = { title:'學校名稱 教師職務選填系統', teachers:[], sections:[], editMode:false };
 let _tid=1, _sid=1, _ssid=1, _slid=1;
 let _dragTeacherId = null;
@@ -363,12 +395,12 @@ function defaultData(){
     teachers:[],
     sections:[
       {id:'s1',name:'普通班年級導師',icon:'🏫',type:'grade',subs:[
-        {id:'ss1',name:'一年級（共 7 班）',slots:mkClass('ss1','一年級',7)},
-        {id:'ss2',name:'二年級（共 7 班）',slots:mkClass('ss2','二年級',7)},
-        {id:'ss3',name:'三年級（共 7 班）',slots:mkClass('ss3','三年級',7)},
-        {id:'ss4',name:'四年級（共 7 班）',slots:mkClass('ss4','四年級',7)},
-        {id:'ss5',name:'五年級（共 7 班）',slots:mkClass('ss5','五年級',7)},
-        {id:'ss6',name:'六年級（共 7 班）',slots:mkClass('ss6','六年級',7)},
+        {id:'ss1',name:'一年級',slots:mkClass('ss1','一年級',7)},
+        {id:'ss2',name:'二年級',slots:mkClass('ss2','二年級',7)},
+        {id:'ss3',name:'三年級',slots:mkClass('ss3','三年級',7)},
+        {id:'ss4',name:'四年級',slots:mkClass('ss4','四年級',7)},
+        {id:'ss5',name:'五年級',slots:mkClass('ss5','五年級',7)},
+        {id:'ss6',name:'六年級',slots:mkClass('ss6','六年級',7)},
       ]},
       {id:'s2',name:'專任 / 科任教師',icon:'📚',type:'subject',subs:[
         {id:'ss7', name:'🎵 音樂科',slots:mkSubj('ss7','音樂科',3)},
@@ -377,11 +409,12 @@ function defaultData(){
         {id:'ss10',name:'🏃 體育科',slots:mkSubj('ss10','體育科',5)},
         {id:'ss11',name:'🎨 美勞科',slots:mkSubj('ss11','美勞科',4)},
         {id:'ss12',name:'💬 本土語科',slots:mkSubj('ss12','本土語科',1)},
+        {id:'ss17',name:'💻 系管師',slots:mkAdmin('ss17',['系管師1','系管師2'])},
       ]},
       {id:'s3',name:'兼任行政職務',icon:'💼',type:'admin',subs:[
         {id:'ss13',name:'💼 教務處',slots:mkAdmin('ss13',['主任','教學組長','註冊組長','設備組長','資訊組長'])},
-        {id:'ss14',name:'🛡️ 學務處',slots:mkAdmin('ss14',['主任','生教組長','體育組長','衛生組長'])},
-        {id:'ss15',name:'🛠️ 總務處',slots:mkAdmin('ss15',['主任','事務組長','出納組長'])},
+        {id:'ss14',name:'🛡️ 學務處',slots:mkAdmin('ss14',['主任','訓育組長','生教組長','體育組長','衛生組長'])},
+        {id:'ss15',name:'🛠️ 總務處',slots:mkAdmin('ss15',['主任'])},
         {id:'ss16',name:'🌱 輔導室',slots:mkAdmin('ss16',['主任','輔導組長','資料組長','特教組長'])},
       ]},
     ]
@@ -775,16 +808,68 @@ function importTeachers(){
 // ═══════════════════════════════════════
 //  IMPORT STRUCTURE
 // ═══════════════════════════════════════
+function loadTeacherTemplate(){
+  document.getElementById('t-text').value=TEACHER_NAMES.join('\n');
+  showToast('已載入教師名單範本，確認後按「確認匯入」','ok');
+}
+
+function loadStructureTemplate(){
+  const d=defaultData();
+  let csv='';
+  d.sections.forEach(sec=>{
+    sec.subs.forEach(sub=>{
+      sub.slots.forEach(slot=>{
+        csv+=`"${sec.name}","${sub.name}","${slot.label}","${sec.icon||''}"\n`;
+      });
+    });
+  });
+  document.getElementById('a-text').value=csv.trim();
+  showToast('已載入職務結構範本，確認後按「確認匯入」','ok');
+}
+
+function downloadTeacherTemplate(){
+  const blob=new Blob(['﻿'+TEACHER_NAMES.join('\r\n')],{type:'text/plain;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='教師名單範本.txt';
+  a.click();
+  showToast('教師名單範本已下載','ok');
+}
+
+function downloadTemplate(){
+  const d=defaultData();
+  let csv='﻿';
+  csv+='# 職務結構範本 CSV — 修改後透過「匯入職務結構」載入\r\n';
+  csv+='# 格式：第一欄=區塊名稱，第二欄=子分類名稱，第三欄=職務名稱，第四欄=區塊圖示（選填）\r\n';
+  csv+='# 相同區塊名稱會自動合併；可自由增刪列；# 開頭為註解行\r\n';
+  csv+='區塊,子分類,職務,圖示\r\n';
+  d.sections.forEach(sec=>{
+    sec.subs.forEach(sub=>{
+      sub.slots.forEach(slot=>{
+        csv+=`"${sec.name}","${sub.name}","${slot.label}","${sec.icon||''}"\r\n`;
+      });
+    });
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='職務結構範本.csv';
+  a.click();
+  showToast('範本已下載','ok');
+}
+
 function importStructure(){
   const raw=document.getElementById('a-text').value.trim();
   if(!raw){ showToast('請輸入職務結構','err'); return; }
   const lines=raw.split(/[\r\n]+/).filter(l=>l.trim()&&!l.startsWith('#'));
-  const secMap=new Map(), secOrder=[];
+  const secMap=new Map(), secOrder=[], iconMap=new Map();
   lines.forEach(line=>{
     const parts=line.split(',').map(p=>p.replace(/^"|"$/g,'').trim());
     if(parts.length<3) return;
-    const [sec,sub,slot]=parts;
+    const [sec,sub,slot,icon]=parts;
     if(!secMap.has(sec)){ secMap.set(sec,new Map()); secOrder.push(sec); }
+    // 第四欄有圖示時記錄（以第一次出現為準）
+    if(icon&&!iconMap.has(sec)) iconMap.set(sec,icon);
     const sm=secMap.get(sec);
     if(!sm.has(sub)) sm.set(sub,[]);
     sm.get(sub).push(slot);
@@ -797,7 +882,7 @@ function importStructure(){
       id:uid(), name:subName,
       slots:slotNames.map(label=>({id:uid(),label,tid:null,locked:false}))
     }));
-    return {id:uid(),name:sn,icon:'📌',type:'',subs};
+    return {id:uid(),name:sn,icon:iconMap.get(sn)||'📌',type:'',subs};
   });
   closeM('m-import-a'); render(); saveState();
   showToast(`已匯入 ${secOrder.length} 個區塊`,'ok');
@@ -953,6 +1038,9 @@ function showToast(msg,type='inf'){
 window.addEventListener('resize',()=>{ if(document.getElementById('ov').style.display!=='none') scaleOverview(); });
 
 window.addEventListener('DOMContentLoaded',()=>{
+  // 動態顯示教師名單範本人數
+  document.getElementById('tmpl-teacher-cnt').textContent=TEACHER_NAMES.length;
+
   if(!loadState()){
     const d=defaultData();
     S.teachers=d.teachers;
@@ -1086,36 +1174,140 @@ function renderOverview(){
   el.innerHTML=html;
 }
 
+let ovScale=1, ovAutoScale=1;
+
 function scaleOverview(){
   const wrap=document.getElementById('ov-wrap');
   const content=document.getElementById('ov-content');
-  // reset to measure natural size
-  content.style.transform='scale(1)';
-  content.style.transformOrigin='top center';
-  const pw=wrap.clientWidth-32;
-  const ph=wrap.clientHeight-16;
+  content.style.zoom=1;
+  const pw=wrap.clientWidth-24;
+  const ph=wrap.clientHeight-24;
   const cw=content.scrollWidth;
   const ch=content.scrollHeight;
-  const scale=Math.min(pw/cw, ph/ch, 1);
-  content.style.transform=`scale(${scale})`;
-  // compensate collapsed height after scale
-  wrap.style.minHeight=(ch*scale)+'px';
+  ovAutoScale=Math.min(pw/cw, ph/ch, 1);
+  ovScale=ovAutoScale;
+  applyOvScale();
+}
+
+function applyOvScale(){
+  const content=document.getElementById('ov-content');
+  const wrap=document.getElementById('ov-wrap');
+  content.style.zoom=ovScale;
+  // margin:0 auto 在 block 流中可靠置中，不依賴 flex justify-content
+  content.style.marginLeft='auto';
+  content.style.marginRight='auto';
+  const lbl=document.getElementById('ov-scale-pct');
+  if(lbl) lbl.textContent=Math.round(ovScale*100)+'%';
+  // 一律允許捲動（zoom 會改變 layout 尺寸，overflow:auto 始終安全）
+  wrap.style.overflow='auto';
+}
+
+function ovZoomIn(){
+  ovScale=Math.min(Math.round((ovScale+0.1)*10)/10, 3.0);
+  applyOvScale();
+}
+
+function ovZoomOut(){
+  ovScale=Math.max(Math.round((ovScale-0.1)*10)/10, 0.2);
+  applyOvScale();
+}
+
+function ovZoomAuto(){
+  ovScale=ovAutoScale;
+  applyOvScale();
+}
+
+async function captureOverview(){
+  if(typeof html2canvas==='undefined'){ showToast('截圖模組尚未載入，請稍後再試','err'); return; }
+  const content=document.getElementById('ov-content');
+  const btn=document.getElementById('ov-capture-btn');
+  const origHTML=btn.innerHTML;
+  btn.innerHTML='⏳ 截圖中…';
+  btn.disabled=true;
+
+  // 暫存目前 zoom，重設為 1 讓 html2canvas 正常擷取原始尺寸
+  const savedZoom=content.style.zoom||1;
+  content.style.zoom=1;
+  // 暫時加上外框背景以讓截圖邊緣整齊
+  content.style.padding='20px';
+  content.style.background='#eef2f7';
+  content.style.borderRadius='14px';
+
+  try{
+    const canvas=await html2canvas(content,{
+      scale:2,                      // 2× 解析度，確保投影機清晰
+      backgroundColor:'#eef2f7',
+      useCORS:true,
+      logging:false,
+      allowTaint:true,
+    });
+
+    // 還原樣式
+    content.style.zoom=savedZoom;
+    content.style.padding='';
+    content.style.background='';
+    content.style.borderRadius='';
+
+    // 下載
+    const link=document.createElement('a');
+    const title=(document.getElementById('school-title').value||'教師職務選填').replace(/\s+/g,'_');
+    const date=new Date().toLocaleDateString('zh-TW').replace(/\//g,'-');
+    link.download=`${title}_全覽_${date}.png`;
+    link.href=canvas.toDataURL('image/png');
+    link.click();
+    showToast('截圖已下載','ok');
+  }catch(e){
+    content.style.zoom=savedZoom;
+    content.style.padding='';
+    content.style.background='';
+    content.style.borderRadius='';
+    showToast('截圖失敗，請重試','err');
+    console.error(e);
+  }
+
+  btn.innerHTML=origHTML;
+  btn.disabled=false;
+  applyOvScale();
 }
 </script>
 
 <!-- ── OVERVIEW OVERLAY ── -->
 <div id="ov" style="display:none;position:fixed;inset:0;z-index:3000;background:#eef2f7;flex-direction:column;font-family:inherit;">
   <!-- Header bar -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px;background:#ffffff;border-bottom:2px solid #e2e8f0;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.08);">
-    <span style="color:#4f46e5;font-size:.88rem;font-weight:800;letter-spacing:.02em;">👁 全覽看板</span>
-    <div style="display:flex;gap:8px;align-items:center;">
-      <button onclick="scaleOverview()" style="background:#f1f5f9;color:#475569;border:1.5px solid #cbd5e1;border-radius:7px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-weight:700;">⟳ 重新縮放</button>
-      <button onclick="closeOverview()" style="background:#ef4444;color:#fff;border:none;border-radius:7px;padding:5px 14px;cursor:pointer;font-size:.82rem;font-weight:800;">✕ 關閉</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:#ffffff;border-bottom:2px solid #e2e8f0;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.08);gap:12px;flex-wrap:wrap;">
+    <span style="color:#4f46e5;font-size:.9rem;font-weight:800;letter-spacing:.02em;white-space:nowrap;">👁 全覽看板</span>
+
+    <!-- 縮放控制 — 大型觸控按鈕 -->
+    <div style="display:flex;align-items:center;gap:6px;">
+      <button onclick="ovZoomOut()" title="縮小"
+        style="width:52px;height:52px;border-radius:12px;border:2px solid #cbd5e1;background:#f8fafc;color:#1e293b;font-size:1.6rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;"
+        onpointerdown="this.style.background='#e2e8f0'" onpointerup="this.style.background='#f8fafc'" onpointerleave="this.style.background='#f8fafc'">－</button>
+
+      <div style="min-width:64px;text-align:center;">
+        <div id="ov-scale-pct" style="font-size:1rem;font-weight:900;color:#1e293b;line-height:1;">100%</div>
+        <div style="font-size:.62rem;color:#94a3b8;margin-top:2px;">縮放比例</div>
+      </div>
+
+      <button onclick="ovZoomIn()" title="放大"
+        style="width:52px;height:52px;border-radius:12px;border:2px solid #4f46e5;background:#4f46e5;color:#fff;font-size:1.6rem;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;"
+        onpointerdown="this.style.background='#3730a3'" onpointerup="this.style.background='#4f46e5'" onpointerleave="this.style.background='#4f46e5'">＋</button>
+
+      <button onclick="ovZoomAuto()" title="自動縮放至適合大小"
+        style="height:52px;padding:0 16px;border-radius:12px;border:2px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;"
+        onpointerdown="this.style.background='#e2e8f0'" onpointerup="this.style.background='#f8fafc'" onpointerleave="this.style.background='#f8fafc'">⊡ 自動</button>
     </div>
+
+    <button id="ov-capture-btn" onclick="captureOverview()" title="將目前配置截圖下載為 PNG"
+      style="height:52px;padding:0 18px;border-radius:12px;border:2px solid #0891b2;background:#0891b2;color:#fff;font-size:.85rem;font-weight:800;cursor:pointer;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;display:flex;align-items:center;gap:6px;"
+      onpointerdown="this.style.background='#0e7490'" onpointerup="this.style.background='#0891b2'" onpointerleave="this.style.background='#0891b2'">📷 截圖下載</button>
+
+    <button onclick="closeOverview()"
+      style="height:52px;padding:0 20px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;touch-action:manipulation;-webkit-tap-highlight-color:transparent;transition:all .15s;"
+      onpointerdown="this.style.background='#b91c1c'" onpointerup="this.style.background='#ef4444'" onpointerleave="this.style.background='#ef4444'">✕ 關閉</button>
   </div>
-  <!-- Scrollable wrap (overflow hidden, scale fits inside) -->
-  <div id="ov-wrap" style="flex:1;overflow:hidden;position:relative;display:flex;align-items:flex-start;justify-content:center;padding:8px 16px;">
-    <div id="ov-content" style="transform-origin:top center;width:max-content;"></div>
+  <!-- Content area: block 流 + margin:0 auto 確保置中，overflow:auto 支援觸控捲動 -->
+  <div id="ov-wrap" style="flex:1;overflow:auto;padding:12px 16px;">
+    <div id="ov-content" style="display:block;width:max-content;margin:0 auto;"></div>
   </div>
 </div>
 </body>
