@@ -407,7 +407,7 @@ const TEACHER_NAMES=[
   '葉昭吟','廖小萍','陳姿庭','葉純卉','葉佳珊','林西南','黃煜修'
 ];
 
-let S = { title:'學校名稱 教師職務選填系統', teachers:[], sections:[], editMode:false };
+let S = { title:'臺北市中山國小115學年度  教師職務選填系統', teachers:[], sections:[], editMode:false };
 let _tid=1, _sid=1, _ssid=1, _slid=1;
 let _dragTeacherId = null;
 let _pendingSectionId = null;
@@ -1147,7 +1147,7 @@ window.addEventListener('DOMContentLoaded',()=>{
     S.teachers=d.teachers;
     S.sections=d.sections;
   }
-  document.getElementById('school-title').value=S.title||'學校名稱 教師職務選填系統';
+  document.getElementById('school-title').value=S.title||'臺北市中山國小115學年度  教師職務選填系統';
   document.getElementById('school-title').addEventListener('change',()=>{
     S.title=document.getElementById('school-title').value; saveState();
   });
