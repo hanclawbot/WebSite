@@ -165,6 +165,7 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
 
 <div class="toolbar" id="toolbar">
   <button class="btn btn-primary" onclick="openM('m-import-t')">📋 匯入教師名單</button>
+  <button class="btn btn-warn" onclick="openM('m-import-admin')">👔 匯入行政名單</button>
   <button class="btn btn-cyan" onclick="openM('m-import-a')">🏢 匯入職務結構</button>
   <div class="tb-div"></div>
   <button class="btn btn-ghost" id="edit-btn" onclick="toggleEdit()">✏️ 編輯模式</button>
@@ -238,6 +239,40 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
       <button class="btn btn-green" style="margin-right:auto" onclick="loadTeacherTemplate()">📋 載入範本</button>
       <button class="btn btn-ghost" onclick="closeM('m-import-t')">取消</button>
       <button class="btn btn-primary" onclick="importTeachers()">確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- Import Admin Personnel -->
+<div class="overlay" id="m-import-admin">
+  <div class="modal">
+    <div class="modal-hd"><h3>👔 匯入行政名單</h3><button class="modal-x" onclick="closeM('m-import-admin')">✕</button></div>
+    <div class="modal-body">
+      <!-- 範本下載區 -->
+      <div style="background:linear-gradient(135deg,#fffbeb,#fef9c3);border:1.5px solid #fde68a;border-radius:10px;padding:13px 15px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+        <div style="font-size:1.6rem;flex-shrink:0;">📋</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.85rem;font-weight:800;color:#92400e;margin-bottom:3px;">下載行政名單範本</div>
+          <div style="font-size:.76rem;color:#78350f;line-height:1.5;">依目前兼任行政職務結構產生 CSV 範本<br>在第四欄填入姓名後匯入，空白或「未配置」的列將略過</div>
+        </div>
+        <button class="btn btn-warn btn-sm" onclick="downloadAdminPersonnelTemplate()" style="flex-shrink:0;">⬇ 下載範本</button>
+      </div>
+
+      <div class="upload-zone" onclick="document.getElementById('fi-admin').click()">
+        <div class="ico">📄</div><div>點擊上傳已填寫的 CSV 檔案</div>
+        <small>格式：區塊,子分類,職務,姓名</small>
+        <input type="file" id="fi-admin" accept=".csv,.txt" style="display:none" onchange="readFile(event,'admin-personnel-text')">
+      </div>
+      <div class="fg">
+        <label>行政名單（CSV，四欄）</label>
+        <textarea class="ftextarea" id="admin-personnel-text" placeholder='"兼任行政職務","💼 教務處","主任","彭健民"&#10;"兼任行政職務","💼 教務處","教學組長","陳立峰"'></textarea>
+        <div class="fhint">第四欄姓名為「未配置」或空白者不會匯入；人員若不在教師名單中會自動新增</div>
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-green" style="margin-right:auto" onclick="loadAdminPersonnelTemplate()">📋 載入範本</button>
+      <button class="btn btn-ghost" onclick="closeM('m-import-admin')">取消</button>
+      <button class="btn btn-warn" onclick="importAdminPersonnel()">確認匯入</button>
     </div>
   </div>
 </div>
@@ -808,6 +843,72 @@ function importTeachers(){
 // ═══════════════════════════════════════
 //  IMPORT STRUCTURE
 // ═══════════════════════════════════════
+// ── 行政名單範本 helper ──
+function _adminPersonnelCSV(){
+  // 優先取 type==='admin' 的區塊，若無則取全部
+  const secs=S.sections.filter(s=>s.type==='admin');
+  const target=secs.length>0?secs:S.sections;
+  let csv='# 行政名單範本 — 在第四欄填入對應姓名後匯入\r\n';
+  csv+='# 姓名欄為「未配置」或空白的列匯入時會略過\r\n';
+  csv+='區塊,子分類,職務,姓名\r\n';
+  target.forEach(sec=>{
+    sec.subs.forEach(sub=>{
+      sub.slots.forEach(slot=>{
+        const t=slot.tid?S.teachers.find(t=>t.id===slot.tid):null;
+        csv+=`"${sec.name}","${sub.name}","${slot.label}","${t?t.name:'未配置'}"\r\n`;
+      });
+    });
+  });
+  return csv;
+}
+
+function downloadAdminPersonnelTemplate(){
+  const blob=new Blob(['﻿'+_adminPersonnelCSV()],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='行政名單範本.csv';
+  a.click();
+  showToast('行政名單範本已下載','ok');
+}
+
+function loadAdminPersonnelTemplate(){
+  // 去掉註解行，只留資料行填入 textarea
+  const lines=_adminPersonnelCSV().split(/\r?\n/).filter(l=>!l.startsWith('#'));
+  document.getElementById('admin-personnel-text').value=lines.join('\n').trim();
+  showToast('已載入行政名單範本，填入姓名後按「確認匯入」','ok');
+}
+
+function importAdminPersonnel(){
+  const raw=document.getElementById('admin-personnel-text').value.trim();
+  if(!raw){ showToast('請輸入行政名單','err'); return; }
+  const lines=raw.split(/[\r\n]+/).filter(l=>l.trim()&&!l.startsWith('#'));
+  let matched=0, added=0;
+  lines.forEach(line=>{
+    const parts=line.split(',').map(p=>p.replace(/^"|"$/g,'').trim());
+    if(parts.length<4) return;
+    const [secName,subName,slotLabel,personName]=parts;
+    if(!personName||personName==='未配置'||personName==='姓名') return;
+    // 找對應 slot
+    for(const sec of S.sections){
+      if(sec.name!==secName) continue;
+      for(const sub of sec.subs){
+        if(sub.name!==subName) continue;
+        const slot=sub.slots.find(s=>s.label===slotLabel);
+        if(!slot) continue;
+        // 人員若不在名單中自動新增
+        let teacher=S.teachers.find(t=>t.name===personName);
+        if(!teacher){ teacher={id:'t_'+(_tid++),name:personName}; S.teachers.push(teacher); added++; }
+        removeTeacherFromSlots(teacher.id);
+        slot.tid=teacher.id;
+        matched++;
+      }
+    }
+  });
+  closeM('m-import-admin'); render(); saveState();
+  showToast(`已配置 ${matched} 個行政職務${added>0?'，新增 '+added+' 位人員':''}`, 'ok');
+  document.getElementById('admin-personnel-text').value='';
+}
+
 function loadTeacherTemplate(){
   document.getElementById('t-text').value=TEACHER_NAMES.join('\n');
   showToast('已載入教師名單範本，確認後按「確認匯入」','ok');
