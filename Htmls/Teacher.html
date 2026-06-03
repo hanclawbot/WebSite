@@ -52,12 +52,12 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
 .pool-hd{padding:13px 15px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
 .pool-hd h3{font-size:.92rem;font-weight:800}
 .pool-hd p{font-size:.75rem;opacity:.82;margin-top:2px}
-#teacher-pool{flex:1;overflow-y:auto;padding:10px;display:flex;flex-wrap:wrap;gap:7px;align-content:flex-start;min-height:100px;border:2px dashed transparent;transition:border-color .2s,background .2s}
+#teacher-pool{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px;align-content:flex-start;min-height:100px;border:2px dashed transparent;transition:border-color .2s,background .2s}
 #teacher-pool.drag-over-pool{border-color:var(--primary-light);background:#eef2ff;border-radius:6px}
 .pool-ft{padding:9px 11px;border-top:1px solid var(--border);display:flex;gap:6px}
 
 /* TEACHER BADGE */
-.teacher-badge{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:5px 11px;border-radius:20px;cursor:grab;user-select:none;font-weight:700;font-size:.83rem;box-shadow:var(--sh-sm);transition:transform .15s,box-shadow .15s,opacity .15s;touch-action:none;white-space:nowrap}
+.teacher-badge{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:7px 14px;border-radius:20px;cursor:grab;user-select:none;font-weight:700;font-size:1rem;box-shadow:var(--sh-sm);transition:transform .15s,box-shadow .15s,opacity .15s;touch-action:none;white-space:nowrap;width:100%;text-align:center}
 .teacher-badge:hover{transform:translateY(-2px) scale(1.04);box-shadow:var(--sh)}
 .teacher-badge.dragging{opacity:.45;transform:scale(.93)}
 
@@ -90,7 +90,7 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
 .slot.drag-over{background:#eef2ff;border-color:var(--primary);border-style:solid;transform:scale(1.03)}
 .slot.locked{background:#fefce8;border-color:var(--warning);border-style:solid}
 .slot.locked .teacher-badge{cursor:not-allowed;opacity:.85;background:linear-gradient(135deg,#92400e,#b45309)}
-.slot-label{font-size:.76rem;font-weight:800;color:var(--muted);line-height:1.3}
+.slot-label{font-size:.9rem;font-weight:800;color:var(--muted);line-height:1.3}
 .slot-actions{align-self:stretch;justify-content:flex-end;gap:3px;display:none;flex-shrink:0}
 .slot-btn{width:19px;height:19px;border:none;border-radius:4px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1}
 .btn-lock{background:#fef3c7;color:#d97706}
@@ -157,7 +157,7 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
 <body>
 
 <header>
-  <input type="text" id="school-title" value="臺北市中山國小115學年度 教師職務選填系統" title="點擊編輯標題" onchange="saveState()">
+  <input type="text" id="school-title" value="學校名稱 教師職務選填系統" title="點擊編輯標題" onchange="saveState()">
   <p>教師職務配置看板 — 拖曳教師姓名至職務欄位完成選填</p>
 </header>
 
@@ -177,6 +177,8 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
   <button class="btn btn-ghost" onclick="clearPlacements()">🔄 清除配置</button>
   <div class="tb-div"></div>
   <button class="btn btn-primary" onclick="openOverview()" style="background:linear-gradient(135deg,#0f172a,#1e40af)">👁 全覽看板</button>
+  <div class="tb-div"></div>
+  <button class="btn btn-ghost" onclick="openTitleModal()">🏷 設定標題</button>
 </div>
 
 <div class="app" id="app">
@@ -186,7 +188,7 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
       <p>未配置 <span id="pool-count">0</span> 人</p>
     </div>
     <div id="teacher-pool"
-         ondragover="ev.preventDefault();this.classList.add('drag-over-pool')"
+         ondragover="event.preventDefault();this.classList.add('drag-over-pool')"
          ondragleave="this.classList.remove('drag-over-pool')"
          ondrop="dropPool(event)"></div>
     <div class="pool-ft">
@@ -392,6 +394,24 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
   </div>
 </div>
 
+<!-- Set Title Modal -->
+<div class="overlay" id="m-set-title">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-hd"><h3>🏷 設定標題</h3><button class="modal-x" onclick="closeM('m-set-title')">✕</button></div>
+    <div class="modal-body">
+      <div class="fg">
+        <label>學校 / 系統名稱</label>
+        <input class="finput" id="title-input" placeholder="例：臺北市中正國小 教師職務選填系統" onkeydown="if(event.key==='Enter')applyTitle()">
+      </div>
+      <div class="fhint">顯示於頁面頂端標題列與全覽看板</div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-ghost" onclick="closeM('m-set-title')">取消</button>
+      <button class="btn btn-primary" onclick="applyTitle()">套用</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/drag-drop-touch/1.3.0/drag-drop-touch.esm.min.js" type="module"></script>
 <script>
@@ -400,14 +420,11 @@ header p{color:rgba(255,255,255,.8);font-size:.9rem;margin-top:4px;position:rela
 // ═══════════════════════════════════════
 // ── 教師名單範本（每年直接修改此陣列即可）──
 const TEACHER_NAMES=[
-  '陳瑞惠','許瑞津','蘇琬淳','陳裕隆','吳淑鈴','蘇楣雅','黃千芸','邱惠琦','吳恣蓉','呂芬芳',
-  '吳惠雯','張般若','洪婉萍','賴玫伶','黃靜琚','葉佳蓉','陳嫻玲','吳杭彌','童筠瑋','楊慧秀',
-  '范慧芳','廖家芳','鄭玟君','翁培倫','鄭旭村','蔡思秀','曾文正','雷彩紅','朱言晞','蘇毓絢',
-  '顏妏伶','沈文悅','林冠綾','嚴嘉妮','周成美','許音婷','陳軍翰','蔡宛蓁','莊俐瑩','陳宜君',
-  '葉昭吟','廖小萍','陳姿庭','葉純卉','葉佳珊','林西南','黃煜修'
+	'老師01','老師02','老師03','老師04','老師05','老師06',
+	'老師07','老師08','老師09','老師10','老師11','老師12'
 ];
 
-let S = { title:'臺北市中山國小115學年度  教師職務選填系統', teachers:[], sections:[], editMode:false };
+let S = { title:'學校名稱 教師職務選填系統', teachers:[], sections:[], editMode:false };
 let _tid=1, _sid=1, _ssid=1, _slid=1;
 let _dragTeacherId = null;
 let _pendingSectionId = null;
@@ -432,9 +449,9 @@ function defaultData(){
       {id:'s1',name:'普通班年級導師',icon:'🏫',type:'grade',subs:[
         {id:'ss1',name:'一年級',slots:mkClass('ss1','一年級',7)},
         {id:'ss2',name:'二年級',slots:mkClass('ss2','二年級',7)},
-        {id:'ss3',name:'三年級',slots:mkClass('ss3','三年級',7)},
+        {id:'ss3',name:'三年級',slots:mkClass('ss3','三年級',8)},
         {id:'ss4',name:'四年級',slots:mkClass('ss4','四年級',7)},
-        {id:'ss5',name:'五年級',slots:mkClass('ss5','五年級',7)},
+        {id:'ss5',name:'五年級',slots:mkClass('ss5','五年級',10)},
         {id:'ss6',name:'六年級',slots:mkClass('ss6','六年級',7)},
       ]},
       {id:'s2',name:'專任 / 科任教師',icon:'📚',type:'subject',subs:[
@@ -450,7 +467,7 @@ function defaultData(){
         {id:'ss13',name:'💼 教務處',slots:mkAdmin('ss13',['主任','教學組長','註冊組長','設備組長','資訊組長'])},
         {id:'ss14',name:'🛡️ 學務處',slots:mkAdmin('ss14',['主任','訓育組長','生教組長','體育組長','衛生組長'])},
         {id:'ss15',name:'🛠️ 總務處',slots:mkAdmin('ss15',['主任'])},
-        {id:'ss16',name:'🌱 輔導室',slots:mkAdmin('ss16',['主任','輔導組長','資料組長','特教組長'])},
+        {id:'ss16',name:'🌱 輔導室',slots:mkAdmin('ss16',['主任','輔導組長','資料組長','特教組長','專輔1','專輔2'])},
       ]},
     ]
   };
@@ -460,20 +477,8 @@ function defaultData(){
 //  PERSISTENCE
 // ═══════════════════════════════════════
 function saveState(){
-  try{ localStorage.setItem('tms_v2',JSON.stringify(S)); }catch(e){}
   const el=document.getElementById('save-label');
-  if(el) el.textContent='✓ 已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
-}
-function loadState(){
-  try{
-    const raw=localStorage.getItem('tms_v2');
-    if(!raw) return false;
-    const p=JSON.parse(raw);
-    S.title=p.title||S.title;
-    S.teachers=p.teachers||[];
-    S.sections=p.sections||[];
-    return true;
-  }catch(e){ return false; }
+  if(el) el.textContent='✓ 已更新 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
 }
 
 // ═══════════════════════════════════════
@@ -549,9 +554,10 @@ function renderBoard(){
 
     const editCtrls=document.createElement('div');
     editCtrls.style.cssText='display:flex;gap:6px';
+    const isFixed=['grade','subject','admin'].includes(sec.type);
     editCtrls.innerHTML=`
       <button class="btn btn-ghost btn-sm" onclick="openAddSub('${sec.id}')">＋ 子分類</button>
-      <button class="btn btn-danger btn-sm" onclick="delSection('${sec.id}')">✕ 刪除區塊</button>`;
+      ${isFixed?'':`<button class="btn btn-danger btn-sm" onclick="delSection('${sec.id}')">✕ 刪除區塊</button>`}`;
     editCtrls.classList.add('edit-only');
 
     hd.appendChild(title);
@@ -631,6 +637,7 @@ function renderBoard(){
 
         if(teacher){
           const badge=makeBadge(teacher.id,teacher.name);
+          badge.style.width='auto';
           if(slot.locked){ badge.draggable=false; badge.style.cursor='not-allowed'; }
           slotEl.appendChild(badge);
         }
@@ -677,6 +684,9 @@ function dropPool(e){
   const tid=e.dataTransfer.getData('text/plain')||_dragTeacherId;
   if(!tid) return;
   removeTeacherFromSlots(tid);
+  // 拖回待選區：移到名單最上面
+  const idx=S.teachers.findIndex(t=>t.id===tid);
+  if(idx>0){ const [t]=S.teachers.splice(idx,1); S.teachers.unshift(t); }
   render(); saveState();
 }
 
@@ -977,13 +987,19 @@ function importStructure(){
   });
   if(!secOrder.length){ showToast('格式錯誤，請確認 CSV 三欄格式','err'); return; }
 
+  const FIXED_SEC={
+    '普通班年級導師':{type:'grade',icon:'🏫'},
+    '專任 / 科任教師':{type:'subject',icon:'📚'},
+    '兼任行政職務'  :{type:'admin', icon:'💼'},
+  };
   S.sections=secOrder.map(sn=>{
     const sm=secMap.get(sn);
     const subs=Array.from(sm.entries()).map(([subName,slotNames])=>({
       id:uid(), name:subName,
       slots:slotNames.map(label=>({id:uid(),label,tid:null,locked:false}))
     }));
-    return {id:uid(),name:sn,icon:iconMap.get(sn)||'📌',type:'',subs};
+    const fixed=FIXED_SEC[sn];
+    return {id:uid(),name:sn,icon:fixed?fixed.icon:(iconMap.get(sn)||'📌'),type:fixed?fixed.type:'',subs};
   });
   closeM('m-import-a'); render(); saveState();
   showToast(`已匯入 ${secOrder.length} 個區塊`,'ok');
@@ -1111,6 +1127,24 @@ function readFile(e,targetId){
 }
 
 // ═══════════════════════════════════════
+//  TITLE
+// ═══════════════════════════════════════
+function openTitleModal(){
+  document.getElementById('title-input').value=S.title||'';
+  openM('m-set-title');
+  setTimeout(()=>document.getElementById('title-input').select(),80);
+}
+function applyTitle(){
+  const val=document.getElementById('title-input').value.trim();
+  if(!val){ showToast('請輸入標題','err'); return; }
+  S.title=val;
+  document.getElementById('school-title').value=val;
+  closeM('m-set-title');
+  saveState();
+  showToast('標題已更新','ok');
+}
+
+// ═══════════════════════════════════════
 //  MODAL
 // ═══════════════════════════════════════
 function openM(id){ document.getElementById(id).classList.add('open'); }
@@ -1142,12 +1176,10 @@ window.addEventListener('DOMContentLoaded',()=>{
   // 動態顯示教師名單範本人數
   document.getElementById('tmpl-teacher-cnt').textContent=TEACHER_NAMES.length;
 
-  if(!loadState()){
-    const d=defaultData();
-    S.teachers=d.teachers;
-    S.sections=d.sections;
-  }
-  document.getElementById('school-title').value=S.title||'臺北市中山國小115學年度  教師職務選填系統';
+  const d=defaultData();
+  S.teachers=d.teachers;
+  S.sections=d.sections;
+  document.getElementById('school-title').value=S.title||'學校名稱 教師職務選填系統';
   document.getElementById('school-title').addEventListener('change',()=>{
     S.title=document.getElementById('school-title').value; saveState();
   });
@@ -1218,7 +1250,7 @@ function renderOverview(){
       let h='<div style="display:flex;flex-direction:column;gap:6px;">';
       rows.forEach(row=>{
         h+='<div style="display:flex;gap:6px;align-items:flex-start;">';
-        row.forEach(sub=>{ h+=`<div style="flex:1;">${subCard(sub,tint,tClr)}</div>`; });
+        row.forEach(sub=>{ h+=`<div style="flex:0 0 calc(50% - 3px);min-width:0;">${subCard(sub,tint,tClr)}</div>`; });
         h+='</div>';
       });
       h+='</div>';
@@ -1226,13 +1258,8 @@ function renderOverview(){
     }
 
     if(sec.type==='subject'||sec.type==='admin'||sec.type===''){
-      const cols=chunk(sec.subs,2);
-      let h='<div style="display:flex;flex-direction:row;gap:6px;align-items:flex-start;">';
-      cols.forEach(col=>{
-        h+='<div style="display:flex;flex-direction:column;gap:6px;flex:1;">';
-        col.forEach(sub=>{ h+=subCard(sub,tint,tClr); });
-        h+='</div>';
-      });
+      let h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:start;">';
+      sec.subs.forEach(sub=>{ h+=subCard(sub,tint,tClr); });
       h+='</div>';
       return h;
     }
