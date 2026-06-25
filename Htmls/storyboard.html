@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>故事分鏡提示詞產生器</title>
+<style>
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+body{
+  font-family:"Microsoft JhengHei",sans-serif;
+  background:#f5f8fc;
+  color:#333;
+}
+
+header{
+  background:#4a90e2;
+  color:white;
+  text-align:center;
+  padding:20px;
+}
+
+header p{ margin-top:6px; font-size:14px; opacity:.85; }
+
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+
+/* ── 全域設定面板 ── */
+.global-panel{
+  background:#fff;
+  border:2px solid #4a90e2;
+  border-radius:12px;
+  padding:20px;
+  margin-bottom:24px;
+  box-shadow:0 3px 12px rgba(74,144,226,.15);
+}
+
+.global-panel-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+  user-select:none;
+}
+
+.global-panel-header h2{
+  color:#4a90e2;
+  font-size:17px;
+}
+
+.toggle-icon{
+  font-size:20px;
+  transition:transform .3s;
+}
+.toggle-icon.open{ transform:rotate(180deg); }
+
+.global-panel-body{ margin-top:16px; }
+
+/* 角色列表 */
+.char-list{ display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+
+.char-row{
+  display:grid;
+  grid-template-columns:140px 1fr auto;
+  gap:8px;
+  align-items:start;
+}
+
+.char-row input,
+.char-row textarea{
+  margin:0;
+  padding:8px 10px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  font-family:inherit;
+  font-size:13px;
+  resize:vertical;
+}
+
+.char-row textarea{ min-height:60px; }
+
+.btn-remove-char{
+  background:#e74c3c;
+  color:white;
+  border:none;
+  border-radius:6px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-size:14px;
+  margin-top:2px;
+}
+
+.btn-add-char{
+  background:#4a90e2;
+  color:white;
+  border:none;
+  border-radius:8px;
+  padding:9px 16px;
+  cursor:pointer;
+  font-size:13px;
+}
+
+/* 畫風區 */
+.style-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+
+.style-grid label{ font-weight:bold; font-size:13px; }
+
+.style-grid input,
+.style-grid select{
+  width:100%;
+  padding:8px 10px;
+  margin-top:4px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  font-family:inherit;
+  font-size:13px;
+}
+
+/* ── 分頁 ── */
+.tabs{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.tab-btn{
+  border:none;
+  background:#ddd;
+  padding:12px 18px;
+  cursor:pointer;
+  border-radius:8px;
+  font-family:inherit;
+  font-size:14px;
+}
+
+.tab-btn.active{ background:#4a90e2; color:white; }
+
+.template{
+  display:none;
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,.1);
+}
+
+.template.active{ display:block; }
+
+/* ── 表單元素 ── */
+input, textarea, select{
+  width:100%;
+  padding:10px;
+  margin-top:5px;
+  margin-bottom:15px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  font-family:inherit;
+}
+
+label{ font-weight:bold; font-size:14px; }
+
+/* ── 按鈕 ── */
+.btn-group{ display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+
+button.generate{
+  background:#28a745;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+button.copy{
+  background:#ff9800;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+button.clear{
+  background:#888;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+  font-family:inherit;
+}
+
+/* ── 輸出區 ── */
+.output{
+  margin-top:20px;
+  background:#fafafa;
+  border:1px solid #ddd;
+  border-radius:8px;
+  padding:15px;
+  white-space:pre-wrap;
+  font-size:13px;
+  line-height:1.7;
+  min-height:40px;
+  color:#222;
+}
+
+/* 全域資訊提示 */
+.global-tip{
+  background:#eaf3ff;
+  border-left:4px solid #4a90e2;
+  padding:8px 12px;
+  border-radius:0 6px 6px 0;
+  font-size:13px;
+  color:#555;
+  margin-bottom:16px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📖 AI故事分鏡提示詞產生器</h1>
+  <p>教育版 Storyboard Prompt Generator — 多角色一致性強化版</p>
+</header>
+
+<div class="container">
+
+  <!-- ══ 全域設定面板 ══ -->
+  <div class="global-panel">
+    <div class="global-panel-header" onclick="togglePanel()">
+      <h2>🎨 全域角色與畫風設定（所有模板共用）</h2>
+      <span class="toggle-icon open" id="panelIcon">▲</span>
+    </div>
+
+    <div class="global-panel-body" id="panelBody">
+
+      <p style="font-size:13px;color:#666;margin-bottom:14px;">
+        在此設定的「角色外觀」與「統一畫風」，會自動注入到下方所有模板產生的提示詞中，確保整組分鏡圖維持一致性。
+      </p>
+
+      <!-- 角色資料庫 -->
+      <label style="font-size:15px;">👤 角色資料庫</label>
+      <div style="font-size:12px;color:#888;margin:4px 0 10px;">
+        每個角色填寫「名稱」與「外觀描述」（英文描述效果更佳）
+      </div>
+
+      <div class="char-list" id="charList">
+        <!-- 預設第一個角色 -->
+        <div class="char-row">
+          <input placeholder="角色名稱（例：小明）" oninput="syncCharLabels()">
+          <textarea placeholder="外觀描述（例：teenage boy, short black hair, red hoodie, blue jeans, backpack, brown eyes）"></textarea>
+          <button class="btn-remove-char" onclick="removeChar(this)" title="移除角色">✕</button>
+        </div>
+      </div>
+
+      <button class="btn-add-char" onclick="addChar()">＋ 新增角色</button>
+
+      <!-- 統一畫風 -->
+      <div class="style-grid" style="margin-top:18px;">
+        <div>
+          <label>🖌️ 統一畫風關鍵詞</label>
+          <input id="globalStyle" placeholder="例：Makoto Shinkai style, anime, cinematic, soft lighting, pastel color">
+        </div>
+        <div>
+          <label>📐 畫面比例</label>
+          <select id="globalRatio">
+            <option value="16:9 aspect ratio">16:9（橫式）</option>
+            <option value="9:16 aspect ratio">9:16（直式/手機）</option>
+            <option value="1:1 aspect ratio">1:1（正方形）</option>
+            <option value="4:3 aspect ratio">4:3（傳統）</option>
+            <option value="2.35:1 aspect ratio">2.35:1（電影寬幅）</option>
+          </select>
+        </div>
+        <div>
+          <label>💡 固定光線風格</label>
+          <input id="globalLight" placeholder="例：golden hour lighting, soft rim light, overcast natural light">
+        </div>
+        <div>
+          <label>🎭 整體氣氛基調</label>
+          <input id="globalMood" placeholder="例：heartwarming, melancholic, adventurous, mysterious">
+        </div>
+      </div>
+
+      <!-- 品質詞 -->
+      <div style="margin-top:12px;">
+        <label>⭐ 固定品質關鍵詞</label>
+        <input id="globalQuality" value="masterpiece, best quality, highly detailed, professional illustration">
+      </div>
+
+    </div><!-- /panelBody -->
+  </div><!-- /global-panel -->
+
+  <!-- ══ 分頁按鈕 ══ -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab(0)">模板1　萬用</button>
+    <button class="tab-btn" onclick="showTab(1)">模板2　AI繪圖</button>
+    <button class="tab-btn" onclick="showTab(2)">模板3　動畫分鏡</button>
+    <button class="tab-btn" onclick="showTab(3)">模板4　30張拆解</button>
+    <button class="tab-btn" onclick="showTab(4)">模板5　電影級</button>
+  </div>
+
+  <!-- ══ 模板1 ══ -->
+  <div class="template active">
+    <h2>故事分鏡圖萬用模板</h2>
+    <div class="global-tip">💡 角色外觀與畫風將自動從上方「全域設定」帶入</div>
+
+    <label>鏡頭編號</label>
+    <input id="scene1" placeholder="例如：Scene 01">
+
+    <label>劇情內容</label>
+    <textarea id="story1" placeholder="描述本鏡頭發生的事件"></textarea>
+
+    <label>本鏡頭登場角色</label>
+    <input id="activeChars1" id="activeChars1" placeholder="填入本鏡頭有哪些角色（例：小明、小花）">
+
+    <label>動作</label>
+    <input id="action1" placeholder="角色正在做什麼">
+
+    <label>場景</label>
+    <input id="location1" placeholder="校園、森林、城市街道">
+
+    <label>時間</label>
+    <input id="time1" placeholder="清晨、黃昏、夜晚">
+
+    <label>鏡頭類型</label>
+    <select id="shot1">
+      <option value="">（選填）</option>
+      <option value="extreme wide shot">極遠景</option>
+      <option value="wide shot">遠景</option>
+      <option value="medium shot">中景</option>
+      <option value="close-up">近景</option>
+      <option value="extreme close-up">特寫</option>
+      <option value="bird's eye view">俯視</option>
+      <option value="low angle shot">仰角</option>
+    </select>
+
+    <div class="btn-group">
+      <button class="generate" onclick="generate1()">產生提示詞</button>
+      <button class="copy" onclick="copyOutput('output1')">複製提示詞</button>
+      <button class="clear" onclick="clearOutput('output1')">清除</button>
+    </div>
+    <div id="output1" class="output"></div>
+  </div>
+
+  <!-- ══ 模板2 ══ -->
+  <div class="template">
+    <h2>AI繪圖專用模板（英文輸出）</h2>
+    <div class="global-tip">💡 全域畫風與角色外觀自動帶入，本模板直接輸出英文 Prompt</div>
+
+    <label>鏡頭類型</label>
+    <input id="camera2" placeholder="wide shot / close-up / medium shot">
+
+    <label>本鏡頭登場角色</label>
+    <input id="activeChars2" placeholder="填入本鏡頭有哪些角色（例：小明、小花）">
+
+    <label>動作描述（可用中文）</label>
+    <textarea id="action2" placeholder="角色在做什麼"></textarea>
+
+    <label>場景描述（可用中文）</label>
+    <textarea id="scene2" placeholder="環境細節"></textarea>
+
+    <label>本鏡頭額外情緒/光線</label>
+    <input id="extra2" placeholder="例：dramatic backlight / rainy atmosphere（選填）">
+
+    <div class="btn-group">
+      <button class="generate" onclick="generate2()">產生提示詞</button>
+      <button class="copy" onclick="copyOutput('output2')">複製提示詞</button>
+      <button class="clear" onclick="clearOutput('output2')">清除</button>
+    </div>
+    <div id="output2" class="output"></div>
+  </div>
+
+  <!-- ══ 模板3 ══ -->
+  <div class="template">
+    <h2>動畫分鏡模板</h2>
+    <div class="global-tip">💡 全域設定自動帶入畫風與角色</div>
+
+    <label>劇情</label>
+    <textarea id="story3" placeholder="主角做什麼事情"></textarea>
+
+    <label>畫面</label>
+    <input id="scene3" placeholder="雨天校園道路">
+
+    <label>本鏡頭登場角色</label>
+    <input id="activeChars3" placeholder="填入本鏡頭有哪些角色（例：小明）">
+
+    <label>氣氛（可覆蓋全域設定）</label>
+    <input id="mood3" placeholder="溫馨、悲傷、懸疑（留空則使用全域氣氛）">
+
+    <div class="btn-group">
+      <button class="generate" onclick="generate3()">產生提示詞</button>
+      <button class="copy" onclick="copyOutput('output3')">複製提示詞</button>
+      <button class="clear" onclick="clearOutput('output3')">清除</button>
+    </div>
+    <div id="output3" class="output"></div>
+  </div>
+
+  <!-- ══ 模板4 ══ -->
+  <div class="template">
+    <h2>30張分鏡拆解模板</h2>
+    <div class="global-tip">💡 全域角色與畫風設定將一併傳入，讓 AI 維持一致性</div>
+
+    <label>故事內容</label>
+    <textarea id="story4" rows="8" placeholder="貼上完整故事內容"></textarea>
+
+    <div class="btn-group">
+      <button class="generate" onclick="generate4()">產生提示詞</button>
+      <button class="copy" onclick="copyOutput('output4')">複製提示詞</button>
+      <button class="clear" onclick="clearOutput('output4')">清除</button>
+    </div>
+    <div id="output4" class="output"></div>
+  </div>
+
+  <!-- ══ 模板5 ══ -->
+  <div class="template">
+    <h2>電影級動漫分鏡模板</h2>
+    <div class="global-tip">💡 全域設定自動帶入，本模板可額外指定動畫導演風格</div>
+
+    <label>故事內容</label>
+    <textarea id="story5" placeholder="輸入故事內容"></textarea>
+
+    <label>動畫導演風格（可覆蓋全域畫風）</label>
+    <input id="style5" placeholder="新海誠、細田守、京阿尼風格（留空則使用全域畫風）">
+
+    <div class="btn-group">
+      <button class="generate" onclick="generate5()">產生提示詞</button>
+      <button class="copy" onclick="copyOutput('output5')">複製提示詞</button>
+      <button class="clear" onclick="clearOutput('output5')">清除</button>
+    </div>
+    <div id="output5" class="output"></div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+
+/* ── 全域面板開關 ── */
+function togglePanel(){
+  const body = document.getElementById('panelBody');
+  const icon = document.getElementById('panelIcon');
+  const visible = body.style.display !== 'none';
+  body.style.display = visible ? 'none' : 'block';
+  icon.classList.toggle('open', !visible);
+}
+
+/* ── 分頁切換 ── */
+function showTab(index){
+  document.querySelectorAll('.template').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.template')[index].classList.add('active');
+  document.querySelectorAll('.tab-btn')[index].classList.add('active');
+}
+
+/* ── 新增 / 移除角色 ── */
+function addChar(){
+  const row = document.createElement('div');
+  row.className = 'char-row';
+  row.innerHTML = `
+    <input placeholder="角色名稱" oninput="syncCharLabels()">
+    <textarea placeholder="外觀描述（例：teenage girl, long brown hair, green school uniform, warm smile）"></textarea>
+    <button class="btn-remove-char" onclick="removeChar(this)" title="移除角色">✕</button>
+  `;
+  document.getElementById('charList').appendChild(row);
+}
+
+function removeChar(btn){
+  const rows = document.querySelectorAll('.char-row');
+  if(rows.length <= 1){ alert('至少保留一個角色設定'); return; }
+  btn.closest('.char-row').remove();
+}
+
+/* ── 取得全域設定 ── */
+function getGlobalChars(filterNames){
+  const rows = document.querySelectorAll('.char-row');
+  const result = [];
+  rows.forEach(row => {
+    const name = row.querySelector('input').value.trim();
+    const desc = row.querySelector('textarea').value.trim();
+    if(!name && !desc) return;
+    if(filterNames && filterNames.length > 0){
+      const lower = filterNames.join('').toLowerCase();
+      if(lower && name && !lower.includes(name.toLowerCase())) return;
+    }
+    result.push({ name: name || '角色', desc });
+  });
+  return result;
+}
+
+function getGlobalStyle(){
+  return document.getElementById('globalStyle').value.trim();
+}
+function getGlobalRatio(){
+  return document.getElementById('globalRatio').value;
+}
+function getGlobalLight(){
+  return document.getElementById('globalLight').value.trim();
+}
+function getGlobalMood(){
+  return document.getElementById('globalMood').value.trim();
+}
+function getGlobalQuality(){
+  return document.getElementById('globalQuality').value.trim();
+}
+
+function buildCharBlock(filterStr){
+  const names = filterStr ? filterStr.split(/[、,，\s]+/).filter(Boolean) : [];
+  const chars = getGlobalChars(names.length > 0 ? names : null);
+  if(chars.length === 0) return '';
+  return chars.map(c =>
+    `【${c.name}外觀】${c.desc || '（未填寫）'}`
+  ).join('\n');
+}
+
+function buildStyleLine(){
+  const parts = [
+    getGlobalStyle(),
+    getGlobalLight(),
+    getGlobalMood()
+  ].filter(Boolean);
+  return parts.join(', ');
+}
+
+/* ── 模板1 ── */
+function generate1(){
+  const charBlock = buildCharBlock(document.getElementById('activeChars1').value);
+  const styleNote = buildStyleLine();
+  const shot = document.getElementById('shot1').value;
+  document.getElementById('output1').innerText =
+`═══════════════════════════════
+【鏡頭編號】${document.getElementById('scene1').value}
+═══════════════════════════════
+
+【劇情內容】
+${document.getElementById('story1').value}
+
+【動作】
+${document.getElementById('action1').value}
+
+【場景】
+${document.getElementById('location1').value}
+
+【時間】
+${document.getElementById('time1').value}
+
+${charBlock ? '【角色外觀（一致性設定）】\n'+charBlock+'\n' : ''}
+─────────────────────────────
+📌 AI繪圖提示詞：
+
+${getGlobalQuality()},
+${styleNote ? styleNote+',' : ''}
+${shot ? shot+',' : ''}
+${document.getElementById('location1').value}, ${document.getElementById('time1').value},
+${document.getElementById('action1').value},
+${getGlobalRatio()}
+`;
+}
+
+/* ── 模板2 ── */
+function generate2(){
+  const charBlock = buildCharBlock(document.getElementById('activeChars2').value);
+  const styleNote = buildStyleLine();
+  document.getElementById('output2').innerText =
+`${getGlobalQuality()},
+${getGlobalStyle() ? getGlobalStyle()+',' : ''}
+${document.getElementById('camera2').value},
+${charBlock ? charBlock.replace(/\n/g, ', ') : ''}
+${document.getElementById('action2').value},
+${document.getElementById('scene2').value},
+${document.getElementById('extra2').value ? document.getElementById('extra2').value+',' : ''}
+${getGlobalLight() ? getGlobalLight()+',' : ''}
+${getGlobalMood() ? getGlobalMood()+',' : ''}
+cinematic composition,
+${getGlobalRatio()}
+`;
+}
+
+/* ── 模板3 ── */
+function generate3(){
+  const charBlock = buildCharBlock(document.getElementById('activeChars3').value);
+  const mood = document.getElementById('mood3').value.trim() || getGlobalMood();
+  document.getElementById('output3').innerText =
+`【劇情】
+${document.getElementById('story3').value}
+
+【畫面】
+${document.getElementById('scene3').value}
+
+${charBlock ? '【角色外觀】\n'+charBlock+'\n' : ''}
+【氣氛】${mood}
+
+─────────────────────────────
+📌 AI提示詞：
+${getGlobalQuality()},
+${buildStyleLine() ? buildStyleLine()+',' : 'anime cinematic scene,'}
+${document.getElementById('scene3').value},
+${mood},
+${getGlobalRatio()}
+`;
+}
+
+/* ── 模板4 ── */
+function generate4(){
+  const chars = getGlobalChars([]);
+  const charSummary = chars.length > 0
+    ? chars.map(c => `・${c.name}：${c.desc || '（未填寫外觀）'}`).join('\n')
+    : '（請先在全域設定填寫角色）';
+
+  document.getElementById('output4').innerText =
+`請根據以下故事，生成30張分鏡圖的完整提示詞。
+
+━━━ 故事內容 ━━━
+${document.getElementById('story4').value}
+
+━━━ 角色一致性設定（必須嚴格遵守） ━━━
+${charSummary}
+
+━━━ 統一畫風設定（每張圖必須相同） ━━━
+畫風：${getGlobalStyle() || '未設定'}
+光線：${getGlobalLight() || '未設定'}
+氣氛：${getGlobalMood() || '未設定'}
+畫面品質：${getGlobalQuality()}
+比例：${getGlobalRatio()}
+
+━━━ 輸出格式要求 ━━━
+請依序輸出30個分鏡，每個分鏡包含：
+1. 場次編號（Scene 01 ~ Scene 30）
+2. 中文場景說明（2〜3句）
+3. 鏡頭類型（wide shot / medium shot / close-up 等）
+4. 角色動作描述
+5. 情緒描述
+6. 完整英文 AI繪圖提示詞（含角色外觀 + 畫風 + 比例）
+
+━━━ 重要規則 ━━━
+- 每張圖角色外觀必須與上方設定完全一致
+- 畫風關鍵詞每張都要包含
+- 全部使用 ${getGlobalRatio()}
+- 角色一致性優先於場景氣氛
+`;
+}
+
+/* ── 模板5 ── */
+function generate5(){
+  const chars = getGlobalChars([]);
+  const charSummary = chars.length > 0
+    ? chars.map(c => `・${c.name}：${c.desc || '（未填寫外觀）'}`).join('\n')
+    : '（請先在全域設定填寫角色）';
+  const styleOverride = document.getElementById('style5').value.trim();
+  const finalStyle = styleOverride || getGlobalStyle() || '（未設定）';
+
+  document.getElementById('output5').innerText =
+`請將以下故事改編為30張電影級動漫分鏡圖。
+
+━━━ 故事 ━━━
+${document.getElementById('story5').value}
+
+━━━ 動畫風格 ━━━
+${finalStyle}
+
+━━━ 角色設定（必須貫穿全部30張，保持一致） ━━━
+${charSummary}
+
+━━━ 統一技術規格 ━━━
+・比例：${getGlobalRatio()}
+・畫風：${finalStyle}
+・光線：${getGlobalLight() || '自然電影光'}
+・品質：${getGlobalQuality()}
+
+━━━ 製作規則 ━━━
+・畫風貫穿始終，不可跑風格
+・角色外觀一致性最高優先
+・電影感構圖（leading lines / rule of thirds）
+・每張圖推進劇情，不重複場景
+・情緒曲線：建立 → 衝突 → 高潮 → 解決
+`;
+}
+
+/* ── 複製 / 清除 ── */
+function copyOutput(id){
+  const text = document.getElementById(id).innerText.trim();
+  if(!text){ alert('請先產生提示詞'); return; }
+  navigator.clipboard.writeText(text).then(()=>{ alert('✅ 提示詞已複製！'); });
+}
+
+function clearOutput(id){
+  document.getElementById(id).innerText = '';
+}
+
+</script>
+</body>
+</html>
