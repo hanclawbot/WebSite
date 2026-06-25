@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎀 繪本工坊｜數位繪本產生器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============ Kawaii Design System ============ */
+:root{
+  --bg:#FFF0F5; --bg2:#FFFDE7; --mint:#F0FFF4; --sky:#E3F2FD;
+  --ink:#5D4037; --ink2:#4A4A4A; --line:#FADADD;
+  --accent:#FF8FAB; --accent2:#FFB74D;
+  --shadow:0 8px 16px rgba(255,182,193,.4);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:'M PLUS Rounded 1c','Kiwi Maru',sans-serif;
+  color:var(--ink); background:
+    radial-gradient(circle at 12% 18%, rgba(255,183,77,.10) 0 60px, transparent 61px),
+    radial-gradient(circle at 88% 80%, rgba(255,143,171,.12) 0 80px, transparent 81px),
+    radial-gradient(rgba(255,143,171,.10) 2px, transparent 2.5px),
+    var(--bg);
+  background-size:auto,auto,26px 26px,auto;
+  line-height:1.7;
+}
+button{font-family:inherit}
+.btn{
+  background:var(--accent); color:#fff; border:none; border-radius:50px;
+  padding:10px 20px; font-size:.95rem; font-weight:700; cursor:pointer;
+  box-shadow:0 4px 12px rgba(255,143,171,.4); transition:transform .2s, box-shadow .2s;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.btn:hover{transform:scale(1.06); box-shadow:0 6px 18px rgba(255,143,171,.5)}
+.btn.alt{background:var(--accent2); box-shadow:0 4px 12px rgba(255,183,77,.4)}
+.btn.ghost{background:#fff; color:var(--accent); border:3px solid var(--line); box-shadow:0 4px 10px rgba(255,182,193,.25)}
+.btn.mini{padding:5px 12px; font-size:.8rem}
+input[type=text], textarea, select, input[type=number]{
+  width:100%; border:3px solid var(--line); border-radius:16px; padding:9px 12px;
+  font-family:inherit; font-size:.92rem; color:var(--ink); background:#fff; outline:none;
+  transition:border-color .2s;
+}
+input:focus, textarea:focus, select:focus{border-color:var(--accent)}
+textarea{resize:vertical; min-height:120px; line-height:1.7}
+label.fld{display:block; font-size:.83rem; font-weight:800; color:#B07A8C; margin:12px 0 4px}
+input[type=range]{width:100%; accent-color:var(--accent)}
+input[type=range]:disabled{opacity:.35}
+.hint{font-size:.76rem; color:#B79A8F; margin-top:2px}
+
+/* ============ Layout ============ */
+header.appbar{
+  position:sticky; top:0; z-index:50; display:flex; flex-wrap:wrap; align-items:center; gap:10px;
+  padding:12px 18px; background:rgba(255,255,255,.86); backdrop-filter:blur(6px);
+  border-bottom:3px solid var(--line);
+}
+.logo{font-size:1.25rem; font-weight:800; color:var(--accent); display:flex; align-items:center; gap:8px; margin-right:auto}
+.logo small{font-size:.72rem; color:#C49AA6; font-weight:700}
+main{display:grid; grid-template-columns:230px 1fr 330px; gap:16px; padding:16px; max-width:1500px; margin:0 auto}
+.panel{background:#fff; border:3px solid var(--line); border-radius:24px; box-shadow:var(--shadow); padding:16px; min-width:0}
+.panel h3{margin:0 0 10px; font-size:1rem; color:var(--accent); display:flex; align-items:center; gap:6px}
+@media (max-width:1024px){ main{grid-template-columns:1fr} }
+
+/* ---- page thumbnails ---- */
+#thumbList{display:flex; flex-direction:column; gap:10px; max-height:48vh; overflow:auto; padding:4px}
+.thumb{
+  border:3px solid var(--line); border-radius:16px; background:var(--bg2); cursor:pointer;
+  padding:8px 10px; transition:transform .15s, border-color .15s; position:relative;
+}
+.thumb:hover{transform:scale(1.03)}
+.thumb.sel{border-color:var(--accent); background:#FFF6F9}
+.thumb .t-type{font-size:.68rem; font-weight:800; color:#fff; background:var(--accent2); border-radius:50px; padding:1px 8px; display:inline-block}
+.thumb .t-type.cover{background:var(--accent)}
+.thumb .t-type.back{background:#90CAF9}
+.thumb .t-title{font-size:.82rem; font-weight:700; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.thumb .t-meta{font-size:.68rem; color:#C49AA6}
+
+/* ---- preview ---- */
+#previewWrap{display:flex; flex-direction:column; align-items:center; gap:10px}
+#previewBox{width:100%; display:flex; justify-content:center; align-items:flex-start; overflow:auto; background:var(--mint); border-radius:18px; border:3px dashed #CDEBD8; padding:18px; min-height:420px}
+#pageNav{display:flex; flex-wrap:wrap; justify-content:center; gap:10px; align-items:center; font-weight:800; color:#B07A8C}
+.pv-persp{perspective:1600px; position:relative}
+.pv-spine{width:14px; align-self:stretch; background:linear-gradient(90deg, rgba(93,64,55,.20), rgba(93,64,55,0) 45%, rgba(93,64,55,0) 55%, rgba(93,64,55,.20)); flex:none}
+.pv-ov{position:absolute; inset:0; pointer-events:none; transform-style:preserve-3d; z-index:60}
+.flip-patch{position:absolute; top:0; height:100%; overflow:hidden; background:#fff}
+.flip-leaf{position:absolute; top:0; height:100%; transform-style:preserve-3d; filter:drop-shadow(0 14px 24px rgba(93,64,55,.35))}
+.flip-face{position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; overflow:hidden; background:#fff}
+.flip-face.backf{transform:rotateY(180deg)}
+#previewBox .pb-img{cursor:grab; touch-action:none}
+#previewBox .pb-img:active{cursor:grabbing}
+
+/* ---- 自由排版：選取框與控制把手（僅預覽區） ---- */
+#previewBox .pb-inner{pointer-events:none}          /* 文字層整體可穿透，墊在後方的圖片也點得到 */
+#previewBox .pb-inner h1,#previewBox .pb-inner h2,#previewBox .pb-inner .sub,#previewBox .pb-inner .pbody,#previewBox .pb-inner .theend{pointer-events:auto;cursor:grab} /* 但實際文字可點住拖曳 */
+#previewBox .pb-tbox{cursor:grab}
+#previewBox .pb-shape{cursor:grab; touch-action:none}
+#previewBox .pb-img.selq,#previewBox .pb-tbox.selq,#previewBox .pb-shape.selq{outline:3px dashed var(--accent); outline-offset:3px; z-index:5 !important} /* 選取時暫時浮到最上層方便編輯 */
+.hdl{
+  position:absolute; width:28px; height:28px; border-radius:50%;
+  background:#fff; border:3px solid var(--accent); color:var(--accent);
+  z-index:99; touch-action:none; display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:800; user-select:none; box-shadow:0 3px 8px rgba(255,143,171,.4);
+}
+.hdl.rz{right:-14px; bottom:-14px; cursor:nwse-resize}
+.hdl.rt{left:50%; top:-46px; transform:translateX(-50%); cursor:grab}
+.hdl.tb{left:-14px; top:-14px; cursor:pointer}
+.hdl.fl{left:-14px; bottom:-14px; cursor:pointer}
+.hdl.rw{right:-14px; top:50%; transform:translateY(-50%); cursor:ew-resize}
+.hdl.lw{left:-14px; top:50%; transform:translateY(-50%); cursor:ew-resize}
+.hdl.rh{bottom:-14px; left:50%; transform:translateX(-50%); cursor:ns-resize}
+.hdl.th{top:-14px; left:50%; transform:translateX(-50%); cursor:ns-resize}
+.hdl.del{right:-14px; top:-14px; cursor:pointer; color:#E57373; border-color:#E57373}
+.rt-line{position:absolute; left:50%; top:-18px; width:3px; height:18px; background:var(--accent); transform:translateX(-50%)}
+.rpt{
+  position:absolute; width:18px; height:18px; border-radius:50%;
+  background:#fff; border:3px solid var(--accent2); z-index:120;
+  transform:translate(-50%,-50%); cursor:move; touch-action:none;
+  box-shadow:0 2px 6px rgba(255,183,77,.5);
+}
+#imgToolbar{display:none; flex-wrap:wrap; gap:8px; justify-content:center; align-items:center}
+#imgToolbar select{width:auto; padding:5px 10px; font-size:.8rem; border-radius:50px}
+#imgToolbar .tlbl{font-size:.76rem; font-weight:800; color:#B07A8C; display:inline-flex; align-items:center; gap:5px; background:#fff; border:3px solid var(--line); border-radius:50px; padding:4px 12px}
+#imgToolbar .tlbl input[type=range]{width:80px}
+#imgToolbar input[type=color]{width:44px; height:34px; border:3px solid var(--line); border-radius:12px; padding:2px; background:#fff; cursor:pointer}
+
+/* ---- image chips ---- */
+#imgChips{display:flex; flex-wrap:wrap; gap:8px; margin-top:8px}
+.chip{width:64px; height:64px; border-radius:14px; overflow:hidden; position:relative; border:3px solid var(--line); cursor:pointer}
+.chip.sel{border-color:var(--accent); box-shadow:0 0 0 3px rgba(255,143,171,.35)}
+.chip img{width:100%; height:100%; object-fit:cover}
+.chip .rm{position:absolute; top:1px; right:1px; width:20px; height:20px; border:none; border-radius:50%; background:rgba(255,143,171,.92); color:#fff; font-size:.7rem; cursor:pointer; line-height:1}
+.rowbtns{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+.two{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) scale(.9); opacity:0;
+  background:#fff; border:3px solid var(--accent); color:var(--ink); border-radius:50px;
+  padding:10px 22px; font-weight:800; box-shadow:var(--shadow); z-index:99; transition:all .25s; pointer-events:none;
+}
+.toast.show{opacity:1; transform:translateX(-50%) scale(1)}
+/* 繪本頁面樣式由下方 JS 注入（預覽／電子書／PDF 三處共用同一份） */
+</style>
+<style id="sharedPageCss"></style>
+</head>
+<body>
+
+<header class="appbar">
+  <div class="logo">🎀 繪本工坊 <small>數位繪本產生器</small></div>
+  <button class="btn ghost mini" onclick="downloadTemplate()">📄 下載 Markdown 範本</button>
+  <button class="btn ghost mini" onclick="loadSample()">🌸 載入範例繪本</button>
+  <button class="btn alt mini" onclick="document.getElementById('mdFile').click()">📂 上傳 Markdown</button>
+  <input type="file" id="mdFile" accept=".md,.markdown,.txt" hidden>
+  <button class="btn ghost mini" onclick="saveProject()">💾 儲存專案</button>
+  <button class="btn ghost mini" onclick="document.getElementById('projFile').click()">📁 開啟專案</button>
+  <input type="file" id="projFile" accept=".json,application/json" hidden>
+  <button class="btn mini" onclick="exportEbook()">🌐 匯出網頁電子書</button>
+  <button class="btn mini" onclick="exportPDF()">🖨️ 匯出 PDF（列印）</button>
+</header>
+
+<main>
+  <!-- 左：頁面清單＋書本設定 -->
+  <section class="panel">
+    <h3>📚 頁面清單</h3>
+    <div id="thumbList"></div>
+    <div class="rowbtns">
+      <button class="btn alt mini" onclick="addPage()">＋ 新增內頁</button>
+      <button class="btn ghost mini" onclick="movePage(-1)">⬆️</button>
+      <button class="btn ghost mini" onclick="movePage(1)">⬇️</button>
+      <button class="btn ghost mini" onclick="deletePage()">🗑️</button>
+    </div>
+
+    <h3 style="margin-top:18px">📖 書本設定</h3>
+    <label class="fld">開本尺寸</label>
+    <select id="trimSel" onchange="onBookSetting()">
+      <option value="200x200">方形繪本 20×20 cm</option>
+      <option value="210x297">A4 直式 21×29.7 cm</option>
+      <option value="297x210">A4 橫式 29.7×21 cm</option>
+      <option value="176x250">B5 直式 17.6×25 cm</option>
+      <option value="250x176">B5 橫式 25×17.6 cm</option>
+    </select>
+    <label class="fld">出血（每邊 mm，列印用）</label>
+    <input type="number" id="bleedInp" min="0" max="5" step="0.5" value="3" onchange="onBookSetting()">
+    <label class="fld" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+      <input type="checkbox" id="cropChk" checked style="width:auto;accent-color:var(--accent)"> 加入裁切標記
+    </label>
+
+    <h3 style="margin-top:18px">🔤 字型設定</h3>
+    <label class="fld">標題字型</label>
+    <select id="titleFontSel" onchange="onFontChange()"></select>
+    <label class="fld">內文字型</label>
+    <select id="bodyFontSel" onchange="onFontChange()"></select>
+    <div class="rowbtns"><button class="btn ghost mini" onclick="grabLocalFonts()">💻 讀取我電腦的字型</button></div>
+    <div class="hint" id="fontHint">需 Chrome／Edge 並同意權限；電腦字型在他人裝置開啟電子書時，需對方也安裝同字型才會顯示。</div>
+  </section>
+
+  <!-- 中：預覽 -->
+  <section class="panel" id="previewWrap">
+    <h3 style="align-self:flex-start">🔍 即時預覽 <span style="font-size:.7rem;color:#C49AA6">直接拖曳圖片可移動；點選後可縮放↘、旋轉↻、⇅移到文字後方</span></h3>
+    <div id="previewBox"></div>
+    <div id="pageNav">
+      <button class="btn ghost mini" onclick="step(-1)">◀ 上一頁</button>
+      <span id="navLabel"></span>
+      <button class="btn ghost mini" onclick="step(1)">下一頁 ▶</button>
+      <button class="btn ghost mini" id="vmBtn" onclick="toggleViewMode()">📄 單頁</button>
+      <button class="btn ghost mini" id="sndBtn" onclick="toggleSound()">🔊</button>
+    </div>
+    <div id="imgToolbar">
+      <select id="maskSel" onchange="toolMask()">
+        <option value="none">🎭 形狀：方形原圖</option>
+        <option value="blob">有機圓塊</option>
+        <option value="brush">筆刷潑墨</option>
+        <option value="torn">撕紙邊</option>
+        <option value="cloud">雲朵</option>
+        <option value="custom">自訂形狀（拖點）</option>
+      </select>
+      <button class="btn ghost mini" id="seedBtn" onclick="toolSeed()">🎲 換個樣子</button>
+      <button class="btn ghost mini" id="editBtn" onclick="toolEdit()">✏️ 編輯區域</button>
+      <label class="tlbl" id="imOpWrap">透明度<input type="range" id="imOpRng" min="10" max="100" step="5" oninput="toolImOp()"></label>
+      <input type="color" id="shpColor" title="色塊顏色" oninput="toolShp()">
+      <label class="tlbl" id="shpRadWrap">圓角<input type="range" id="shpRad" min="0" max="120" step="2" oninput="toolShp()"></label>
+      <label class="tlbl" id="shpOpWrap">透明度<input type="range" id="shpOp" min="10" max="100" step="5" oninput="toolShp()"></label>
+      <select id="shpZ" onchange="toolShpZ()">
+        <option value="3">層級：最上層</option>
+        <option value="1.5">層級：文字之上</option>
+        <option value="0.6">層級：文字之下</option>
+        <option value="0">層級：最底層</option>
+      </select>
+      <button class="btn ghost mini" id="tbLayerBtn" onclick="toolLayer()">⬇️ 墊到文字後</button>
+      <button class="btn ghost mini" id="flipBtn" onclick="toolFlip()">↔️ 水平翻轉</button>
+      <button class="btn ghost mini" id="rzeroBtn" onclick="toolRotZero()">↻ 角度歸零</button>
+      <button class="btn ghost mini" id="delBtn" onclick="toolDel()" style="color:#E57373;border-color:#FFCDD2">🗑️ 刪除此圖</button>
+    </div>
+  </section>
+
+  <!-- 右：頁面編輯 -->
+  <section class="panel">
+    <h3>✏️ 本頁編輯 <span id="edType" style="font-size:.72rem;color:#C49AA6"></span></h3>
+    <div id="coverFields" style="display:none">
+      <label class="fld">書名</label><input type="text" id="bkTitle" oninput="onCoverInput()">
+      <label class="fld">副標題</label><input type="text" id="bkSub" oninput="onCoverInput()">
+      <label class="fld">作者</label><input type="text" id="bkAuthor" oninput="onCoverInput()">
+    </div>
+    <div id="pageFields">
+      <label class="fld" id="pgTitleLbl">本頁標題（可留空）</label><input type="text" id="pgTitle" oninput="onPageInput()">
+      <label class="fld">內文（支援 **粗體**、*斜體*、清單）</label>
+      <textarea id="pgBody" oninput="onPageInput()"></textarea>
+    </div>
+    <div class="two" id="titleStyleRow">
+      <div><label class="fld">標題大小：<span id="tszVal"></span></label><input type="range" id="tszRng" min="0.6" max="3.5" step="0.05" oninput="onPageInput()"></div>
+      <div><label class="fld">標題顏色</label><input type="color" id="tcoInp" value="#C2587A" oninput="onPageInput()" style="width:100%;height:42px;border:3px solid var(--line);border-radius:16px;background:#fff;padding:4px"></div>
+    </div>
+    <div class="two">
+      <div><label class="fld">內文大小：<span id="bszVal"></span></label><input type="range" id="bszRng" min="0.6" max="2.5" step="0.05" oninput="onPageInput()"></div>
+      <div><label class="fld">內文顏色</label><input type="color" id="bcoInp" value="#5D4037" oninput="onPageInput()" style="width:100%;height:42px;border:3px solid var(--line);border-radius:16px;background:#fff;padding:4px"></div>
+    </div>
+    <div class="two" id="tStrokeRow">
+      <div><label class="fld">標題外框粗細：<span id="tstVal"></span></label><input type="range" id="tstRng" min="0" max="6" step="0.5" oninput="onPageInput()"></div>
+      <div><label class="fld">標題外框色</label><input type="color" id="tstCo" value="#FFFFFF" oninput="onPageInput()" style="width:100%;height:42px;border:3px solid var(--line);border-radius:16px;background:#fff;padding:4px"></div>
+    </div>
+    <div class="two">
+      <div><label class="fld">內文外框粗細：<span id="bstVal"></span></label><input type="range" id="bstRng" min="0" max="5" step="0.5" oninput="onPageInput()"></div>
+      <div><label class="fld">內文外框色</label><input type="color" id="bstCo" value="#FFFFFF" oninput="onPageInput()" style="width:100%;height:42px;border:3px solid var(--line);border-radius:16px;background:#fff;padding:4px"></div>
+    </div>
+    <h3 style="margin-top:16px">🟧 裝飾色塊</h3>
+    <button class="btn alt mini" onclick="addShape()">＋ 新增圓角矩形</button>
+    <div class="hint">色塊在任何排版都可用：點選後可拖曳，把手 ⤡ 等比縮放、↔ 調寬、↕ 調高、↻ 旋轉；工具列可調顏色、圓角、透明度與層級（相對文字與圖片）。</div>
+    <div class="hint">在預覽區點住「標題」或「內文」即可拖曳位置（自動轉自由排版）；選取後把手可調寬度 ⤡ 與旋轉 ↻。</div>
+
+    <h3 style="margin-top:16px">🖼️ 本頁插畫</h3>
+    <button class="btn alt mini" onclick="document.getElementById('imgFile').click()">＋ 加入圖片（可多選）</button>
+    <input type="file" id="imgFile" accept="image/*" multiple hidden>
+    <div id="imgChips"></div>
+    <div class="two">
+      <div>
+        <label class="fld">排版方式</label>
+        <select id="laySel" onchange="onPageInput()">
+          <option value="top">上圖・下文</option>
+          <option value="bottom">下圖・上文</option>
+          <option value="left">左圖・右文</option>
+          <option value="right">右圖・左文</option>
+          <option value="bg">滿版背景・文字浮卡</option>
+          <option value="grid">格狀拼貼・文字在下</option>
+          <option value="free">✋ 自由排版（拖曳/旋轉）</option>
+        </select>
+      </div>
+      <div>
+        <label class="fld">頁面底色</label>
+        <select id="bgSel" onchange="onPageInput()">
+          <option value="#FFFDF7">奶油白</option>
+          <option value="#FFF0F5">粉櫻</option>
+          <option value="#F0FFF4">薄荷</option>
+          <option value="#FFFDE7">奶油黃</option>
+          <option value="#E3F2FD">天空藍</option>
+          <option value="#FFFFFF">純白</option>
+        </select>
+      </div>
+    </div>
+    <div class="two">
+      <div>
+        <label class="fld">柔邊化程度：<span id="feaVal"></span></label>
+        <input type="range" id="feaRng" min="0" max="80" step="2" oninput="onPageInput()">
+      </div>
+      <div>
+        <label class="fld">柔邊形狀</label>
+        <select id="feaShapeSel" onchange="onPageInput()">
+          <option value="rect">矩形暈邊</option>
+          <option value="ellipse">橢圓暈邊</option>
+        </select>
+      </div>
+    </div>
+    <label class="fld">圖片遮罩形狀（一次套用本頁全部圖片）</label>
+    <select id="pgMaskSel" onchange="onPgMask()">
+      <option value="none">方形原圖（依柔邊形狀暈邊）</option>
+      <option value="blob">有機圓塊</option>
+      <option value="brush">筆刷潑墨</option>
+      <option value="torn">撕紙邊</option>
+      <option value="cloud">雲朵</option>
+    </select>
+    <label class="fld">圖片區佔比：<span id="sizVal"></span></label>
+    <input type="range" id="sizRng" min="25" max="78" step="1" oninput="onPageInput()">
+    <div class="hint">在預覽區直接拖曳任何圖片，會自動切換為「自由排版」；點選圖片後可用把手縮放、旋轉，⇅ 可把圖片墊到文字後方。</div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* ================= 共用頁面 CSS（預覽 / 電子書 / PDF 三處同步） ================= */
+const PAGE_CSS = `
+.pb-page{position:relative;overflow:hidden;color:#5D4037;font-family:var(--bodyf,'Kiwi Maru','M PLUS Rounded 1c',serif);display:flex;flex-direction:column;line-height:1.9}
+.pb-page h1,.pb-page h2{font-family:var(--titlef,inherit)}
+.pb-inner{position:relative;flex:1;display:flex;gap:5%;min-height:0;z-index:1}
+.pb-imgs{display:flex;gap:14px;min-height:0;min-width:0}
+.pb-img{position:relative;overflow:hidden;border-radius:20px;flex:1;min-width:0;min-height:0}
+.pb-img>img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none}
+/* —— 柔邊：以遮罩漸層淡出至「透明」，邊緣完全融入背景，無外框 —— */
+.feathered .pb-img{border-radius:0;overflow:visible}
+.feathered.fs-rect .pb-img>img{
+  -webkit-mask-image:linear-gradient(to right,transparent 0,#000 var(--fz),#000 calc(100% - var(--fz)),transparent 100%),linear-gradient(to bottom,transparent 0,#000 var(--fz),#000 calc(100% - var(--fz)),transparent 100%);
+  -webkit-mask-composite:source-in;
+  mask-image:linear-gradient(to right,transparent 0,#000 var(--fz),#000 calc(100% - var(--fz)),transparent 100%),linear-gradient(to bottom,transparent 0,#000 var(--fz),#000 calc(100% - var(--fz)),transparent 100%);
+  mask-composite:intersect}
+.feathered.fs-ellipse .pb-img>img{
+  -webkit-mask-image:radial-gradient(ellipse closest-side,#000 calc(100% - var(--fz)*1.8),transparent 100%);
+  mask-image:radial-gradient(ellipse closest-side,#000 calc(100% - var(--fz)*1.8),transparent 100%)}
+/* —— 固定排版 —— */
+.lay-top .pb-inner{flex-direction:column}
+.lay-bottom .pb-inner{flex-direction:column-reverse}
+.lay-top .pb-imgs,.lay-bottom .pb-imgs{height:var(--isz,55%);width:100%}
+.lay-left .pb-inner{flex-direction:row}
+.lay-right .pb-inner{flex-direction:row-reverse}
+.lay-left .pb-imgs,.lay-right .pb-imgs{width:var(--isz,50%);flex-direction:column}
+.lay-grid .pb-inner{flex-direction:column}
+.lay-grid .pb-imgs{display:grid;grid-template-columns:1fr 1fr;height:var(--isz,58%);width:100%}
+.lay-grid .pb-imgs.n1{grid-template-columns:1fr}
+.lay-grid .pb-imgs.n3 .pb-img:first-child{grid-row:span 2}
+.lay-bg .pb-imgs{position:absolute;inset:0;z-index:0;border-radius:0}
+.lay-bg .pb-img,.lay-bg.feathered .pb-img{border-radius:0;overflow:hidden}
+.lay-bg .pb-text{position:relative;z-index:2;align-self:flex-end;width:100%;background:rgba(255,255,255,.88);border-radius:22px;padding:18px 24px;box-shadow:0 8px 16px rgba(93,64,55,.15)}
+/* —— 自由排版：圖片絕對定位，可墊於文字前/後 —— */
+.lay-free .pb-text{flex:1;justify-content:center}
+.pb-img.free{position:absolute;flex:none;border-radius:14px;overflow:visible}
+.pb-img.free>img{border-radius:inherit}
+.pb-img.free.flipx>img{transform:scaleX(-1)}
+.feathered .pb-img.free{border-radius:0}
+.pb-text{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0}
+.pb-text h2,.pb-tbox h2{font-size:var(--tsz,1.35em);margin:0 0 .4em;color:var(--tco,#C2587A);letter-spacing:.06em}
+.pb-text p{margin:.45em 0}
+.pbody{font-size:var(--bsz,1em);color:var(--bco,#5D4037);-webkit-text-stroke:var(--bstw,0px) var(--bstc,#fff);paint-order:stroke fill}
+.pb-cover h1,.pb-text h2,.pb-tbox h2{-webkit-text-stroke:var(--tstw,0px) var(--tstc,#fff);paint-order:stroke fill}
+.pb-shape{position:absolute}
+.pb-tbox{position:absolute;z-index:1;line-height:1.9}
+.pb-cover .pb-tbox,.pb-back .pb-tbox{text-align:center}
+.pb-tbox .author{display:inline-block}
+.pb-text ul{margin:.4em 0;padding-left:1.4em}
+.pb-num{position:absolute;z-index:3;bottom:0;right:0;font-size:.78em;font-weight:700;color:#fff;background:#FFB6C9;border-radius:50px;padding:2px 14px}
+.pb-page.is-even .pb-num{right:auto;left:0}
+/* —— 封面 / 封底 —— */
+.pb-cover .pb-text{align-items:center;text-align:center}
+.pb-cover h1{font-size:var(--tsz,2.1em);margin:.2em 0 .1em;color:var(--tco,#C2587A);letter-spacing:.12em}
+.pb-cover .sub{font-size:1em;color:#A1887F;margin:0 0 .8em}
+.pb-cover .author{font-size:.9em;color:#8D6E63;border-top:3px dotted #FADADD;padding-top:.6em;letter-spacing:.2em}
+.pb-back .pb-text{align-items:center;text-align:center;font-size:.95em}
+.pb-back .theend{font-size:1.1em;color:#C2587A;letter-spacing:.3em;margin-top:1em}
+`;
+document.getElementById('sharedPageCss').textContent = PAGE_CSS;
+
+/* ================= 字型 ================= */
+const FONTS = [
+  {n:'圓體可愛（M PLUS Rounded 1c）', v:"'M PLUS Rounded 1c',sans-serif", g:'M+PLUS+Rounded+1c:wght@400;700;800'},
+  {n:'手寫圓體（Kiwi Maru）',         v:"'Kiwi Maru',serif",              g:'Kiwi+Maru:wght@400;500'},
+  {n:'思源黑體（Noto Sans TC）',      v:"'Noto Sans TC',sans-serif",      g:'Noto+Sans+TC:wght@400;700;900'},
+  {n:'思源宋體（Noto Serif TC）',     v:"'Noto Serif TC',serif",          g:'Noto+Serif+TC:wght@400;700;900'},
+  {n:'甜甜圓體（Yusei Magic）',       v:"'Yusei Magic',sans-serif",       g:'Yusei+Magic'},
+  {n:'系統・標楷體',                  v:"'DFKai-SB','BiauKai','標楷體',serif"},
+  {n:'系統・細明體',                  v:"'PMingLiU','新細明體',serif"},
+  {n:'系統・微軟正黑體',              v:"'Microsoft JhengHei','微軟正黑體',sans-serif"},
+];
+const loadedG = new Set(['M+PLUS+Rounded+1c:wght@400;500;700;800','Kiwi+Maru:wght@400;500']);
+function ensureGFont(val){
+  const f = FONTS.find(x=>x.v===val);
+  if(f && f.g && !loadedG.has(f.g)){
+    const l=document.createElement('link'); l.rel='stylesheet';
+    l.href='https://fonts.googleapis.com/css2?family='+f.g+'&display=swap';
+    document.head.appendChild(l); loadedG.add(f.g);
+  }
+}
+function gfontHref(){
+  const fams = new Set(['Kiwi+Maru:wght@400;500','M+PLUS+Rounded+1c:wght@400;700;800']);
+  [book.titleFont, book.bodyFont].forEach(v=>{
+    const f=FONTS.find(x=>x.v===v); if(f&&f.g) fams.add(f.g);
+  });
+  return 'https://fonts.googleapis.com/css2?'+[...fams].map(g=>'family='+g).join('&')+'&display=swap';
+}
+function fillFontSelects(extra){
+  ['titleFontSel','bodyFontSel'].forEach(id=>{
+    const sel=document.getElementById(id);
+    const cur=sel.value;
+    sel.innerHTML='';
+    const og1=document.createElement('optgroup'); og1.label='🌸 內建字型';
+    FONTS.forEach(f=>{const o=document.createElement('option');o.value=f.v;o.textContent=f.n;o.style.fontFamily=f.v;og1.appendChild(o);});
+    sel.appendChild(og1);
+    if(localFamilies.length){
+      const og2=document.createElement('optgroup'); og2.label='💻 電腦字型';
+      localFamilies.forEach(fam=>{
+        const o=document.createElement('option');o.value=`'${fam}'`;o.textContent=fam;o.style.fontFamily=`'${fam}'`;og2.appendChild(o);
+      });
+      sel.appendChild(og2);
+    }
+    if(cur) sel.value=cur;
+  });
+  document.getElementById('titleFontSel').value=book.titleFont;
+  document.getElementById('bodyFontSel').value=book.bodyFont;
+}
+let localFamilies=[];
+async function grabLocalFonts(){
+  if(!('queryLocalFonts' in window)){
+    toast('此瀏覽器不支援讀取電腦字型（請用 Chrome／Edge）'); return;
+  }
+  try{
+    const fonts = await window.queryLocalFonts();
+    localFamilies = [...new Set(fonts.map(f=>f.family))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+    fillFontSelects();
+    toast('已載入 '+localFamilies.length+' 個電腦字型 💻✨');
+    document.getElementById('fontHint').textContent='電腦字型已載入；注意：匯出的電子書在他人裝置上，需對方也安裝相同字型才會顯示。PDF 列印則會內嵌，無此問題。';
+  }catch(e){
+    toast('未取得字型權限，請重試並按「允許」');
+  }
+}
+function onFontChange(){
+  book.titleFont=document.getElementById('titleFontSel').value;
+  book.bodyFont=document.getElementById('bodyFontSel').value;
+  ensureGFont(book.titleFont); ensureGFont(book.bodyFont);
+  renderPreview();
+}
+
+/* ================= 資料模型 ================= */
+const PXMM = 3.7795;           // 1mm ≈ 3.7795px（96dpi）
+const SAFE_MM = 12;            // 文字安全邊距
+const newPage = (type) => ({
+  type, title:'', body:'',
+  tstyle:{titleSize:type==='cover'?2.1:1.35, titleColor:'#C2587A', bodySize:1, bodyColor:'#5D4037', titleStrokeW:0, titleStrokeColor:'#FFFFFF', bodyStrokeW:0, bodyStrokeColor:'#FFFFFF'},
+  shapes:[],
+  images:[],                    // [{src,name,free:{x,y,w,h,rot,back}}]
+  layout: type==='cover' ? 'bottom' : 'top',
+  feather:18, feaShape:'rect', imgSize:55, bg:'#FFFDF7'
+});
+let book = {
+  title:'我的小繪本', subtitle:'', author:'',
+  trim:'200x200', bleed:3, viewMode:'single', sound:true,
+  titleFont:FONTS[1].v, bodyFont:FONTS[0].v,
+  pages:[ newPage('cover'), newPage('content'), newPage('back') ]
+};
+let cur = 0;
+let selImg = -1;               // 自由排版時選取中的圖片索引
+let selTxt = null;             // 自由排版時選取中的文字框：'title' | 'body' | null
+let selShape = -1;             // 選取中的裝飾色塊索引（任何排版皆可用）
+let _pv = {scale:1, wPx:1, hPx:1};
+
+/* ================= Markdown 解析 ================= */
+function parseBookMarkdown(text){
+  text = text.replace(/\r\n/g,'\n');
+  const meta = {};
+  const fm = text.match(/^---\n([\s\S]*?)\n---\n?/);
+  if(fm){
+    fm[1].split('\n').forEach(l=>{
+      const m = l.match(/^\s*([^:：]+)[:：]\s*(.*)$/);
+      if(m) meta[m[1].trim()] = m[2].trim();
+    });
+    text = text.slice(fm[0].length);
+  }
+  const secs = text.split(/^\s*===+\s*$/m).map(s=>s.trim()).filter(Boolean);
+  const pages = [];
+  const cover = newPage('cover');
+  pages.push(cover);
+  let coverDone = false;
+  secs.forEach(sec=>{
+    const lines = sec.split('\n');
+    let title='', bodyLines=[];
+    for(const l of lines){
+      const h = l.match(/^#\s+(.*)$/);
+      if(h && !title){ title = h[1].trim(); } else bodyLines.push(l);
+    }
+    const body = bodyLines.join('\n').trim();
+    if(/^封面$/.test(title) && !coverDone){ cover.body = body; coverDone = true; return; }
+    if(/^封底$/.test(title)){ const b=newPage('back'); b.body=body; pages.push(b); return; }
+    const p = newPage('content'); p.title = title; p.body = body; pages.push(p);
+  });
+  if(!pages.some(p=>p.type==='back')) pages.push(newPage('back'));
+  book.title    = meta['書名']  || meta['title']    || book.title;
+  book.subtitle = meta['副標題']|| meta['subtitle'] || '';
+  book.author   = meta['作者']  || meta['author']   || '';
+  book.pages = pages;
+  cur = 0; selImg = -1; selTxt = null; selShape = -1;
+}
+function miniMD(src){
+  const esc = s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inline = s=>esc(s)
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>');
+  const out=[]; let ul=[];
+  const flush=()=>{ if(ul.length){ out.push('<ul>'+ul.map(li=>'<li>'+inline(li)+'</li>').join('')+'</ul>'); ul=[]; } };
+  src.split(/\n{2,}/).forEach(blk=>{
+    const lines = blk.split('\n');
+    if(lines.every(l=>/^\s*[-*]\s+/.test(l))){
+      lines.forEach(l=>ul.push(l.replace(/^\s*[-*]\s+/,''))); flush();
+    }else{
+      flush(); out.push('<p>'+lines.map(inline).join('<br>')+'</p>');
+    }
+  });
+  flush(); return out.join('');
+}
+function escapeH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ================= 不規則形狀遮罩（SVG＋高斯模糊柔邊） ================= */
+function rngFromSeed(seed){
+  let s=(seed||1)%2147483647; if(s<=0)s+=2147483646;
+  return ()=> (s = s*16807%2147483647)/2147483647;
+}
+function genShapePts(type,seed){
+  const r=rngFromSeed(seed);
+  let N=10, base=42, vr=8;
+  if(type==='blob'){N=8; base=42; vr=8;}
+  if(type==='brush'){N=18; base=46; vr=16;}
+  if(type==='torn'){N=22; base=44; vr=12;}
+  if(type==='cloud'){N=14; base=37; vr=2;}
+  const pts=[];
+  for(let i=0;i<N;i++){
+    const jitter = type==='cloud' ? 0 : (r()-.5)*(Math.PI*2/N)*0.9;
+    const ang=(i/N)*Math.PI*2 + jitter;
+    let rad=base+(r()*2-1)*vr;
+    if(type==='brush'){
+      if(r()<0.22) rad*=0.55;            // 偶發深缺口（筆觸飛白）
+      else if(r()<0.35) rad*=1.28;       // 偶發外甩（潑墨）
+    }
+    if(type==='cloud') rad=base+(i%2?10:0)+(r()*2-1)*vr;
+    pts.push({x:50+Math.cos(ang)*rad*1.04, y:50+Math.sin(ang)*rad*1.04});
+  }
+  return pts;
+}
+function ptsToPath(pts, jagged){
+  const f=v=>v.toFixed(1);
+  if(jagged) return 'M'+pts.map(p=>f(p.x)+' '+f(p.y)).join('L')+'Z';
+  const n=pts.length;
+  let d='M'+f(pts[0].x)+' '+f(pts[0].y);
+  for(let i=0;i<n;i++){
+    const p0=pts[(i-1+n)%n], p1=pts[i], p2=pts[(i+1)%n], p3=pts[(i+2)%n];
+    d+=`C${f(p1.x+(p2.x-p0.x)/6)} ${f(p1.y+(p2.y-p0.y)/6)} ${f(p2.x-(p3.x-p1.x)/6)} ${f(p2.y-(p3.y-p1.y)/6)} ${f(p2.x)} ${f(p2.y)}`;
+  }
+  return d+'Z';
+}
+function imMask(im){ if(!im.mask) im.mask={type:'none'}; return im.mask; }
+function maskPts(im){
+  const m=imMask(im);
+  if(m.type==='custom'){ if(!m.pts) m.pts=genShapePts('blob', m.seed||7); return m.pts; }
+  return genShapePts(m.type, m.seed||7);
+}
+function imgMaskStyle(im, feather){
+  const m=imMask(im);
+  if(m.type==='none') return '';
+  const d=ptsToPath(maskPts(im), m.type==='torn');
+  const blur=Math.min(9, (feather||0)*0.11).toFixed(2);
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>`+
+    `<filter id='f' x='-40%' y='-40%' width='180%' height='180%'><feGaussianBlur stdDeviation='${blur}'/></filter>`+
+    `<path d='${d}' fill='#fff' filter='url(#f)'/></svg>`;
+  const enc=encodeURIComponent(svg).replace(/'/g,'%27').replace(/\(/g,'%28').replace(/\)/g,'%29');
+  const uri=`url('data:image/svg+xml,${enc}')`;
+  return `-webkit-mask-image:${uri};mask-image:${uri};-webkit-mask-size:100% 100%;mask-size:100% 100%;`+
+         `-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-composite:source-over;mask-composite:add;`;
+}
+
+/* ================= 自由排版資料 ================= */
+function ensureFree(p){
+  p.images.forEach((im,i)=>{
+    if(!im.free) im.free={x:8+(i%4)*12, y:8+(i%4)*10, w:42, h:34, rot:0, back:false, flip:false};
+  });
+}
+function ensureTFree(p){
+  if(!p.tfree) p.tfree={title:{x:8,y:7,w:84,rot:0}, body:{x:8,y:52,w:84,rot:0}};
+}
+function convertToFree(p){
+  // 由目前預覽畫面量測各圖位置，轉為自由座標（所見即所得）
+  const pageEl=document.querySelector('#previewBox .pb-page');
+  const imgs=pageEl?[...pageEl.querySelectorAll('.pb-img')]:[];
+  const pr=pageEl?pageEl.getBoundingClientRect():null;
+  p.images.forEach((im,i)=>{
+    const r=imgs[i]?imgs[i].getBoundingClientRect():null;
+    if(pr && r && pr.width>0){
+      im.free={x:(r.left-pr.left)/pr.width*100, y:(r.top-pr.top)/pr.height*100,
+               w:r.width/pr.width*100, h:r.height/pr.height*100,
+               rot:0, back:p.layout==='bg'};
+    }
+  });
+  ensureFree(p);
+  // 量測標題與內文目前位置，轉為文字框座標
+  const txEl=pageEl?pageEl.querySelector('.pb-text'):null;
+  if(pr && txEl){
+    const tr=txEl.getBoundingClientRect();
+    const X=(tr.left-pr.left)/pr.width*100, W=Math.max(20,tr.width/pr.width*100);
+    const tEl=pageEl.querySelector('.pb-text h1,.pb-text h2');
+    const bEl=pageEl.querySelector('.pb-text .pbody')||pageEl.querySelector('.pb-text .theend');
+    const yOf=el=>(el.getBoundingClientRect().top-pr.top)/pr.height*100;
+    p.tfree={
+      title:{x:X, y: tEl?yOf(tEl):(tr.top-pr.top)/pr.height*100, w:W, rot:0},
+      body:{x:X, y: bEl?yOf(bEl):(tr.top-pr.top)/pr.height*100+10, w:W, rot:0}
+    };
+  }
+  ensureTFree(p);
+  p.layout='free';
+}
+
+/* ================= 頁面渲染（三處共用） ================= */
+function trimSize(){ const [w,h]=book.trim.split('x').map(Number); return {w,h}; }
+function pageHTML(p, idx, opt){
+  const o = Object.assign({padPx:0, fontPx:16}, opt);
+  const contentPages = book.pages.filter(x=>x.type==='content');
+  const num = p.type==='content' ? contentPages.indexOf(p)+1 : 0;
+  let imgBlock='', freeImgs='';
+  if(p.layout==='free'){
+    ensureFree(p);
+    freeImgs = p.images.slice(0,8).map((im,i)=>{
+      const f=im.free;
+      return `<div class="pb-img free${f.flip?' flipx':''}" data-idx="${i}" style="left:${f.x}%;top:${f.y}%;width:${f.w}%;height:${f.h}%;transform:rotate(${f.rot}deg);z-index:${f.back?0:2};opacity:${im.op==null?1:im.op}"><img src="${im.src}" alt="" style="${imgMaskStyle(im,p.feather)}"></div>`;
+    }).join('');
+  }else{
+    const n = Math.min(p.images.length,8);
+    const imgs = p.images.slice(0,8).map((im,i)=>
+      `<div class="pb-img" data-idx="${i}" style="opacity:${im.op==null?1:im.op}"><img src="${im.src}" alt="" style="${imgMaskStyle(im,p.feather)}"></div>`).join('');
+    imgBlock = n ? `<div class="pb-imgs n${n}">${imgs}</div>` : '';
+  }
+  const ts = p.tstyle || (p.tstyle={titleSize:p.type==='cover'?2.1:1.35, titleColor:'#C2587A', bodySize:1, bodyColor:'#5D4037'});
+  let titleHTML='', bodyHTML='';
+  if(p.type==='cover'){
+    titleHTML = `<h1>${escapeH(book.title)}</h1>${book.subtitle?`<p class="sub">${escapeH(book.subtitle)}</p>`:''}`;
+    bodyHTML  = `${p.body?`<div class="pbody">${miniMD(p.body)}</div>`:''}${book.author?`<div class="author">${escapeH(book.author)}</div>`:''}`;
+  }else if(p.type==='back'){
+    bodyHTML  = `${p.body?`<div class="pbody">${miniMD(p.body)}</div>`:''}${book.author?`<p style="color:#A1887F">${escapeH(book.author)}</p>`:''}<div class="theend">～ The End ～</div>`;
+  }else{
+    titleHTML = p.title?`<h2>${escapeH(p.title)}</h2>`:'';
+    bodyHTML  = p.body?`<div class="pbody">${miniMD(p.body)}</div>`:'';
+  }
+  const shapesHTML=(p.shapes||[]).map((s,i)=>
+    `<div class="pb-shape" data-si="${i}" style="left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.rot}deg);background:${s.color};border-radius:${s.radius}px;opacity:${s.op};z-index:${s.z}"></div>`).join('');
+  let textBlock='', tboxes='';
+  if(p.layout==='free'){
+    ensureTFree(p);
+    const tb=(key,inner)=> inner?`<div class="pb-tbox t-${key}" data-t="${key}" style="left:${p.tfree[key].x}%;top:${p.tfree[key].y}%;width:${p.tfree[key].w}%;transform:rotate(${p.tfree[key].rot}deg)">${inner}</div>`:'';
+    tboxes = tb('title',titleHTML)+tb('body',bodyHTML);
+  }else{
+    textBlock = `<div class="pb-text">${titleHTML}${bodyHTML}</div>`;
+  }
+  const pad = `calc(7% + ${o.padPx}px)`;
+  const numPad = o.padPx + 10;
+  const fcls = p.feather>0 ? `feathered fs-${p.feaShape||'rect'}` : '';
+  return `<div class="pb-page lay-${p.layout} ${fcls} ${p.type==='cover'?'pb-cover':''} ${p.type==='back'?'pb-back':''} ${num%2===0?'is-even':''}"
+    style="width:${o.wPx}px;height:${o.hPx}px;background:${p.bg};--pgbg:${p.bg};--fz:${p.feather}px;--isz:${p.imgSize}%;--titlef:${book.titleFont.replace(/"/g,'&quot;')};--bodyf:${book.bodyFont.replace(/"/g,'&quot;')};--tsz:${ts.titleSize}em;--tco:${ts.titleColor};--bsz:${ts.bodySize}em;--bco:${ts.bodyColor};--tstw:${ts.titleStrokeW||0}px;--tstc:${ts.titleStrokeColor||'#fff'};--bstw:${ts.bodyStrokeW||0}px;--bstc:${ts.bodyStrokeColor||'#fff'};font-size:${o.fontPx}px">
+    <div class="pb-inner" style="padding:${pad}">${imgBlock}${textBlock}</div>
+    ${tboxes}
+    ${freeImgs}
+    ${shapesHTML}
+    ${num?`<div class="pb-num" style="bottom:${numPad}px;${num%2===0?`left:${numPad}px`:`right:${numPad}px`}">${num}</div>`:''}
+  </div>`;
+}
+
+/* ================= 翻頁音效與檢視模式 ================= */
+let _ac=null;
+function playFlip(){
+  if(book.sound===false) return;
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;
+    _ac=_ac||new AC();
+    const ac=_ac, t=ac.currentTime, dur=0.28;
+    const buf=ac.createBuffer(1, Math.floor(ac.sampleRate*dur), ac.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.6);
+    const src=ac.createBufferSource(); src.buffer=buf;
+    const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.9;
+    bp.frequency.setValueAtTime(900,t);
+    bp.frequency.exponentialRampToValueAtTime(2600,t+dur*0.7);
+    const g=ac.createGain();
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.5,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t);
+  }catch(e){}
+}
+function viewsList(){
+  if(book.viewMode!=='spread') return book.pages.map((_,i)=>[i]);
+  const v=[];
+  book.pages.forEach((p,i)=>{ if(p.type==='cover') v.push([i]); });
+  const ci=book.pages.map((p,i)=>p.type==='content'?i:null).filter(x=>x!==null);
+  for(let k=0;k<ci.length;k+=2) v.push(ci.slice(k,k+2));
+  book.pages.forEach((p,i)=>{ if(p.type==='back') v.push([i]); });
+  return v.length?v:[[0]];
+}
+function curViewIndex(views){ const i=views.findIndex(v=>v.includes(cur)); return i<0?0:i; }
+function toggleViewMode(){
+  book.viewMode = book.viewMode==='spread' ? 'single' : 'spread';
+  selImg=-1; selTxt=null; selShape=-1; editRegion=false;
+  renderPreview();
+  toast(book.viewMode==='spread' ? '跨頁模式 📖（瀏覽用；編輯請切回單頁）' : '單頁模式 📄（可編輯）');
+}
+function toggleSound(){
+  book.sound = book.sound===false;
+  updateNavBtns();
+  if(book.sound) playFlip();
+  toast(book.sound ? '翻頁音效：開 🔊' : '翻頁音效：關 🔇');
+}
+function updateNavBtns(){
+  document.getElementById('vmBtn').textContent = book.viewMode==='spread' ? '📖 跨頁' : '📄 單頁';
+  document.getElementById('sndBtn').textContent = book.sound===false ? '🔇' : '🔊';
+}
+
+/* ================= UI 渲染 ================= */
+function renderAll(){ renderThumbs(); renderEditor(); renderPreview(); }
+function renderThumbs(){
+  const box = document.getElementById('thumbList'); box.innerHTML='';
+  const names={cover:'封面',content:'內頁',back:'封底'};
+  let n=0;
+  book.pages.forEach((p,i)=>{
+    if(p.type==='content') n++;
+    const d=document.createElement('div');
+    d.className='thumb'+(i===cur?' sel':'');
+    d.innerHTML=`<span class="t-type ${p.type}">${names[p.type]}${p.type==='content'?' P'+n:''}</span>
+      <div class="t-title">${escapeH(p.type==='cover'?book.title:(p.title||p.body.slice(0,14)||'（空白頁）'))}</div>
+      <div class="t-meta">🖼️ ${p.images.length} 張圖 ・ ${layName(p.layout)}</div>`;
+    d.onclick=()=>{cur=i; selImg=-1; selTxt=null; selShape=-1; editRegion=false; renderAll();};
+    box.appendChild(d);
+  });
+}
+function layName(v){ return {top:'上圖下文',bottom:'下圖上文',left:'左圖右文',right:'右圖左文',bg:'滿版背景',grid:'格狀拼貼',free:'自由排版'}[v]||v; }
+function renderPreview(animDir){
+  const {w,h}=trimSize();
+  const views=viewsList();
+  const vi=curViewIndex(views);
+  const view=views[vi];
+  const spread=view.length>1;
+  const wPx=w*PXMM, hPx=h*PXMM;
+  const fontPx=Math.max(13, wPx*0.024);
+  const totalW=wPx*view.length + (spread?14:0);
+  const boxW=document.getElementById('previewBox').clientWidth-36||640;
+  const scale=Math.min(boxW/totalW, 520/hPx, 1);
+  _pv={scale,wPx,hPx};
+  const p=book.pages[cur];
+  const inner=view.map(i=>pageHTML(book.pages[i],i,{wPx,hPx,fontPx})).join('<div class="pv-spine"></div>');
+  document.getElementById('previewBox').innerHTML=
+    `<div style="width:${totalW*scale}px;height:${hPx*scale}px;flex:none">
+       <div class="pv-persp" style="transform:scale(${scale});transform-origin:top left;width:${totalW}px;height:${hPx}px">
+         <div class="pv-card" style="display:flex;width:${totalW}px;height:${hPx}px;border-radius:14px;overflow:hidden;box-shadow:0 12px 24px rgba(93,64,55,.18)">${inner}</div>
+         <div class="pv-ov"></div>
+       </div></div>`;
+  // 選取把手（僅單頁模式）
+  if(!spread && book.viewMode!=='spread'){
+    if(p.layout==='free' && selImg>=0 && selImg<p.images.length){
+      const el=document.querySelector(`#previewBox .pb-img[data-idx="${selImg}"]`);
+      if(el){
+        el.classList.add('selq');
+        el.insertAdjacentHTML('beforeend',
+          `<div class="rt-line"></div>
+           <div class="hdl rt" data-h="rt" title="旋轉">↻</div>
+           <div class="hdl rz" data-h="rz" title="縮放">⤡</div>
+           <div class="hdl tb" data-h="tb" title="移到文字前/後">⇅</div>
+           <div class="hdl fl" data-h="fl" title="水平翻轉">↔</div>
+           <div class="hdl rw" data-h="rw" title="右邊裁切">↔</div>
+           <div class="hdl lw" data-h="lw" title="左邊裁切">↔</div>
+           <div class="hdl rh" data-h="rh" title="下邊裁切">↕</div>
+           <div class="hdl th" data-h="th" title="上邊裁切">↕</div>
+           <div class="hdl del" data-h="del" title="刪除圖片">✕</div>`);
+        selTxt=null;
+        const im=p.images[selImg];
+        if(editRegion && imMask(im).type==='custom'){
+          const flip=p.images[selImg].free.flip;
+          maskPts(im).forEach((pt,k)=>{
+            const dx=flip?(100-pt.x):pt.x;
+            el.insertAdjacentHTML('beforeend', `<div class="rpt" data-pi="${k}" style="left:${dx}%;top:${pt.y}%"></div>`);
+          });
+        }
+      }
+    }
+    if(p.layout==='free' && selTxt && selImg<0){
+      const el=document.querySelector(`#previewBox .pb-tbox[data-t="${selTxt}"]`);
+      if(el){
+        el.classList.add('selq');
+        el.insertAdjacentHTML('beforeend',
+          `<div class="rt-line"></div>
+           <div class="hdl rt" data-h="rt" title="旋轉">↻</div>
+           <div class="hdl rz" data-h="rz" title="調整寬度">⤡</div>`);
+      }
+    }
+    if(selShape>=0 && p.shapes && selShape<p.shapes.length){
+      const el=document.querySelector(`#previewBox .pb-shape[data-si="${selShape}"]`);
+      if(el){
+        el.classList.add('selq');
+        el.insertAdjacentHTML('beforeend',
+          `<div class="rt-line"></div>
+           <div class="hdl rt" data-h="rt" title="旋轉">↻</div>
+           <div class="hdl rz" data-h="rz" title="等比縮放">⤡</div>
+           <div class="hdl rw" data-h="rw" title="右邊調整">↔</div>
+           <div class="hdl lw" data-h="lw" title="左邊調整">↔</div>
+           <div class="hdl rh" data-h="rh" title="下邊調整">↕</div>
+           <div class="hdl th" data-h="th" title="上邊調整">↕</div>
+           <div class="hdl del" data-h="del" title="刪除色塊">✕</div>`);
+      }
+    }
+  }
+  updateImgToolbar();
+  updateNavBtns();
+  const names={cover:'封面',content:'內頁',back:'封底'};
+  let label;
+  if(spread){
+    const cps=book.pages.filter(x=>x.type==='content');
+    const nums=view.map(i=>cps.indexOf(book.pages[i])+1);
+    label=`內頁 P${nums.join('–P')}（${vi+1} / ${views.length}）`;
+  }else{
+    label=`${names[book.pages[view[0]].type]}（${vi+1} / ${views.length}）`;
+  }
+  document.getElementById('navLabel').textContent=label;
+}
+function renderEditor(){
+  const p=book.pages[cur];
+  const names={cover:'封面',content:'內頁',back:'封底'};
+  document.getElementById('edType').textContent='— '+names[p.type];
+  document.getElementById('coverFields').style.display = p.type==='cover'?'block':'none';
+  document.getElementById('pgTitle').style.display = p.type==='content'?'block':'none';
+  document.getElementById('pgTitleLbl').style.display = p.type==='content'?'block':'none';
+  document.getElementById('bkTitle').value=book.title;
+  document.getElementById('bkSub').value=book.subtitle;
+  document.getElementById('bkAuthor').value=book.author;
+  document.getElementById('pgTitle').value=p.title;
+  document.getElementById('pgBody').value=p.body;
+  document.getElementById('laySel').value=p.layout;
+  document.getElementById('bgSel').value=p.bg;
+  document.getElementById('feaRng').value=p.feather;
+  document.getElementById('feaShapeSel').value=p.feaShape||'rect';
+  document.getElementById('sizRng').value=p.imgSize;
+  document.getElementById('sizRng').disabled = (p.layout==='free');
+  document.getElementById('feaVal').textContent=p.feather+' px';
+  document.getElementById('sizVal').textContent=p.imgSize+' %';
+  const ts=p.tstyle||(p.tstyle={titleSize:p.type==='cover'?2.1:1.35,titleColor:'#C2587A',bodySize:1,bodyColor:'#5D4037'});
+  document.getElementById('tszRng').value=ts.titleSize;
+  document.getElementById('tcoInp').value=ts.titleColor;
+  document.getElementById('bszRng').value=ts.bodySize;
+  document.getElementById('bcoInp').value=ts.bodyColor;
+  document.getElementById('tszVal').textContent=(+ts.titleSize).toFixed(2)+'×';
+  document.getElementById('bszVal').textContent=(+ts.bodySize).toFixed(2)+'×';
+  document.getElementById('tstRng').value=ts.titleStrokeW||0;
+  document.getElementById('tstCo').value=ts.titleStrokeColor||'#FFFFFF';
+  document.getElementById('bstRng').value=ts.bodyStrokeW||0;
+  document.getElementById('bstCo').value=ts.bodyStrokeColor||'#FFFFFF';
+  document.getElementById('tstVal').textContent=(ts.titleStrokeW||0)+' px';
+  document.getElementById('bstVal').textContent=(ts.bodyStrokeW||0)+' px';
+  document.getElementById('titleStyleRow').style.display = p.type==='back'?'none':'grid';
+  document.getElementById('tStrokeRow').style.display = p.type==='back'?'none':'grid';
+  const m0 = p.images.length ? imMask(p.images[0]).type : 'none';
+  document.getElementById('pgMaskSel').value = ['blob','brush','torn','cloud'].includes(m0) ? m0 : 'none';
+  document.getElementById('trimSel').value=book.trim;
+  document.getElementById('bleedInp').value=book.bleed;
+  const chips=document.getElementById('imgChips'); chips.innerHTML='';
+  p.images.forEach((im,i)=>{
+    const c=document.createElement('div');
+    c.className='chip'+(p.layout==='free'&&i===selImg?' sel':'');
+    c.innerHTML=`<img src="${im.src}"><button class="rm" title="移除">✕</button>`;
+    c.onclick=()=>{
+      if(p.layout!=='free'){ toast('切換為「自由排版」後即可逐張選取調整'); return; }
+      selTxt=null; selShape=-1; selImg=i; renderEditor(); renderPreview();
+    };
+    c.querySelector('.rm').onclick=(ev)=>{ev.stopPropagation(); p.images.splice(i,1); if(selImg>=p.images.length)selImg=-1; renderAll();};
+    chips.appendChild(c);
+  });
+}
+
+/* ================= 互動 ================= */
+function onCoverInput(){
+  book.title=document.getElementById('bkTitle').value;
+  book.subtitle=document.getElementById('bkSub').value;
+  book.author=document.getElementById('bkAuthor').value;
+  renderThumbs(); renderPreview();
+}
+function onPageInput(){
+  const p=book.pages[cur];
+  p.title=document.getElementById('pgTitle').value;
+  p.body=document.getElementById('pgBody').value;
+  const newLay=document.getElementById('laySel').value;
+  if(newLay==='free' && p.layout!=='free'){ convertToFree(p); }
+  else p.layout=newLay;
+  p.bg=document.getElementById('bgSel').value;
+  p.feather=+document.getElementById('feaRng').value;
+  p.feaShape=document.getElementById('feaShapeSel').value;
+  p.imgSize=+document.getElementById('sizRng').value;
+  document.getElementById('feaVal').textContent=p.feather+' px';
+  document.getElementById('sizVal').textContent=p.imgSize+' %';
+  document.getElementById('sizRng').disabled=(p.layout==='free');
+  const ts=p.tstyle||(p.tstyle={});
+  ts.titleSize=+document.getElementById('tszRng').value;
+  ts.titleColor=document.getElementById('tcoInp').value;
+  ts.bodySize=+document.getElementById('bszRng').value;
+  ts.bodyColor=document.getElementById('bcoInp').value;
+  ts.titleStrokeW=+document.getElementById('tstRng').value;
+  ts.titleStrokeColor=document.getElementById('tstCo').value;
+  ts.bodyStrokeW=+document.getElementById('bstRng').value;
+  ts.bodyStrokeColor=document.getElementById('bstCo').value;
+  document.getElementById('tszVal').textContent=ts.titleSize.toFixed(2)+'×';
+  document.getElementById('bszVal').textContent=ts.bodySize.toFixed(2)+'×';
+  document.getElementById('tstVal').textContent=ts.titleStrokeW+' px';
+  document.getElementById('bstVal').textContent=ts.bodyStrokeW+' px';
+  renderThumbs(); renderPreview();
+}
+function onBookSetting(){
+  book.trim=document.getElementById('trimSel').value;
+  book.bleed=+document.getElementById('bleedInp').value;
+  renderPreview();
+}
+function step(d){
+  const views=viewsList();
+  const vi=curViewIndex(views);
+  const ni=Math.min(Math.max(vi+d,0),views.length-1);
+  if(ni===vi) return;
+  const v0=views[vi], v1=views[ni];
+  cur=views[ni][0];
+  selImg=-1; selTxt=null; selShape=-1; editRegion=false;
+  playFlip();
+  renderThumbs(); renderEditor(); renderPreview();
+  flipPreviewAnim(d, v0, v1);
+}
+function flipPreviewAnim(d, v0, v1){
+  const ovEl=document.querySelector('#previewBox .pv-ov');
+  if(!ovEl) return;
+  const {wPx,hPx}=_pv;
+  const fontPx=Math.max(13, wPx*0.024);
+  const S=14;
+  const pg=i=>pageHTML(book.pages[i], i, {wPx,hPx,fontPx});
+  const spreadCase = v0.length===2 && v1.length===2;
+  let htmlS='';
+  if(spreadCase){
+    // 真書葉片：正面＝原右(或左)頁，背面＝新跨頁的對側頁，繞書脊翻 180°
+    const patchPage = d>0 ? v0[0] : v0[1];
+    const patchLeft = d>0 ? 0 : wPx+S;
+    const leafLeft  = d>0 ? wPx+S : 0;
+    const frontPage = d>0 ? v0[1] : v0[0];
+    const backPage  = d>0 ? v1[0] : v1[1];
+    htmlS = `<div class="flip-patch" style="left:${patchLeft}px;width:${wPx}px">${pg(patchPage)}</div>`+
+      `<div class="flip-leaf" style="left:${leafLeft}px;width:${wPx}px;transform-origin:${d>0?'left':'right'} center">`+
+      `<div class="flip-face">${pg(frontPage)}</div>`+
+      `<div class="flip-face backf">${pg(backPage)}</div></div>`;
+  }else{
+    // 單頁/混合：整張紙掀起翻離，露出紙背
+    const oldW=wPx*v0.length+(v0.length>1?S:0);
+    const NT=wPx*v1.length+(v1.length>1?S:0);
+    const leafL=d>0?0:Math.max(0,NT-oldW);
+    const frontView=`<div style="display:flex;width:${oldW}px;height:${hPx}px">${v0.map(pg).join('<div class="pv-spine"></div>')}</div>`;
+    htmlS = `<div class="flip-leaf" style="left:${leafL}px;width:${oldW}px;transform-origin:${d>0?'left':'right'} center">`+
+      `<div class="flip-face">${frontView}</div>`+
+      `<div class="flip-face backf" style="background:linear-gradient(115deg,#ffffff,#f1e9df)"></div></div>`;
+  }
+  ovEl.innerHTML=htmlS;
+  const leaf=ovEl.querySelector('.flip-leaf');
+  try{
+    const a=leaf.animate(
+      [{transform:'rotateY(0deg)'},{transform:`rotateY(${d>0?-180:180}deg)`}],
+      {duration:spreadCase?650:520, easing:'cubic-bezier(.35,.6,.3,1)'});
+    a.onfinish=()=>{ovEl.innerHTML='';};
+    setTimeout(()=>{ if(ovEl) ovEl.innerHTML=''; }, 820);
+  }catch(e){ ovEl.innerHTML=''; }
+}
+function addPage(){
+  const backIdx=book.pages.findIndex(p=>p.type==='back');
+  const at=backIdx===-1?book.pages.length:backIdx;
+  book.pages.splice(at,0,newPage('content')); cur=at; selImg=-1; selTxt=null; selShape=-1; renderAll(); toast('已新增內頁 🌱');
+}
+function deletePage(){
+  const p=book.pages[cur];
+  if(p.type!=='content'){ toast('封面與封底不能刪除唷'); return; }
+  book.pages.splice(cur,1); cur=Math.max(0,cur-1); selImg=-1; selTxt=null; selShape=-1; renderAll(); toast('已刪除該頁');
+}
+function movePage(d){
+  const j=cur+d, a=book.pages[cur], b=book.pages[j];
+  if(!b||a.type!=='content'||b.type!=='content'){ toast('只有內頁可以調整順序'); return; }
+  book.pages[cur]=b; book.pages[j]=a; cur=j; renderAll();
+}
+document.getElementById('imgFile').addEventListener('change', e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  const p=book.pages[cur];
+  let left=files.length;
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=()=>{
+      const rec={src:r.result,name:f.name};
+      if(p.layout==='free'){
+        const img=new Image();
+        img.onload=()=>{
+          const {w,h}=trimSize();
+          const W=42, H=W*(img.naturalHeight/img.naturalWidth)*(w/h);
+          rec.free={x:10+(p.images.length%4)*8, y:10+(p.images.length%4)*8, w:W, h:Math.min(H,85), rot:0, back:false};
+          p.images.push(rec);
+          if(--left===0){renderAll(); toast('圖片已加入 🖼️');}
+        };
+        img.src=r.result;
+      }else{
+        p.images.push(rec);
+        if(--left===0){renderAll(); toast('圖片已加入 🖼️');}
+      }
+    };
+    r.readAsDataURL(f);
+  });
+  e.target.value='';
+});
+document.getElementById('mdFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ parseBookMarkdown(r.result); renderAll(); toast('Markdown 已載入 📖'); };
+  r.readAsText(f,'utf-8'); e.target.value='';
+});
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tm); t._tm=setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+/* ================= 預覽區：拖曳 / 縮放 / 旋轉 / 區域編輯 ================= */
+const EDGE_MODES=['rw','lw','rh','th'];
+function makeEdgeDrag(e, el, obj, kind){
+  // obj 需有 w,h,rot（單位 %），以畫面像素計算，再換回 %（支援旋轉）
+  const pr=document.querySelector('#previewBox .pb-page').getBoundingClientRect();
+  const r=el.getBoundingClientRect();
+  const rad=(obj.rot||0)*Math.PI/180;
+  const {scale,wPx,hPx}=_pv;
+  return {mode:null, kind, edge:true,
+    ux:Math.cos(rad), uy:Math.sin(rad),
+    C0x:r.left+r.width/2, C0y:r.top+r.height/2,
+    W0:obj.w/100*wPx*scale, H0:obj.h/100*hPx*scale,
+    sx:e.clientX, sy:e.clientY, pageL:pr.left, pageT:pr.top};
+}
+let drag=null;
+let editRegion=false;
+const pvBox=document.getElementById('previewBox');
+pvBox.addEventListener('pointerdown', e=>{
+  if(book.viewMode==='spread'){
+    if(e.target.closest('.pb-page')) toast('跨頁為瀏覽模式，編輯請切回 📄 單頁');
+    return;
+  }
+  const p=book.pages[cur];
+  const rpt=e.target.closest('.rpt');
+  if(rpt && p.layout==='free' && selImg>=0){
+    drag={mode:'pt', pi:+rpt.dataset.pi};
+    e.preventDefault(); return;
+  }
+  const hdl=e.target.closest('.hdl');
+  if(hdl && selShape>=0 && p.shapes && p.shapes[selShape]){
+    const s=p.shapes[selShape];
+    if(hdl.dataset.h==='del'){ p.shapes.splice(selShape,1); selShape=-1; renderPreview(); toast('色塊已刪除'); return; }
+    const el=document.querySelector(`#previewBox .pb-shape[data-si="${selShape}"]`);
+    if(EDGE_MODES.includes(hdl.dataset.h)){
+      drag=makeEdgeDrag(e, el, s, 'shape'); drag.mode=hdl.dataset.h;
+      e.preventDefault(); return;
+    }
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    drag={mode:hdl.dataset.h, kind:'shape', cx, cy, w0:s.w, h0:s.h,
+      d0:Math.max(8,Math.hypot(e.clientX-cx,e.clientY-cy)),
+      a0:Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI, r0:s.rot};
+    e.preventDefault(); return;
+  }
+  if(hdl && p.layout==='free' && selTxt && selImg<0){
+    const t=p.tfree[selTxt];
+    const el=document.querySelector(`#previewBox .pb-tbox[data-t="${selTxt}"]`);
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    drag={mode:hdl.dataset.h, kind:'txt', cx, cy, w0:t.w,
+      d0:Math.max(8,Math.hypot(e.clientX-cx,e.clientY-cy)),
+      a0:Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI, r0:t.rot};
+    e.preventDefault(); return;
+  }
+  if(hdl && p.layout==='free' && selImg>=0){
+    const f=p.images[selImg].free;
+    if(hdl.dataset.h==='tb'){ f.back=!f.back; renderPreview(); toast(f.back?'圖片已墊到文字後方 ⬇️':'圖片已移到文字前方 ⬆️'); return; }
+    if(hdl.dataset.h==='fl'){ f.flip=!f.flip; renderPreview(); toast(f.flip?'圖片已水平翻轉 ↔️':'已取消翻轉'); return; }
+    if(hdl.dataset.h==='del'){ p.images.splice(selImg,1); selImg=-1; editRegion=false; renderAll(); toast('圖片已刪除'); return; }
+    const el=document.querySelector(`#previewBox .pb-img[data-idx="${selImg}"]`);
+    if(EDGE_MODES.includes(hdl.dataset.h)){
+      drag=makeEdgeDrag(e, el, f, 'img'); drag.mode=hdl.dataset.h;
+      e.preventDefault(); return;
+    }
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    drag={mode:hdl.dataset.h, cx, cy,
+      w0:f.w, h0:f.h,
+      d0:Math.max(8,Math.hypot(e.clientX-cx,e.clientY-cy)),
+      a0:Math.atan2(e.clientY-cy,e.clientX-cx)*180/Math.PI, r0:f.rot};
+    e.preventDefault(); return;
+  }
+  const shpEl=e.target.closest('.pb-shape');
+  if(shpEl){
+    selShape=+shpEl.dataset.si; selImg=-1; selTxt=null; editRegion=false;
+    renderPreview();
+    const s=p.shapes[selShape];
+    drag={mode:'mv', kind:'shape', x0:s.x, y0:s.y, sx:e.clientX, sy:e.clientY};
+    e.preventDefault(); return;
+  }
+  const tboxEl=e.target.closest('.pb-tbox');
+  const inTxt=e.target.closest('.pb-text h1,.pb-text h2,.pb-text .sub,.pb-text .pbody,.pb-text .theend');
+  if(tboxEl || inTxt){
+    let key = tboxEl ? tboxEl.dataset.t
+            : (e.target.closest('h1,h2,.sub') ? 'title' : 'body');
+    if(p.type==='back') key='body';
+    if(p.layout!=='free'){
+      convertToFree(p);
+      document.getElementById('laySel').value='free';
+      document.getElementById('sizRng').disabled=true;
+      renderThumbs();
+      toast('已切換為自由排版 ✋（文字框可拖曳、調寬、旋轉）');
+    }
+    selImg=-1; selShape=-1; editRegion=false; selTxt=key;
+    renderPreview();
+    const t=p.tfree[key];
+    drag={mode:'mv', kind:'txt', x0:t.x, y0:t.y, sx:e.clientX, sy:e.clientY};
+    e.preventDefault(); return;
+  }
+  const imgEl=e.target.closest('.pb-img');
+  if(imgEl){
+    const idx=+imgEl.dataset.idx;
+    if(p.layout!=='free'){
+      convertToFree(p);
+      document.getElementById('laySel').value='free';
+      document.getElementById('sizRng').disabled=true;
+      renderThumbs();
+      toast('已切換為自由排版 ✋（可拖曳、縮放、旋轉）');
+    }
+    if(selImg!==idx) editRegion=false;
+    selTxt=null; selShape=-1; selImg=idx; renderPreview();
+    const f=p.images[idx].free;
+    drag={mode:'mv', x0:f.x, y0:f.y, sx:e.clientX, sy:e.clientY};
+    e.preventDefault();
+  }else if(selImg!==-1 || selTxt || selShape!==-1){ selImg=-1; selTxt=null; selShape=-1; editRegion=false; renderPreview(); }
+});
+document.addEventListener('pointermove', e=>{
+  if(!drag) return;
+  const p=book.pages[cur];
+  if(drag.edge){
+    const obj = drag.kind==='shape' ? (p.shapes&&p.shapes[selShape])
+                                    : (p.images[selImg]&&p.images[selImg].free);
+    if(!obj){drag=null;return;}
+    const {scale,wPx,hPx}=_pv;
+    const dx=e.clientX-drag.sx, dy=e.clientY-drag.sy;
+    const du=dx*drag.ux+dy*drag.uy;          // 沿物件本地 X 軸的位移
+    const dv=dx*(-drag.uy)+dy*drag.ux;       // 沿物件本地 Y 軸的位移
+    let W=drag.W0, H=drag.H0, Cx=drag.C0x, Cy=drag.C0y;
+    if(drag.mode==='rw'){ W=Math.max(12,drag.W0+du); const g=(W-drag.W0)/2; Cx+=drag.ux*g; Cy+=drag.uy*g; }
+    if(drag.mode==='lw'){ W=Math.max(12,drag.W0-du); const g=(W-drag.W0)/2; Cx-=drag.ux*g; Cy-=drag.uy*g; }
+    if(drag.mode==='rh'){ H=Math.max(12,drag.H0+dv); const g=(H-drag.H0)/2; Cx+=(-drag.uy)*g; Cy+=drag.ux*g; }
+    if(drag.mode==='th'){ H=Math.max(12,drag.H0-dv); const g=(H-drag.H0)/2; Cx-=(-drag.uy)*g; Cy-=drag.ux*g; }
+    obj.w=W/(scale*wPx)*100; obj.h=H/(scale*hPx)*100;
+    obj.x=(Cx-drag.pageL)/(scale*wPx)*100 - obj.w/2;
+    obj.y=(Cy-drag.pageT)/(scale*hPx)*100 - obj.h/2;
+    const sel = drag.kind==='shape' ? `#previewBox .pb-shape[data-si="${selShape}"]`
+                                    : `#previewBox .pb-img[data-idx="${selImg}"]`;
+    const el=document.querySelector(sel);
+    if(el) el.style.cssText+=`;left:${obj.x}%;top:${obj.y}%;width:${obj.w}%;height:${obj.h}%;transform:rotate(${obj.rot||0}deg)`;
+    return;
+  }
+  if(drag.kind==='shape'){
+    const s=p.shapes && p.shapes[selShape]; if(!s){drag=null;return;}
+    const {scale,wPx,hPx}=_pv;
+    if(drag.mode==='mv'){
+      s.x=drag.x0+(e.clientX-drag.sx)/scale/wPx*100;
+      s.y=drag.y0+(e.clientY-drag.sy)/scale/hPx*100;
+    }else{
+      const k=Math.max(.1, Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)/drag.d0);
+      if(drag.mode==='rz'){ s.w=drag.w0*k; s.h=drag.h0*k; }
+      else if(drag.mode==='rt'){
+        const a=Math.atan2(e.clientY-drag.cy,e.clientX-drag.cx)*180/Math.PI;
+        s.rot=Math.round(drag.r0+a-drag.a0);
+      }
+    }
+    const el=document.querySelector(`#previewBox .pb-shape[data-si="${selShape}"]`);
+    if(el) el.style.cssText+=`;left:${s.x}%;top:${s.y}%;width:${s.w}%;height:${s.h}%;transform:rotate(${s.rot}deg)`;
+    return;
+  }
+  if(drag.kind==='txt'){
+    const t=p.tfree && p.tfree[selTxt]; if(!t){drag=null;return;}
+    const {scale,wPx,hPx}=_pv;
+    if(drag.mode==='mv'){
+      t.x=drag.x0+(e.clientX-drag.sx)/scale/wPx*100;
+      t.y=drag.y0+(e.clientY-drag.sy)/scale/hPx*100;
+    }else if(drag.mode==='rz'){
+      const k=Math.max(.15, Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)/drag.d0);
+      t.w=Math.max(10, Math.min(120, drag.w0*k));
+    }else if(drag.mode==='rt'){
+      const a=Math.atan2(e.clientY-drag.cy,e.clientX-drag.cx)*180/Math.PI;
+      t.rot=Math.round(drag.r0+a-drag.a0);
+    }
+    const el=document.querySelector(`#previewBox .pb-tbox[data-t="${selTxt}"]`);
+    if(el) el.style.cssText+=`;left:${t.x}%;top:${t.y}%;width:${t.w}%;transform:rotate(${t.rot}deg)`;
+    return;
+  }
+  const im=p.images[selImg]; if(!im||!im.free){drag=null;return;}
+  const f=im.free, {scale,wPx,hPx}=_pv;
+  const el=document.querySelector(`#previewBox .pb-img[data-idx="${selImg}"]`);
+  if(drag.mode==='pt'){
+    if(!el) return;
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    // 指標座標反向旋轉回圖片本地座標
+    const rad=-f.rot*Math.PI/180;
+    let dx=e.clientX-cx, dy=e.clientY-cy;
+    let lx=dx*Math.cos(rad)-dy*Math.sin(rad), ly=dx*Math.sin(rad)+dy*Math.cos(rad);
+    if(f.flip) lx=-lx;
+    const pts=maskPts(im);
+    const px=Math.min(118,Math.max(-18, 50+lx/(r.width/2)*50));
+    const py=Math.min(118,Math.max(-18, 50+ly/(r.height/2)*50));
+    pts[drag.pi]={x:px,y:py};
+    const rptEl=el.querySelector(`.rpt[data-pi="${drag.pi}"]`);
+    if(rptEl){ rptEl.style.left=(f.flip?(100-px):px)+'%'; rptEl.style.top=py+'%'; }
+    const imgTag=el.querySelector('img');
+    if(imgTag) imgTag.style.cssText=imgMaskStyle(im,p.feather);
+    return;
+  }
+  if(drag.mode==='mv'){
+    f.x=drag.x0+(e.clientX-drag.sx)/scale/wPx*100;
+    f.y=drag.y0+(e.clientY-drag.sy)/scale/hPx*100;
+  }else if(drag.mode==='rz'){
+    const k=Math.max(.15, Math.hypot(e.clientX-drag.cx,e.clientY-drag.cy)/drag.d0);
+    f.w=drag.w0*k; f.h=drag.h0*k;
+  }else if(drag.mode==='rt'){
+    const a=Math.atan2(e.clientY-drag.cy,e.clientX-drag.cx)*180/Math.PI;
+    f.rot=Math.round(drag.r0+a-drag.a0);
+  }
+  if(el) el.style.cssText+=`;left:${f.x}%;top:${f.y}%;width:${f.w}%;height:${f.h}%;transform:rotate(${f.rot}deg)`;
+});
+document.addEventListener('pointerup', ()=>{ if(drag){ drag=null; renderPreview(); } });
+
+/* ---- 選取圖片工具列（預覽區下方的大按鈕，與小把手功能相同） ---- */
+function selFree(){
+  const p=book.pages[cur];
+  return (p.layout==='free' && selImg>=0 && selImg<p.images.length) ? p.images[selImg].free : null;
+}
+function updateImgToolbar(){
+  const p=book.pages[cur];
+  if(book.viewMode==='spread'){ document.getElementById('imgToolbar').style.display='none'; return; }
+  const f=selFree();
+  const isShp = selShape>=0 && p.shapes && selShape<p.shapes.length;
+  const isTxt = p.layout==='free' && !!selTxt && !f && !isShp;
+  const bar=document.getElementById('imgToolbar');
+  bar.style.display = (f||isTxt||isShp) ? 'flex' : 'none';
+  ['maskSel','seedBtn','editBtn','tbLayerBtn','flipBtn','imOpWrap'].forEach(id=>{
+    document.getElementById(id).style.display = f ? '' : 'none';
+  });
+  ['shpColor','shpRadWrap','shpOpWrap','shpZ'].forEach(id=>{
+    document.getElementById(id).style.display = isShp ? '' : 'none';
+  });
+  document.getElementById('delBtn').style.display = (f||isShp) ? '' : 'none';
+  document.getElementById('delBtn').textContent = isShp ? '🗑️ 刪除色塊' : '🗑️ 刪除此圖';
+  if(isShp){
+    const s=p.shapes[selShape];
+    document.getElementById('shpColor').value=s.color;
+    document.getElementById('shpRad').value=s.radius;
+    document.getElementById('shpOp').value=Math.round(s.op*100);
+    document.getElementById('shpZ').value=String(s.z);
+    return;
+  }
+  if(!f) return;
+  const im=p.images[selImg];
+  const m=imMask(im);
+  document.getElementById('imOpRng').value=Math.round((im.op==null?1:im.op)*100);
+  document.getElementById('tbLayerBtn').textContent = f.back ? '⬆️ 移回文字前' : '⬇️ 墊到文字後';
+  document.getElementById('maskSel').value=m.type;
+  document.getElementById('seedBtn').style.display = ['blob','brush','torn','cloud'].includes(m.type)?'inline-flex':'none';
+  const eb=document.getElementById('editBtn');
+  eb.style.display = m.type==='none'?'none':'inline-flex';
+  eb.textContent = editRegion ? '✔️ 完成編輯' : '✏️ 編輯區域';
+}
+function addShape(){
+  const p=book.pages[cur];
+  if(!p.shapes) p.shapes=[];
+  p.shapes.push({x:30, y:34, w:40, h:26, rot:0, color:'#FFD6E3', radius:24, op:0.9, z:0.6});
+  selShape=p.shapes.length-1; selImg=-1; selTxt=null; editRegion=false;
+  renderPreview(); toast('已新增圓角矩形 🟧（拖曳調整位置）');
+}
+function selShp(){ const p=book.pages[cur]; return (selShape>=0&&p.shapes&&p.shapes[selShape])||null; }
+function toolImOp(){
+  const p=book.pages[cur]; const im=p.images[selImg]; if(!im)return;
+  im.op=+document.getElementById('imOpRng').value/100;
+  const el=document.querySelector(`#previewBox .pb-img[data-idx="${selImg}"]`);
+  if(el) el.style.opacity=im.op;
+}
+function toolShp(){
+  const s=selShp(); if(!s)return;
+  s.color=document.getElementById('shpColor').value;
+  s.radius=+document.getElementById('shpRad').value;
+  s.op=+document.getElementById('shpOp').value/100;
+  const el=document.querySelector(`#previewBox .pb-shape[data-si="${selShape}"]`);
+  if(el){ el.style.background=s.color; el.style.borderRadius=s.radius+'px'; el.style.opacity=s.op; }
+}
+function toolShpZ(){
+  const s=selShp(); if(!s)return;
+  s.z=+document.getElementById('shpZ').value;
+  renderPreview();
+  toast('層級已調整：'+document.getElementById('shpZ').selectedOptions[0].text.replace('層級：',''));
+}
+function toolMask(){
+  const im=book.pages[cur].images[selImg]; if(!im)return;
+  const m=imMask(im);
+  const v=document.getElementById('maskSel').value;
+  if(v==='custom' && m.type!=='custom'){
+    m.pts = maskPts(im).map(p=>({x:p.x,y:p.y}));   // 以目前形狀為起點開始編輯
+    m.type='custom'; editRegion=true;
+    toast('拖曳橘色控制點調整顯示區域 ✏️');
+  }else{
+    m.type=v; if(!m.seed) m.seed=Math.floor(Math.random()*1e6);
+    editRegion=false;
+  }
+  renderPreview();
+}
+function toolSeed(){
+  const im=book.pages[cur].images[selImg]; if(!im)return;
+  imMask(im).seed=Math.floor(Math.random()*1e6);
+  renderPreview(); toast('換了一個新形狀 🎲');
+}
+function toolEdit(){
+  const im=book.pages[cur].images[selImg]; if(!im)return;
+  const m=imMask(im);
+  if(m.type==='none') return;
+  if(m.type!=='custom'){ m.pts=maskPts(im).map(p=>({x:p.x,y:p.y})); m.type='custom'; }
+  editRegion=!editRegion;
+  renderPreview();
+  toast(editRegion?'拖曳橘色控制點調整顯示區域 ✏️':'區域編輯完成 ✔️');
+}
+function onPgMask(){
+  const v=document.getElementById('pgMaskSel').value;
+  const p=book.pages[cur];
+  p.images.forEach(im=>{
+    im.mask = v==='none' ? {type:'none'} : {type:v, seed:Math.floor(Math.random()*1e6)};
+  });
+  editRegion=false;
+  renderPreview(); renderThumbs();
+  toast(v==='none'?'已恢復方形原圖':'已套用「'+document.getElementById('pgMaskSel').selectedOptions[0].text+'」到本頁全部圖片 🎭');
+}
+function toolLayer(){ const f=selFree(); if(!f)return; f.back=!f.back; renderPreview(); toast(f.back?'圖片已墊到文字後方 ⬇️':'圖片已移到文字前方 ⬆️'); }
+function toolFlip(){ const f=selFree(); if(!f)return; f.flip=!f.flip; renderPreview(); toast(f.flip?'圖片已水平翻轉 ↔️':'已取消翻轉'); }
+function toolRotZero(){
+  const p=book.pages[cur];
+  const s=selShp();
+  if(s){ s.rot=0; }
+  else if(selTxt && p.tfree){ p.tfree[selTxt].rot=0; }
+  else{ const f=selFree(); if(!f)return; f.rot=0; }
+  renderPreview(); toast('角度已歸零 ↻');
+}
+function toolDel(){
+  const p=book.pages[cur];
+  if(selShp()){ p.shapes.splice(selShape,1); selShape=-1; renderPreview(); toast('色塊已刪除'); return; }
+  if(!selFree())return;
+  p.images.splice(selImg,1); selImg=-1; editRegion=false; renderAll(); toast('圖片已刪除');
+}
+
+/* ================= 專案存檔（JSON） ================= */
+const PROJ_VERSION = 1;
+function saveProject(){
+  const data = {
+    app:'繪本工坊', kind:'picturebook-project', version:PROJ_VERSION,
+    savedAt:new Date().toISOString(),
+    cropMarks:document.getElementById('cropChk').checked,
+    book
+  };
+  const blob=new Blob([JSON.stringify(data)],{type:'application/json;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(book.title||'繪本')+'_專案.json'; a.click(); URL.revokeObjectURL(a.href);
+  toast('專案已儲存（含圖片與全部設定）💾');
+}
+function normalizeBook(b){
+  // 補齊缺漏欄位，確保不同版本的專案檔都能開啟
+  const nb = Object.assign({
+    title:'我的小繪本', subtitle:'', author:'',
+    trim:'200x200', bleed:3, viewMode:'single', sound:true,
+    titleFont:FONTS[1].v, bodyFont:FONTS[0].v,
+    pages:[]
+  }, b);
+  if(!Array.isArray(nb.pages) || !nb.pages.length) nb.pages=[newPage('cover'), newPage('back')];
+  nb.pages = nb.pages.map(p=>{
+    const np = Object.assign(newPage(p.type==='cover'||p.type==='back'?p.type:'content'), p);
+    np.tstyle = Object.assign({titleSize:np.type==='cover'?2.1:1.35, titleColor:'#C2587A', bodySize:1, bodyColor:'#5D4037',
+      titleStrokeW:0, titleStrokeColor:'#FFFFFF', bodyStrokeW:0, bodyStrokeColor:'#FFFFFF'}, p.tstyle||{});
+    np.shapes = Array.isArray(p.shapes)?p.shapes:[];
+    np.images = (Array.isArray(p.images)?p.images:[]).filter(im=>im&&typeof im.src==='string');
+    return np;
+  });
+  if(!nb.pages.some(p=>p.type==='cover')) nb.pages.unshift(newPage('cover'));
+  if(!nb.pages.some(p=>p.type==='back')) nb.pages.push(newPage('back'));
+  return nb;
+}
+document.getElementById('projFile').addEventListener('change', e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      const b = data && data.kind==='picturebook-project' ? data.book : data; // 也接受純 book 物件
+      if(!b || typeof b!=='object' || !b.pages) throw new Error('格式不符');
+      book = normalizeBook(b);
+      if(data && typeof data.cropMarks==='boolean') document.getElementById('cropChk').checked=data.cropMarks;
+      ensureGFont(book.titleFont); ensureGFont(book.bodyFont);
+      fillFontSelects();
+      cur=0; selImg=-1; selTxt=null; selShape=-1; editRegion=false;
+      renderAll();
+      toast('專案已開啟 📁（共 '+book.pages.length+' 頁）');
+    }catch(err){
+      toast('無法開啟：這不是有效的繪本專案 JSON 檔');
+    }
+  };
+  r.readAsText(f,'utf-8'); e.target.value='';
+});
+
+/* ================= Markdown 範本與範例 ================= */
+const TEMPLATE_MD = `---
+書名: （請填入書名）
+副標題: （可留空）
+作者: （請填入作者）
+---
+# 封面
+（封面上的小段文字，可留空）
+
+===
+
+# 第一頁的標題
+這裡是第一頁內文。支援 **粗體**、*斜體*，
+空一行代表新的段落。
+
+- 也支援
+- 項目清單
+
+===
+
+# 第二頁的標題
+每一頁用單獨一行的「===」分隔，頁碼會自動編號。
+
+===
+
+# 封底
+封底的介紹文字寫在這裡。
+`;
+function downloadTemplate(){
+  const blob=new Blob([TEMPLATE_MD],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='繪本範本.md'; a.click(); URL.revokeObjectURL(a.href);
+}
+function loadSample(){
+  parseBookMarkdown(`---
+書名: 小狐狸的星空旅行
+副標題: 一場溫柔的夜間冒險
+作者: 蝦蝦 工作室
+---
+# 封面
+獻給每一個喜歡抬頭看星星的孩子 ✨
+
+===
+
+# 月亮升起的時候
+夜晚悄悄來臨，小狐狸**琪琪**坐在山丘上，
+看著天空慢慢變成深藍色。
+
+「今天的星星，好像在對我眨眼睛呢。」
+
+===
+
+# 一顆掉下來的星星
+忽然，一道亮亮的光劃過天空——
+*咻！* 一顆小星星掉進了森林裡。
+
+- 它會掉在哪裡呢？
+- 它會不會受傷呢？
+
+琪琪決定出發去找它。
+
+===
+
+# 森林裡的微光
+琪琪跟著微微的光走進森林，
+螢火蟲們排成一條閃亮亮的小路，
+好像在說：「往這邊走、往這邊走。」
+
+===
+
+# 送你回家
+琪琪捧起小星星，輕輕吹了一口氣。
+小星星慢慢飄回夜空，
+變回天上最亮的那一顆。
+
+「晚安，謝謝你陪我冒險。」
+
+===
+
+# 封底
+每一顆星星，都記得曾經溫柔對待它的人。
+
+這是一個關於勇氣與溫柔的小故事，
+適合睡前，慢慢地、輕輕地讀。
+`);
+  renderAll(); toast('範例繪本已載入 🦊✨（接著請為各頁加上插畫）');
+}
+
+/* ================= 匯出：網頁電子書 ================= */
+function exportEbook(){
+  const {w,h}=trimSize();
+  const wPx=Math.round(w*PXMM), hPx=Math.round(h*PXMM);
+  const fontPx=Math.max(13,wPx*0.024);
+  const pagesHTML=book.pages.map((p,i)=>
+    `<div class="pg" data-i="${i}">${pageHTML(p,i,{wPx,hPx,fontPx})}</div>`).join('\n');
+  const TYPES=JSON.stringify(book.pages.map(p=>p.type));
+  const doc = `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeH(book.title)}｜電子繪本</title>
+<link href="${gfontHref()}" rel="stylesheet">
+<style>
+${PAGE_CSS}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+ font-family:'M PLUS Rounded 1c',sans-serif;color:#5D4037;
+ background:radial-gradient(rgba(255,143,171,.12) 2px,transparent 2.5px) 0 0/26px 26px,#FFF0F5;padding:16px;box-sizing:border-box;overflow:hidden}
+h1.ttl{font-size:1.05rem;margin:0;color:#C2587A;letter-spacing:.1em}
+#fit{position:relative}
+#persp{perspective:1800px;position:relative;transform-origin:top left}
+#viewport .view,#overlay .view{display:flex;border-radius:16px;overflow:hidden;border:4px solid #fff;background:#fff;box-shadow:0 14px 30px rgba(93,64,55,.2)}
+#viewport .view{animation:vin .38s ease}
+@keyframes vin{from{opacity:.55}to{opacity:1}}
+.spine{width:14px;align-self:stretch;flex:none;background:linear-gradient(90deg,rgba(93,64,55,.20),rgba(93,64,55,0) 45%,rgba(93,64,55,0) 55%,rgba(93,64,55,.20))}
+#overlay{position:absolute;inset:0;pointer-events:none;transform-style:preserve-3d}
+.flip-patch{position:absolute;top:0;height:100%;overflow:hidden;background:#fff}
+.flip-leaf{position:absolute;top:0;height:100%;transform-style:preserve-3d;filter:drop-shadow(0 14px 26px rgba(93,64,55,.38))}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden;background:#fff}
+.flip-face.backf{transform:rotateY(180deg)}
+#bar{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;align-items:center;font-weight:800}
+button{font-family:inherit;background:#FF8FAB;color:#fff;border:none;border-radius:50px;padding:10px 22px;font-size:.95rem;font-weight:800;cursor:pointer;box-shadow:0 4px 12px rgba(255,143,171,.4);transition:transform .2s}
+button:hover{transform:scale(1.08)}
+button.lite{background:#fff;color:#FF8FAB;border:3px solid #FADADD;padding:8px 16px}
+#ind{color:#B07A8C}
+#store{display:none}
+</style></head><body>
+<h1 class="ttl">🎀 ${escapeH(book.title)}</h1>
+<div id="fit"><div id="persp"><div id="viewport"></div><div id="overlay"></div></div></div>
+<div id="bar">
+  <button onclick="go(-1)">◀ 上一頁</button><span id="ind"></span><button onclick="go(1)">下一頁 ▶</button>
+  <button class="lite" id="vmBtn" onclick="toggleMode()"></button>
+  <button class="lite" id="sndBtn" onclick="toggleSnd()"></button>
+</div>
+<div id="store">${pagesHTML}</div>
+<script>
+var TYPES=${TYPES}, W=${wPx}, H=${hPx};
+var mode='${book.viewMode==='spread'?'spread':'single'}', snd=${book.sound===false?'false':'true'};
+var vi=0, ac=null;
+var vp=document.getElementById('viewport'), ov=document.getElementById('overlay');
+function views(){
+  if(mode!=='spread'){var a=[];for(var i=0;i<TYPES.length;i++)a.push([i]);return a;}
+  var v=[],ci=[],i;
+  for(i=0;i<TYPES.length;i++) if(TYPES[i]==='cover') v.push([i]);
+  for(i=0;i<TYPES.length;i++) if(TYPES[i]==='content') ci.push(i);
+  for(i=0;i<ci.length;i+=2) v.push(ci.slice(i,i+2));
+  for(i=0;i<TYPES.length;i++) if(TYPES[i]==='back') v.push([i]);
+  return v.length?v:[[0]];
+}
+function pgHTML(i){return document.querySelector('#store .pg[data-i="'+i+'"]').innerHTML;}
+function viewHTML(v){
+  var s='<div class="view">';
+  for(var k=0;k<v.length;k++){ if(k)s+='<div class="spine"></div>'; s+=pgHTML(v[k]); }
+  return s+'</div>';
+}
+function show(){
+  vp.innerHTML=viewHTML(views()[vi]);
+  fit();
+  document.getElementById('ind').textContent=(vi+1)+' / '+views().length;
+}
+function go(d){
+  var n=views().length, ni=Math.min(Math.max(vi+d,0),n-1);
+  if(ni===vi) return;
+  var v0=views()[vi], v1=views()[ni];
+  vi=ni; playFlip(); show();
+  runFlip(d, v0, v1);
+}
+function runFlip(d, v0, v1){
+  ov.innerHTML='';
+  var S=14;
+  var spreadCase = v0.length===2 && v1.length===2;
+  var htmlS='';
+  if(spreadCase){
+    var patchPage = d>0 ? v0[0] : v0[1];
+    var patchLeft = d>0 ? 0 : W+S;
+    var leafLeft  = d>0 ? W+S : 0;
+    var frontPage = d>0 ? v0[1] : v0[0];
+    var backPage  = d>0 ? v1[0] : v1[1];
+    htmlS='<div class="flip-patch" style="left:'+patchLeft+'px;width:'+W+'px">'+pgHTML(patchPage)+'</div>'
+      +'<div class="flip-leaf" style="left:'+leafLeft+'px;width:'+W+'px;transform-origin:'+(d>0?'left':'right')+' center">'
+      +'<div class="flip-face">'+pgHTML(frontPage)+'</div>'
+      +'<div class="flip-face backf">'+pgHTML(backPage)+'</div></div>';
+  }else{
+    var oldW=W*v0.length+(v0.length>1?S:0);
+    var NT=W*v1.length+(v1.length>1?S:0);
+    var leafL=d>0?0:Math.max(0,NT-oldW);
+    var inner='<div style="display:flex;width:'+oldW+'px;height:'+H+'px">';
+    for(var k=0;k<v0.length;k++){ if(k)inner+='<div class="spine"></div>'; inner+=pgHTML(v0[k]); }
+    inner+='</div>';
+    htmlS='<div class="flip-leaf" style="left:'+leafL+'px;width:'+oldW+'px;transform-origin:'+(d>0?'left':'right')+' center">'
+      +'<div class="flip-face">'+inner+'</div>'
+      +'<div class="flip-face backf" style="background:linear-gradient(115deg,#ffffff,#f1e9df)"></div></div>';
+  }
+  ov.innerHTML=htmlS;
+  var leaf=ov.querySelector('.flip-leaf');
+  try{
+    var a=leaf.animate(
+      [{transform:'rotateY(0deg)'},{transform:'rotateY('+(d>0?-180:180)+'deg)'}],
+      {duration:spreadCase?650:520, easing:'cubic-bezier(.35,.6,.3,1)'});
+    a.onfinish=function(){ov.innerHTML='';};
+    setTimeout(function(){ov.innerHTML='';},820);
+  }catch(e){ ov.innerHTML=''; }
+}
+function fit(){
+  var v=views()[vi];
+  var TW=W*v.length+(v.length>1?14:0);
+  var s=Math.min((innerWidth-32)/TW,(innerHeight-180)/H,1);
+  document.getElementById('persp').style.transform='scale('+s+')';
+  var f=document.getElementById('fit');
+  f.style.width=TW*s+'px'; f.style.height=H*s+'px';
+}
+function toggleMode(){
+  var first=views()[vi][0];
+  mode = mode==='spread'?'single':'spread';
+  var vs=views(); vi=0;
+  for(var i=0;i<vs.length;i++){ if(vs[i].indexOf(first)>=0){vi=i;break;} }
+  updateBtns(); show();
+}
+function toggleSnd(){ snd=!snd; updateBtns(); if(snd)playFlip(); }
+function updateBtns(){
+  document.getElementById('vmBtn').textContent = mode==='spread'?'📖 跨頁':'📄 單頁';
+  document.getElementById('sndBtn').textContent = snd?'🔊 音效':'🔇 靜音';
+}
+function playFlip(){
+  if(!snd) return;
+  try{
+    var AC=window.AudioContext||window.webkitAudioContext;
+    ac=ac||new AC();
+    var t=ac.currentTime, dur=0.28;
+    var buf=ac.createBuffer(1,Math.floor(ac.sampleRate*dur),ac.sampleRate);
+    var d=buf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.6);
+    var src=ac.createBufferSource(); src.buffer=buf;
+    var bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.9;
+    bp.frequency.setValueAtTime(900,t);
+    bp.frequency.exponentialRampToValueAtTime(2600,t+dur*0.7);
+    var g=ac.createGain();
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.5,t+0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    src.connect(bp); bp.connect(g); g.connect(ac.destination); src.start(t);
+  }catch(e){}
+}
+addEventListener('resize',fit);
+addEventListener('keydown',function(e){if(e.key==='ArrowRight')go(1);if(e.key==='ArrowLeft')go(-1);});
+updateBtns(); show();
+<\/script></body></html>`;
+  const blob=new Blob([doc],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(book.title||'繪本')+'_電子書.html'; a.click(); URL.revokeObjectURL(a.href);
+  toast('網頁電子書已匯出 🌐（含翻頁動畫與音效）');
+}
+
+/* ================= 匯出：PDF（含出血與裁切標記） ================= */
+function exportPDF(){
+  const {w,h}=trimSize();
+  const b=book.bleed;
+  const marks=document.getElementById('cropChk').checked;
+  const slug = marks ? 5 : 0;
+  const sheetW=w+2*b+2*slug, sheetH=h+2*b+2*slug;
+  const wPx=Math.round((w+2*b)*PXMM), hPx=Math.round((h+2*b)*PXMM);
+  const padPx=Math.round((b+SAFE_MM*0.35)*PXMM);
+  const fontPx=Math.max(13,(w*PXMM)*0.024);
+  const mk = marks ? `
+    <i class="mk h" style="top:${slug+b}mm;left:0"></i><i class="mk h" style="top:${slug+b}mm;right:0"></i>
+    <i class="mk h" style="bottom:${slug+b}mm;left:0"></i><i class="mk h" style="bottom:${slug+b}mm;right:0"></i>
+    <i class="mk v" style="left:${slug+b}mm;top:0"></i><i class="mk v" style="right:${slug+b}mm;top:0"></i>
+    <i class="mk v" style="left:${slug+b}mm;bottom:0"></i><i class="mk v" style="right:${slug+b}mm;bottom:0"></i>` : '';
+  const sheets=book.pages.map((p,i)=>`
+    <div class="sheet">
+      <div class="bleedbox">${pageHTML(p,i,{wPx,hPx,padPx,fontPx})}</div>${mk}
+    </div>`).join('\n');
+  const doc=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8">
+<title>${escapeH(book.title)}｜列印用 PDF（完成尺寸 ${w}×${h}mm／出血 ${b}mm）</title>
+<link href="${gfontHref()}" rel="stylesheet">
+<style>
+${PAGE_CSS}
+*{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+@page{size:${sheetW}mm ${sheetH}mm;margin:0}
+html,body{margin:0;padding:0;background:#888}
+.sheet{position:relative;width:${sheetW}mm;height:${sheetH}mm;background:#fff;overflow:hidden;page-break-after:always;break-after:page;margin:0 auto 10px}
+.bleedbox{position:absolute;top:${slug}mm;left:${slug}mm;width:${w+2*b}mm;height:${h+2*b}mm;overflow:hidden}
+.bleedbox .pb-page{width:100% !important;height:100% !important}
+.mk{position:absolute;background:#000}
+.mk.h{width:${Math.max(slug-1.2,0)}mm;height:.25mm}
+.mk.v{height:${Math.max(slug-1.2,0)}mm;width:.25mm}
+.tip{position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:9;background:#FF8FAB;color:#fff;font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;border-radius:50px;padding:10px 24px;box-shadow:0 6px 14px rgba(0,0,0,.25)}
+@media print{.tip{display:none}}
+</style></head><body>
+<div class="tip">列印視窗將自動開啟；請選「另存為 PDF」、紙張採預設尺寸、邊界設為「無」、勾選「背景圖形」。</div>
+${sheets}
+<script>setTimeout(function(){print()},800);<\/script>
+</body></html>`;
+  const win=window.open('','_blank');
+  if(!win){ toast('請允許彈出視窗以匯出 PDF'); return; }
+  win.document.write(doc); win.document.close();
+  toast('已開啟列印頁（含 '+b+'mm 出血'+(marks?'與裁切標記':'')+'）🖨️');
+}
+
+/* ================= 啟動 ================= */
+fillFontSelects();
+loadSample();
+window.addEventListener('resize',renderPreview);
+</script>
+</body>
+</html>
