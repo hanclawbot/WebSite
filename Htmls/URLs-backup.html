@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>網頁快速連結</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            background-color: #fdf2f8;
+            background-image: radial-gradient(#fbcfe8 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+
+        .cute-card {
+            border: 4px solid #fff;
+            box-shadow: 0 10px 25px rgba(255, 182, 193, 0.4);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .cute-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 35px rgba(255, 182, 193, 0.6);
+            border-color: #fce7f3;
+        }
+
+        .icon-bounce {
+            transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .cute-card:hover .icon-bounce {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .announcement-box {
+            box-shadow: 0 15px 30px -5px rgba(234, 179, 8, 0.3);
+            border-left-width: 12px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-16 px-6">
+
+    <header class="mb-10 text-center w-full max-w-7xl">
+        <h1 class="text-4xl md:text-5xl font-black text-pink-500 tracking-wide drop-shadow-sm mb-3">
+            網頁快速連結
+        </h1>
+        <div class="h-2 w-24 bg-pink-300 rounded-full mx-auto"></div>
+    </header>
+
+    <div class="w-full max-w-7xl flex justify-center">
+        
+        <div class="w-full bg-yellow-50 text-yellow-900 border-yellow-400 p-8 md:p-10 rounded-2xl announcement-box relative overflow-hidden mb-10">
+            <div class="absolute top-0 right-0 -mt-6 -mr-6 text-yellow-200 opacity-40 pointer-events-none">
+                <svg class="w-48 h-48" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            </div>
+            <div class="relative z-10 text-2xl md:text-3xl font-black leading-relaxed tracking-wide text-left">
+                帳號：學號@csps.tp.edu.tw<br><br>密碼：csps班級座號
+            </div>
+        </div>
+    </div>
+
+    <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl w-full">
+        
+        <a href="https://www.google.com.tw" target="_blank" rel="noopener noreferrer" class="cute-card bg-white rounded-3xl overflow-hidden group flex flex-col no-underline">
+            <div class="h-48 bg-blue-100 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="%233b82f6"/></svg>')"></div>
+                <div class="text-blue-500">
+                    <svg class="w-24 h-24 icon-bounce relative z-10" fill="none" stroke="#3b82f6" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                </div>
+            </div>
+            <div class="p-6 flex-1 flex items-center justify-center bg-white text-center">
+                <h2 class="text-2xl font-extrabold text-blue-500 opacity-90 group-hover:opacity-100 transition-opacity leading-tight">
+                    Google首頁
+                </h2>
+            </div>
+        </a>
+        
+        <a href="https://accounts.google.com/v3/signin/identifier?continue=https%3A%2F%2Fmail.google.com%2Fmail%2F&dsh=S437277025%3A1779077443994882&flowEntry=ServiceLogin&flowName=GlifWebSignIn&hd=csps.tp.edu.tw&rip=1&sacu=1&service=mail&ifkv=AWa2Pauj3vTjsZAkkXHpAaGBuxh9U9fPpfbfJAYFqoEbQFWdUx0IH9AKjcCgoIHv6QeeuOc6EGub" target="_blank" rel="noopener noreferrer" class="cute-card bg-white rounded-3xl overflow-hidden group flex flex-col no-underline">
+            <div class="h-48 bg-rose-100 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="%23f43f5e"/></svg>')"></div>
+                <div class="text-rose-500">
+                    <svg class="w-24 h-24 icon-bounce relative z-10" fill="none" stroke="#f43f5e" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                </div>
+            </div>
+            <div class="p-6 flex-1 flex items-center justify-center bg-white text-center">
+                <h2 class="text-2xl font-extrabold text-rose-500 opacity-90 group-hover:opacity-100 transition-opacity leading-tight">
+                    Gmail
+                </h2>
+            </div>
+        </a>
+        
+        <a href="https://accounts.google.com/v3/signin/identifier?dsh=S218587319%3A1669784987756296&continue=https%3A%2F%2Fclassroom.google.com&flowEntry=ServiceLogin&flowName=GlifWebSignIn&hd=csps.tp.edu.tw&rip=1&sacu=1&service=classroom&ifkv=ARgdvAuyK8YVH2gavr-6F4P366qGFKNnOS0DIHFYqe_OE7UPPbxqu2tPesabYqiNjBUqd8n-0IkB9g" target="_blank" rel="noopener noreferrer" class="cute-card bg-white rounded-3xl overflow-hidden group flex flex-col no-underline">
+            <div class="h-48 bg-emerald-100 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="%2310b981"/></svg>')"></div>
+                <div class="text-emerald-500">
+                    <svg class="w-24 h-24 icon-bounce relative z-10" fill="none" stroke="#10b981" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+                </div>
+            </div>
+            <div class="p-6 flex-1 flex items-center justify-center bg-white text-center">
+                <h2 class="text-2xl font-extrabold text-emerald-500 opacity-90 group-hover:opacity-100 transition-opacity leading-tight">
+                    Google Classroom
+                </h2>
+            </div>
+        </a>
+        
+        <a href="https://forms.gle/E76kRLH8ZnfYx5xw6" target="_blank" rel="noopener noreferrer" class="cute-card bg-white rounded-3xl overflow-hidden group flex flex-col no-underline">
+            <div class="h-48 bg-purple-100 flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-20" style="background-image: url('data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="%23a855f7"/></svg>')"></div>
+                <div class="text-purple-500">
+                    <svg class="w-24 h-24 icon-bounce relative z-10" fill="none" stroke="#a855f7" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg>
+                </div>
+            </div>
+            <div class="p-6 flex-1 flex items-center justify-center bg-white text-center">
+                <h2 class="text-2xl font-extrabold text-purple-500 opacity-90 group-hover:opacity-100 transition-opacity leading-tight">
+                    【午餐調查表】
+                </h2>
+            </div>
+        </a>
+    </main>
+
+    
+
+</body>
+</html>
