@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A班_任務紀錄表</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Microsoft JhengHei',sans-serif;background:#e8f5e9;min-height:100vh;padding:20px}
+h1{text-align:center;color:#2e7d32;margin-bottom:6px;font-size:1.4rem}
+.date-row{text-align:center;color:#888;font-size:.85rem;margin-bottom:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:12px}
+button{padding:7px 14px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;transition:opacity .2s}
+button:hover{opacity:.82}
+.stats{text-align:center;font-size:.85rem;color:#555;margin-bottom:14px}
+.stats span{margin:0 6px}
+.classroom-wrap{background:#f9fbe7;border-radius:18px;padding:18px 24px;max-width:900px;margin:0 auto;box-shadow:0 4px 18px rgba(46,125,50,.1)}
+.board-label{text-align:center;background:#66bb6a;color:#fff;border-radius:12px;padding:8px 0;font-size:1rem;font-weight:bold;margin-bottom:12px;letter-spacing:.1em}
+.bulletin-label{text-align:center;background:#c8e6c9;color:#2e7d32;border-radius:12px;padding:6px 0;font-size:.9rem;font-weight:bold;margin-bottom:12px;letter-spacing:.1em}
+.seat-area{display:flex;align-items:stretch;gap:8px}
+.side-label{writing-mode:vertical-rl;text-orientation:upright;background:#fff9c4;color:#795548;border-radius:10px;padding:10px 6px;font-size:.85rem;font-weight:bold;display:flex;align-items:center;justify-content:center;min-width:32px}
+.grid{flex:1;display:grid;gap:8px}
+.seat{background:#fff;border:2px dashed #e0e0e0;border-radius:12px;min-height:82px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;cursor:pointer;position:relative;padding:6px 5px 5px;user-select:none;transition:border-color .2s,background .2s}
+.seat.empty-slot{color:#ccc;font-size:.9rem;border-color:#eee;justify-content:center}
+.seat.occupied{border:2px solid #81c784;background:#f1f8e9}
+.seat.all-done{background:#c8e6c9;border-color:#4caf50}
+.seat.partial{background:#fff9c4;border-color:#ffd54f}
+.seat-num{position:absolute;top:4px;left:7px;font-size:.62rem;color:#bbb}
+.seat-name{font-size:.82rem;font-weight:bold;color:#555;text-align:center;margin-top:2px;line-height:1.3}
+.seat-tasks{display:flex;flex-direction:column;gap:2px;width:100%;margin-top:4px}
+.task-badge{font-size:.65rem;border-radius:5px;padding:1px 5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-badge.done{color:#fff}
+.task-badge.undone{background:#f5f5f5;color:#bbb}
+.popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.28);z-index:100;align-items:center;justify-content:center}
+.popup-overlay.show{display:flex}
+.popup{background:#fff;border-radius:16px;padding:22px 28px;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.18);text-align:center}
+.popup h3{color:#2e7d32;margin-bottom:14px;font-size:1.05rem}
+.task-checks{display:flex;flex-direction:column;gap:9px;text-align:left;margin-bottom:16px}
+.task-check-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:10px;cursor:pointer;transition:background .15s}
+.task-check-row:hover{background:#f1f8e9}
+.task-check-row input{width:16px;height:16px;cursor:pointer;accent-color:#4caf50}
+.task-check-row label{font-size:.9rem;cursor:pointer;flex:1}
+.task-num-sm{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:bold;color:#fff;flex-shrink:0}
+.popup-actions{display:flex;flex-direction:column;gap:8px}
+.popup-actions button{font-size:.9rem;padding:8px}
+@media print{body{background:#fff;padding:0}.toolbar,.stats{display:none}.classroom-wrap{box-shadow:none;max-width:100%}.seat{min-height:70px}}
+</style>
+</head>
+<body>
+<h1>✅ A班_任務紀錄表</h1>
+<div class="date-row" id="dateRow"></div>
+<div class="toolbar">
+  <button style="background:#ef9a9a;color:#fff" onclick="clearAll()">🧹 清除所有任務</button>
+  <button style="background:#a5d6a7;color:#1b5e20" onclick="setAll()">✅ 全部完成</button>
+  <button style="background:#90caf9;color:#fff" onclick="window.print()">🖨️ 列印</button>
+  <button style="background:#ffcc80;color:#555" onclick="exportCSV()">📊 匯出 CSV</button>
+</div>
+<div class="stats" id="statsBar"></div>
+<div class="classroom-wrap">
+  <div class="bulletin-label">教室後方 ／ 布告欄</div>
+  <div class="seat-area">
+    <div class="side-label">後門</div>
+    <div class="grid" id="seatGrid"></div>
+    <div style="width:32px"></div>
+  </div>
+  <div class="board-label" style="margin-top:12px">講台 ／ 黑板</div>
+</div>
+<div class="popup-overlay" id="popupOverlay">
+  <div class="popup">
+    <h3 id="popupTitle">任務完成狀況</h3>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px">
+      <button style="background:#a5d6a7;color:#1b5e20;font-size:.8rem;padding:5px 10px;border-radius:8px" onclick="checkAll()">全選</button>
+      <button style="background:#e0e0e0;color:#555;font-size:.8rem;padding:5px 10px;border-radius:8px" onclick="checkNone()">全清</button>
+    </div>
+    <div class="task-checks" id="taskChecks"></div>
+    <div class="popup-actions">
+      <button style="background:#81c784;color:#1b5e20" onclick="savePopup()">✅ 確認</button>
+      <button style="background:#ce93d8;color:#6a1b9a" onclick="startSwap()">🔀 交換座位</button>
+      <button style="background:#f5f5f5;color:#555" onclick="closePopup()">取消</button>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="_seats">[{"name":"30810黃宣皓(112009)","tasks":[]},{"name":"50802田禮維(110084)","tasks":[]},{"name":"30721林庭伊(112073)","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"30507陳宗德(112111)","tasks":[]},{"name":"40801彭達勝(111205)","tasks":[]},{"name":"40330呂英綸(111041)","tasks":[]},{"name":"","tasks":[]},{"name":"50709湯昂諦(110011)","tasks":[]},{"name":"40911蔡博任(111246)","tasks":[]},{"name":"40206游閎凱(111240)","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"50304莊翔堤(110222)","tasks":[]},{"name":"30402張炘任(112028)","tasks":[]},{"name":"50603王培昊(110167)","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"","tasks":[]},{"name":"20407宋奐禛(113077)","tasks":[]},{"name":"50111周揚政(110145)","tasks":[]},{"name":"50605李以安(110171)","tasks":[]},{"name":"20611張仕騫(113129)","tasks":[]}]</script>
+<script type="application/json" id="_tasks">[{"name":"任務一","on":true},{"name":"任務二","on":true},{"name":"任務三","on":true},{"name":"任務四","on":true},{"name":"任務五","on":true},{"name":"任務六","on":true}]</script>
+<script type="application/json" id="_colors">["#ef5350","#ff9800","#fdd835","#66bb6a","#42a5f5","#ab47bc"]</script>
+<script>
+var rows=8,cols=4;
+var seats=JSON.parse(document.getElementById('_seats').textContent);
+var tasks=JSON.parse(document.getElementById('_tasks').textContent);
+var COLORS=JSON.parse(document.getElementById('_colors').textContent);
+var swapPending=-1,currentIdx=-1;
+document.getElementById('dateRow').textContent='日期：'+new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+function renderGrid(){
+  var g=document.getElementById('seatGrid');
+  g.style.gridTemplateColumns='repeat('+cols+',1fr)';g.innerHTML='';
+  seats.forEach(function(s,i){
+    var d=document.createElement('div');
+    if(!s.name){d.className='seat empty-slot';d.innerHTML='<span class="seat-num">'+(i+1)+'<\/span><span style="color:#ddd">空<\/span>';}
+    else{
+      var done=(s.tasks||[]).filter(Boolean).length;
+      var cls=done===0?'':done>=tasks.length?'all-done':'partial';
+      d.className='seat occupied '+cls;
+      var badges=tasks.map(function(t,ti){
+        var ok=(s.tasks||[])[ti]||false;
+        return '<div class="task-badge '+(ok?'done':'undone')+'" style="'+(ok?'background:'+COLORS[ti]:'')+'">'+(t.name)+'<\/div>';
+      }).join('');
+      d.innerHTML='<span class="seat-num">'+(i+1)+'<\/span><span class="seat-name">'+s.name+'<\/span><div class="seat-tasks">'+badges+'<\/div>';
+    }
+    d.addEventListener('click',(function(idx){return function(){onSeatClick(idx);};})(i));
+    g.appendChild(d);
+  });
+  updateStats();
+}
+function onSeatClick(idx){
+  if(swapPending!==-1){var t=seats[swapPending];seats[swapPending]=seats[idx];seats[idx]=t;swapPending=-1;renderGrid();return;}
+  if(!seats[idx].name)return;
+  currentIdx=idx;
+  var s=seats[idx];if(!s.tasks)s.tasks=[];
+  document.getElementById('popupTitle').textContent=s.name+' 的任務';
+  document.getElementById('taskChecks').innerHTML=tasks.map(function(t,ti){
+    var ck=s.tasks[ti]?'checked':'';
+    return '<div class="task-check-row" onclick="toggleCk('+ti+')">'
+      +'<input type="checkbox" id="ck'+ti+'" '+ck+' onclick="event.stopPropagation();seats[currentIdx].tasks['+ti+']=this.checked">'
+      +'<div class="task-num-sm" style="background:'+COLORS[ti]+'">'+(ti+1)+'<\/div>'
+      +'<label for="ck'+ti+'" style="color:'+COLORS[ti]+';font-weight:bold">'+t.name+'<\/label><\/div>';
+  }).join('');
+  document.getElementById('popupOverlay').classList.add('show');
+}
+function toggleCk(ti){var cb=document.getElementById('ck'+ti);cb.checked=!cb.checked;seats[currentIdx].tasks[ti]=cb.checked;}
+function checkAll(){tasks.forEach(function(_,ti){document.getElementById('ck'+ti).checked=true;seats[currentIdx].tasks[ti]=true;});}
+function checkNone(){tasks.forEach(function(_,ti){document.getElementById('ck'+ti).checked=false;seats[currentIdx].tasks[ti]=false;});}
+function savePopup(){closePopup();renderGrid();}
+function startSwap(){swapPending=currentIdx;closePopup();alert('已選取「'+seats[currentIdx].name+'」，請點選目標座位');}
+function closePopup(){document.getElementById('popupOverlay').classList.remove('show');}
+function clearAll(){seats.forEach(function(s){s.tasks=[];});renderGrid();}
+function setAll(){seats.forEach(function(s){if(s.name){if(!s.tasks)s.tasks=[];tasks.forEach(function(_,ti){s.tasks[ti]=true;});}});renderGrid();}
+function updateStats(){
+  var placed=0,allDone=0,partial=0,none=0;
+  seats.forEach(function(s){if(!s.name)return;placed++;var d=(s.tasks||[]).filter(Boolean).length;if(d>=tasks.length&&tasks.length>0)allDone++;else if(d>0)partial++;else none++;});
+  var summary=tasks.map(function(t,ti){var c=seats.filter(function(s){return s.name&&(s.tasks||[])[ti];}).length;return '<span style="color:'+COLORS[ti]+';font-weight:bold">'+t.name+':'+c+'<\/span>';}).join(' ');
+  document.getElementById('statsBar').innerHTML='<span>👥 '+placed+' 人<\/span><span>🟢 全完成 '+allDone+'<\/span><span>🟡 部分 '+partial+'<\/span><span>⬜ 未開始 '+none+'<\/span>'+(tasks.length?'&nbsp;｜&nbsp;'+summary:'');
+}
+function exportCSV(){
+  var header=['座位','姓名'].concat(tasks.map(function(t){return t.name;})).concat(['完成數']).join(',')+'\n';
+  var body=seats.map(function(s,i){
+    if(!s.name)return (i+1)+',(空),'+tasks.map(function(){return '';}).join(',')+',';
+    var chk=tasks.map(function(_,ti){return (s.tasks||[])[ti]?'✓':'';});
+    return [i+1,s.name].concat(chk).concat([(s.tasks||[]).filter(Boolean).length]).join(',');
+  }).join('\n');
+  var blob=new Blob(['﻿'+header+body],{type:'text/csv;charset=utf-8'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='任務紀錄_'+new Date().toLocaleDateString('zh-TW').split('/').join('-')+'.csv';a.click();
+}
+document.getElementById('popupOverlay').addEventListener('click',function(e){if(e.target===this)closePopup();});
+renderGrid();
+</script>
+</body>
+</html>
