@@ -166,6 +166,46 @@
   footer{text-align:center;color:var(--text);opacity:.6;font-size:.78rem;margin-top:30px;}
   .hidden{display:none !important;}
   .badge-count{background:var(--accent2);color:#fff;border-radius:10px;padding:0 6px;font-size:.7rem;margin-left:4px;}
+
+  .cell-clickable{cursor:pointer;transition:transform .12s;}
+  .cell-clickable:hover{transform:scale(1.08);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .cam-icon{font-size:.75rem;}
+  .warn-icon{font-size:.72rem;opacity:.8;}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(93,64,55,.45);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-box{
+    background:#fff;border-radius:24px;border:3px solid var(--border);
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+    max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;
+  }
+  .modal-header{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:16px 20px;border-bottom:2px solid var(--border);background:var(--cream);
+  }
+  .modal-title{font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;color:var(--text);font-size:1.05rem;}
+  .modal-subtitle{font-size:.8rem;color:var(--text2);margin-top:2px;}
+  .modal-close{
+    background:#fff;border:2px solid var(--border);border-radius:50%;
+    width:32px;height:32px;cursor:pointer;font-size:.9rem;color:var(--text);flex-shrink:0;
+  }
+  .modal-close:hover{background:var(--miss-bg);}
+  .modal-body{padding:18px 20px;overflow-y:auto;}
+  .submission-block{margin-bottom:18px;}
+  .submission-block:last-child{margin-bottom:0;}
+  .submission-block .sub-caption{font-size:.78rem;color:#8a7f7c;margin-bottom:6px;}
+  .attachment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+  .attachment-grid img{
+    width:100%;border-radius:14px;border:2px solid var(--border);display:block;cursor:zoom-in;
+    background:var(--pink);
+  }
+  .attachment-link{
+    display:block;padding:10px 14px;border-radius:14px;background:var(--sky);
+    color:var(--text);font-size:.85rem;text-decoration:none;border:2px solid var(--border);
+  }
+  .no-attachment-note{color:var(--miss-text);font-size:.85rem;}
 </style>
 </head>
 <body>
@@ -274,6 +314,19 @@
   <footer>由 Claude 製作 · 資料僅於本機瀏覽器處理，不會上傳到任何伺服器</footer>
 </div>
 
+<div id="imageModalBackdrop" class="modal-backdrop hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitle"></div>
+      </div>
+      <button class="modal-close" id="modalCloseBtn" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -282,6 +335,7 @@
   let rosterOrder = [];        // ordered seats
   let studentIdMap = new Map();// studentId -> seat (secondary matching key)
   let seatToId = new Map();    // seat -> studentId (for display)
+  let cellLookup = new Map();  // "taskIdx|seat" -> {studentSeat, studentName, taskName, submissions}
   let tasks = [];              // [{name, entries:[{raw, matchType, matchedSeat, timestamp}]}]
   let resolutions = new Map(); // rawTitle -> seat ('__ignore__' to ignore)
   let teacherSeat = "60099";
@@ -380,9 +434,21 @@
         const chunkEnd = i+1<heads.length ? heads[i+1].start : text2.length;
         const chunk = text2.slice(h.end, chunkEnd);
         const tsMatch = chunk.match(/建立於 \(UTC\):\*\*\s*(.+)/);
+        const attachments = [];
+        const imgRe = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+        let im;
+        while((im = imgRe.exec(chunk)) !== null){
+          attachments.push({type:'image', alt: im[1]||'附件', url: im[2]});
+        }
+        const linkRe = /(^|[^!])\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+        let lm;
+        while((lm = linkRe.exec(chunk)) !== null){
+          attachments.push({type:'link', alt: lm[2]||'附件連結', url: lm[3]});
+        }
         entries.push({
           raw: h.raw,
-          timestamp: tsMatch ? tsMatch[1].trim() : ''
+          timestamp: tsMatch ? tsMatch[1].trim() : '',
+          attachments
         });
       }
       if(entries.length){
@@ -447,15 +513,16 @@
   }
 
   function computeStats(){
-    // submission map: task.name -> Map(seat -> {count, viaId})
+    // submission map: task.name -> Map(seat -> {count, viaId, submissions:[{timestamp,via,attachments}]})
     const taskStats = tasks.map(task=>{
-      const submitted = new Map(); // seat -> {count, viaId}
+      const submitted = new Map(); // seat -> {count, viaId, submissions}
       for(const e of task.entries){
         const c = classify(e.raw);
         if(c.type === 'matched'){
-          const cur = submitted.get(c.seat) || {count:0, viaId:0};
+          const cur = submitted.get(c.seat) || {count:0, viaId:0, submissions:[]};
           cur.count++;
           if(c.via === 'id') cur.viaId++;
+          cur.submissions.push({timestamp:e.timestamp, via:c.via, attachments:e.attachments||[]});
           submitted.set(c.seat, cur);
         }
       }
@@ -595,19 +662,27 @@
     }
     thead += `<th>繳交率</th></tr></thead>`;
 
+    cellLookup.clear();
     let tbody = '<tbody>';
     for(const s of rows){
       tbody += `<tr><th>${s.seat}<br><span style="font-weight:400;color:#8a7f7c;">${escapeHtml(s.name||'')}</span></th>`;
-      for(const t of taskStats){
+      taskStats.forEach((t, tIdx)=>{
         const info = t.submitted.get(s.seat);
         if(info){
           const dup = info.count>1 ? `<span class="badge-count">×${info.count}</span>` : '';
           const idTag = info.viaId>0 ? `<span class="badge-count" style="background:#7EA8D6;" title="以學號比對">ID</span>` : '';
-          tbody += `<td class="cell-ok">✓${dup}${idTag}</td>`;
+          const totalAttachments = info.submissions.reduce((a,sub)=>a+sub.attachments.length,0);
+          if(totalAttachments>0){
+            const key = tIdx+'|'+s.seat;
+            cellLookup.set(key, {studentSeat:s.seat, studentName:s.name, taskName:t.name, submissions:info.submissions});
+            tbody += `<td class="cell-ok cell-clickable" data-key="${key}" title="點擊查看附件">✓${dup}${idTag} <span class="cam-icon">📷</span></td>`;
+          } else {
+            tbody += `<td class="cell-ok" title="已繳交，但未偵測到附件圖片">✓${dup}${idTag} <span class="warn-icon" title="無附件">⚠️</span></td>`;
+          }
         } else {
           tbody += `<td class="cell-miss">✗</td>`;
         }
-      }
+      });
       const c = rateColor(s.rate);
       tbody += `<td><span class="rate-pill" style="background:${c.bg};color:${c.text};">${Math.round(s.rate*100)}%</span></td>`;
       tbody += '</tr>';
@@ -673,6 +748,48 @@
   }
   document.querySelectorAll('.tab-btn').forEach(b=>{
     b.addEventListener('click', ()=>switchTab(b.dataset.tab));
+  });
+
+  // ---------- Attachment image modal ----------
+  const modalBackdrop = $('#imageModalBackdrop');
+  const modalTitle = $('#modalTitle');
+  const modalSubtitle = $('#modalSubtitle');
+  const modalBody = $('#modalBody');
+
+  function openImageModal(entry){
+    modalTitle.textContent = `${entry.studentSeat} ${entry.studentName||''}`;
+    modalSubtitle.textContent = entry.taskName;
+    modalBody.innerHTML = entry.submissions.map((sub, idx)=>{
+      const cap = entry.submissions.length>1 ? `第 ${idx+1} 次繳交${sub.timestamp?'・'+escapeHtml(sub.timestamp):''}${sub.via==='id'?'・以學號比對':''}` : (sub.timestamp?escapeHtml(sub.timestamp)+(sub.via==='id'?'・以學號比對':''):(sub.via==='id'?'以學號比對':''));
+      let body;
+      if(sub.attachments.length===0){
+        body = `<div class="no-attachment-note">（此則貼文沒有偵測到附件圖片）</div>`;
+      } else {
+        body = `<div class="attachment-grid">` + sub.attachments.map(att=>{
+          if(att.type==='image'){
+            return `<a href="${escapeAttr(att.url)}" target="_blank" rel="noopener"><img src="${escapeAttr(att.url)}" alt="${escapeAttr(att.alt)}" loading="lazy"></a>`;
+          }
+          return `<a class="attachment-link" href="${escapeAttr(att.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(att.alt)}</a>`;
+        }).join('') + `</div>`;
+      }
+      return `<div class="submission-block">${cap?`<div class="sub-caption">${cap}</div>`:''}${body}</div>`;
+    }).join('');
+    modalBackdrop.classList.remove('hidden');
+  }
+  function closeImageModal(){
+    modalBackdrop.classList.add('hidden');
+    modalBody.innerHTML = '';
+  }
+  $('#modalCloseBtn').addEventListener('click', closeImageModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeImageModal(); });
+  window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeImageModal(); });
+
+  $('#matrixTable').addEventListener('click', (e)=>{
+    const cell = e.target.closest('.cell-clickable');
+    if(!cell) return;
+    const key = cell.getAttribute('data-key');
+    const entry = cellLookup.get(key);
+    if(entry) openImageModal(entry);
   });
 
   ['matrixSearch','matrixSort'].forEach(id=>$('#'+id).addEventListener('input', refresh));
