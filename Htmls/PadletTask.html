@@ -179,7 +179,7 @@
       <div class="field">
         <label for="rosterFile">學生名單（.txt / .csv）</label>
         <input type="file" id="rosterFile" accept=".txt,.csv">
-        <small>格式：每行「座號,姓名」，例如 20407,宋奐禛</small>
+        <small>格式：每行「座號,姓名」，例如 20407,宋奐禛；可加第 3 欄「學號」（例如 20407,宋奐禛,113077），若貼文誤填學號也能自動比對到正確學生</small>
       </div>
       <div class="field">
         <label for="mdFile">Padlet 匯出檔（.md）</label>
@@ -222,6 +222,7 @@
           </select>
           <button class="btn small secondary" id="exportMatrixBtn">⬇️ 匯出矩陣 CSV</button>
         </div>
+        <p style="font-size:.78rem;color:#8a7f7c;margin:0 0 10px;">藍色「ID」標籤代表該筆繳交是用學號比對到學生，而非座號</p>
         <div class="matrix-wrap"><table id="matrixTable"></table></div>
       </div>
     </div>
@@ -279,6 +280,8 @@
 
   let rosterMap = new Map();   // seat -> name
   let rosterOrder = [];        // ordered seats
+  let studentIdMap = new Map();// studentId -> seat (secondary matching key)
+  let seatToId = new Map();    // seat -> studentId (for display)
   let tasks = [];              // [{name, entries:[{raw, matchType, matchedSeat, timestamp}]}]
   let resolutions = new Map(); // rawTitle -> seat ('__ignore__' to ignore)
   let teacherSeat = "60099";
@@ -318,22 +321,34 @@
   });
 
   function parseRoster(text){
-    const map = new Map();
-    const order = [];
+    const map = new Map();       // seat -> name
+    const order = [];            // ordered seats
+    const idMap = new Map();     // studentId -> seat
+    const seatToId = new Map();  // seat -> studentId (for display)
+    const idConflicts = [];      // studentId that appear on >1 seat
     text.split(/\r?\n/).forEach(line=>{
       line = line.trim();
       if(!line) return;
-      const parts = line.split(',');
+      const parts = line.split(',').map(p=>p.trim());
       if(parts.length >= 2){
-        const seat = parts[0].trim();
-        const name = parts.slice(1).join(',').trim();
+        const seat = parts[0];
+        const name = parts[1];
+        const studentId = (parts[2]||'').trim();
         if(seat && !map.has(seat)){
           map.set(seat, name);
           order.push(seat);
+          if(studentId){
+            seatToId.set(seat, studentId);
+            if(idMap.has(studentId) && idMap.get(studentId)!==seat){
+              idConflicts.push(studentId);
+            } else {
+              idMap.set(studentId, seat);
+            }
+          }
         }
       }
     });
-    return {map, order};
+    return {map, order, idMap, seatToId, idConflicts};
   }
 
   function parseMarkdown(text){
@@ -396,17 +411,22 @@
       const d = levenshtein(raw, seat);
       if(d<bestDist){bestDist=d; best=seat;}
     }
+    for(const [studentId, seat] of studentIdMap.entries()){
+      const d = levenshtein(raw, studentId);
+      if(d<bestDist){bestDist=d; best=seat;}
+    }
     if(best!==null && bestDist<=2) return best;
     return null;
   }
 
   function classify(raw){
     if(raw === teacherSeat) return {type:'teacher'};
-    if(rosterMap.has(raw)) return {type:'matched', seat:raw};
+    if(rosterMap.has(raw)) return {type:'matched', seat:raw, via:'seat'};
+    if(studentIdMap.has(raw)) return {type:'matched', seat:studentIdMap.get(raw), via:'id'};
     if(resolutions.has(raw)){
       const r = resolutions.get(raw);
       if(r === '__ignore__') return {type:'ignored'};
-      return {type:'matched', seat:r};
+      return {type:'matched', seat:r, via:'manual'};
     }
     return {type:'unmatched'};
   }
@@ -427,13 +447,16 @@
   }
 
   function computeStats(){
-    // submission map: task.name -> Set(seat) with counts
+    // submission map: task.name -> Map(seat -> {count, viaId})
     const taskStats = tasks.map(task=>{
-      const submitted = new Map(); // seat -> count
+      const submitted = new Map(); // seat -> {count, viaId}
       for(const e of task.entries){
         const c = classify(e.raw);
         if(c.type === 'matched'){
-          submitted.set(c.seat, (submitted.get(c.seat)||0)+1);
+          const cur = submitted.get(c.seat) || {count:0, viaId:0};
+          cur.count++;
+          if(c.via === 'id') cur.viaId++;
+          submitted.set(c.seat, cur);
         }
       }
       const missing = rosterOrder.filter(s=>!submitted.has(s));
@@ -479,6 +502,10 @@
     const totalSubmitted = studentStats.reduce((a,s)=>a+s.submittedCount,0);
     const overallRate = totalSlots ? Math.round((totalSubmitted/totalSlots)*1000)/10 : 0;
     const anomalyCount = [...anomalies.values()].reduce((a,o)=>a+o.count,0);
+    let idMatchCount = 0;
+    for(const t of taskStats){
+      for(const info of t.submitted.values()) idMatchCount += info.viaId;
+    }
 
     const items = [
       {num:totalStudents, label:'學生人數'},
@@ -487,6 +514,7 @@
       {num:teacherPostCount, label:'教師示範貼文'},
       {num:anomalyCount, label:'待確認異常筆數'},
     ];
+    if(idMatchCount>0) items.push({num:idMatchCount, label:'以學號比對筆數'});
     $('#overviewGrid').innerHTML = items.map(it=>`
       <div class="stat-box"><div class="num">${it.num}</div><div class="label">${it.label}</div></div>
     `).join('');
@@ -571,10 +599,11 @@
     for(const s of rows){
       tbody += `<tr><th>${s.seat}<br><span style="font-weight:400;color:#8a7f7c;">${escapeHtml(s.name||'')}</span></th>`;
       for(const t of taskStats){
-        const submittedCount = t.submitted.get(s.seat);
-        if(submittedCount){
-          const dup = submittedCount>1 ? `<span class="badge-count">×${submittedCount}</span>` : '';
-          tbody += `<td class="cell-ok">✓${dup}</td>`;
+        const info = t.submitted.get(s.seat);
+        if(info){
+          const dup = info.count>1 ? `<span class="badge-count">×${info.count}</span>` : '';
+          const idTag = info.viaId>0 ? `<span class="badge-count" style="background:#7EA8D6;" title="以學號比對">ID</span>` : '';
+          tbody += `<td class="cell-ok">✓${dup}${idTag}</td>`;
         } else {
           tbody += `<td class="cell-miss">✗</td>`;
         }
@@ -675,6 +704,7 @@
         return;
       }
       rosterMap = r.map; rosterOrder = r.order;
+      studentIdMap = r.idMap; seatToId = r.seatToId;
       tasks = parseMarkdown(mdFileText);
       resolutions = new Map();
       if(tasks.length===0){
@@ -682,7 +712,10 @@
         statusMsg.classList.add('error');
         return;
       }
-      statusMsg.textContent = `✅ 解析完成：名單 ${rosterOrder.length} 人，任務 ${tasks.length} 項。`;
+      let msg = `✅ 解析完成：名單 ${rosterOrder.length} 人，任務 ${tasks.length} 項。`;
+      if(studentIdMap.size>0) msg += ` 已讀取 ${studentIdMap.size} 筆學號，可作為次要比對依據。`;
+      if(r.idConflicts.length>0) msg += ` ⚠️ 名單中有 ${r.idConflicts.length} 個學號重複，已略過重複項，請檢查名單檔。`;
+      statusMsg.textContent = msg;
       $('#dashboard').classList.remove('hidden');
       refresh();
       switchTab('matrix');
