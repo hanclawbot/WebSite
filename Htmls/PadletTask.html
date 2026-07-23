@@ -146,6 +146,7 @@
   .matrix-wrap tbody tr:nth-child(even) td, .matrix-wrap tbody tr:nth-child(even) th{background:#FFFBF9;}
   .cell-ok{background:var(--ok-bg);color:var(--ok-text);font-weight:800;border-radius:10px;}
   .cell-miss{background:var(--miss-bg);color:var(--miss-text);font-weight:800;border-radius:10px;}
+  .cell-leave{background:#E4E4F0;color:#6B6B8A;font-weight:700;border-radius:10px;font-size:.75rem;}
   .rate-pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;margin-left:6px;}
 
   .anomaly-banner{
@@ -262,7 +263,7 @@
           </select>
           <button class="btn small secondary" id="exportMatrixBtn">⬇️ 匯出矩陣 CSV</button>
         </div>
-        <p style="font-size:.78rem;color:#8a7f7c;margin:0 0 10px;">藍色「ID」標籤代表該筆繳交是用學號比對到學生，而非座號</p>
+        <p style="font-size:.78rem;color:#8a7f7c;margin:0 0 10px;">藍色「ID」標籤代表該筆繳交是用學號比對到學生，而非座號；灰色「請假」表示該任務老師已標記請假，不計入繳交率</p>
         <div class="matrix-wrap"><table id="matrixTable"></table></div>
       </div>
     </div>
@@ -497,16 +498,33 @@
     return {type:'unmatched'};
   }
 
+  // 貼文標題形如「請假-40113,30102」（分隔符可為 - : ： 、 , ， 或空白，後面允許附加原因文字）
+  const LEAVE_RE = /^請假[\s\-–—:：、,，]*([\d][\d\s,，、]*)/;
+  function extractLeaveTokens(raw){
+    const m = raw.match(LEAVE_RE);
+    if(!m) return null;
+    return m[1].split(/[\s,，、]+/).map(s=>s.trim()).filter(Boolean);
+  }
+
   function computeAnomalies(){
     const map = new Map(); // raw -> {count, sections:Set}
+    const add = (raw, sectionLabel)=>{
+      if(!map.has(raw)) map.set(raw, {count:0, sections:new Set()});
+      const o = map.get(raw);
+      o.count++; o.sections.add(sectionLabel);
+    };
     for(const task of tasks){
       for(const e of task.entries){
-        const c = classify(e.raw);
-        if(c.type === 'unmatched'){
-          if(!map.has(e.raw)) map.set(e.raw, {count:0, sections:new Set()});
-          const o = map.get(e.raw);
-          o.count++; o.sections.add(task.name);
+        const leaveTokens = extractLeaveTokens(e.raw);
+        if(leaveTokens){
+          for(const tok of leaveTokens){
+            const c = classify(tok);
+            if(c.type === 'unmatched') add(tok, task.name+'（請假名單）');
+          }
+          continue;
         }
+        const c = classify(e.raw);
+        if(c.type === 'unmatched') add(e.raw, task.name);
       }
     }
     return map;
@@ -516,7 +534,16 @@
     // submission map: task.name -> Map(seat -> {count, viaId, submissions:[{timestamp,via,attachments}]})
     const taskStats = tasks.map(task=>{
       const submitted = new Map(); // seat -> {count, viaId, submissions}
+      const leave = new Set();     // seats marked on leave for this task
       for(const e of task.entries){
+        const leaveTokens = extractLeaveTokens(e.raw);
+        if(leaveTokens){
+          for(const tok of leaveTokens){
+            const c = classify(tok);
+            if(c.type === 'matched') leave.add(c.seat);
+          }
+          continue;
+        }
         const c = classify(e.raw);
         if(c.type === 'matched'){
           const cur = submitted.get(c.seat) || {count:0, viaId:0, submissions:[]};
@@ -526,29 +553,35 @@
           submitted.set(c.seat, cur);
         }
       }
-      const missing = rosterOrder.filter(s=>!submitted.has(s));
+      const applicable = rosterOrder.filter(s=>!leave.has(s));
+      const missing = applicable.filter(s=>!submitted.has(s));
       return {
         name: task.name,
         submitted,
+        leave,
         missing,
-        total: rosterOrder.length,
-        rate: rosterOrder.length ? (rosterOrder.length-missing.length)/rosterOrder.length : 0
+        total: applicable.length,
+        rate: applicable.length ? (applicable.length-missing.length)/applicable.length : 0
       };
     });
 
     const studentStats = rosterOrder.map(seat=>{
       const missingTasks = [];
-      let count=0;
+      const leaveTasks = [];
+      let count=0, applicableCount=0;
       for(const ts of taskStats){
+        if(ts.leave.has(seat)){ leaveTasks.push(ts.name); continue; }
+        applicableCount++;
         if(ts.submitted.has(seat)) count++;
         else missingTasks.push(ts.name);
       }
       return {
         seat, name: rosterMap.get(seat),
         submittedCount: count,
-        total: taskStats.length,
-        rate: taskStats.length ? count/taskStats.length : 0,
-        missingTasks
+        total: applicableCount,
+        rate: applicableCount ? count/applicableCount : 0,
+        missingTasks,
+        leaveTasks
       };
     });
 
@@ -565,13 +598,14 @@
   function renderOverview(taskStats, studentStats, anomalies, teacherPostCount){
     const totalStudents = rosterOrder.length;
     const totalTasks = taskStats.length;
-    const totalSlots = totalStudents*totalTasks;
+    const totalApplicable = studentStats.reduce((a,s)=>a+s.total,0); // 已扣除請假的應繳分母
     const totalSubmitted = studentStats.reduce((a,s)=>a+s.submittedCount,0);
-    const overallRate = totalSlots ? Math.round((totalSubmitted/totalSlots)*1000)/10 : 0;
+    const overallRate = totalApplicable ? Math.round((totalSubmitted/totalApplicable)*1000)/10 : 0;
     const anomalyCount = [...anomalies.values()].reduce((a,o)=>a+o.count,0);
-    let idMatchCount = 0;
+    let idMatchCount = 0, leaveCount = 0;
     for(const t of taskStats){
       for(const info of t.submitted.values()) idMatchCount += info.viaId;
+      leaveCount += t.leave.size;
     }
 
     const items = [
@@ -582,6 +616,7 @@
       {num:anomalyCount, label:'待確認異常筆數'},
     ];
     if(idMatchCount>0) items.push({num:idMatchCount, label:'以學號比對筆數'});
+    if(leaveCount>0) items.push({num:leaveCount, label:'請假人次（不計入繳交率）'});
     $('#overviewGrid').innerHTML = items.map(it=>`
       <div class="stat-box"><div class="num">${it.num}</div><div class="label">${it.label}</div></div>
     `).join('');
@@ -667,6 +702,10 @@
     for(const s of rows){
       tbody += `<tr><th>${s.seat}<br><span style="font-weight:400;color:#8a7f7c;">${escapeHtml(s.name||'')}</span></th>`;
       taskStats.forEach((t, tIdx)=>{
+        if(t.leave.has(s.seat)){
+          tbody += `<td class="cell-leave" title="該任務標記請假，不計入繳交率">請假</td>`;
+          return;
+        }
         const info = t.submitted.get(s.seat);
         if(info){
           const dup = info.count>1 ? `<span class="badge-count">×${info.count}</span>` : '';
@@ -700,11 +739,13 @@
     $('#taskList').innerHTML = list.map(t=>{
       const c = rateColor(t.rate);
       const missNames = t.missing.map(seat=>`<span>${seat} ${escapeHtml(rosterMap.get(seat)||'')}</span>`).join('');
+      const leaveNote = t.leave.size>0 ? `<div style="font-size:.75rem;color:#6B6B8A;margin-top:4px;">🌙 另有 ${t.leave.size} 人請假，不列入繳交率</div>` : '';
       return `<div class="mini-card">
         <div class="title"><span>${escapeHtml(t.name)}</span>
           <span class="rate-pill" style="background:${c.bg};color:${c.text};">${t.total-t.missing.length}/${t.total}（${Math.round(t.rate*100)}%）</span>
         </div>
         ${t.missing.length ? `<div class="missing-list">${missNames}</div>` : `<div class="ok-tag">✅ 全員繳交</div>`}
+        ${leaveNote}
       </div>`;
     }).join('');
   }
@@ -720,11 +761,13 @@
     $('#studentList').innerHTML = list.map(s=>{
       const c = rateColor(s.rate);
       const missNames = s.missingTasks.map(n=>`<span>${escapeHtml(n)}</span>`).join('');
+      const leaveNote = s.leaveTasks.length>0 ? `<div style="font-size:.75rem;color:#6B6B8A;margin-top:4px;">🌙 請假 ${s.leaveTasks.length} 項（不列入繳交率）：${escapeHtml(s.leaveTasks.join('、'))}</div>` : '';
       return `<div class="mini-card">
         <div class="title"><span>${s.seat} ${escapeHtml(s.name||'')}</span>
           <span class="rate-pill" style="background:${c.bg};color:${c.text};">${s.submittedCount}/${s.total}（${Math.round(s.rate*100)}%）</span>
         </div>
         ${s.missingTasks.length ? `<div class="missing-list">${missNames}</div>` : `<div class="ok-tag">✅ 全部繳交</div>`}
+        ${leaveNote}
       </div>`;
     }).join('');
   }
@@ -865,7 +908,7 @@
     for(const s of studentStats){
       const row = [s.seat, s.name];
       for(const t of taskStats){
-        row.push(t.submitted.has(s.seat) ? '1' : '0');
+        row.push(t.leave.has(s.seat) ? '請假' : (t.submitted.has(s.seat) ? '1' : '0'));
       }
       row.push(Math.round(s.rate*100)+'%');
       rows.push(row);
@@ -875,9 +918,9 @@
 
   $('#exportTaskBtn').addEventListener('click', ()=>{
     const {taskStats} = window.__latestStats || computeStats();
-    const rows = [['任務','已繳交','應繳交','繳交率','未繳交名單']];
+    const rows = [['任務','已繳交','應繳交（已扣除請假）','繳交率','請假人數','未繳交名單']];
     for(const t of taskStats){
-      rows.push([t.name, t.total-t.missing.length, t.total, Math.round(t.rate*100)+'%',
+      rows.push([t.name, t.total-t.missing.length, t.total, Math.round(t.rate*100)+'%', t.leave.size,
         t.missing.map(seat=>`${seat}${rosterMap.get(seat)||''}`).join('、')]);
     }
     downloadCsv('任務統計.csv', rows);
@@ -885,9 +928,9 @@
 
   $('#exportStudentBtn').addEventListener('click', ()=>{
     const {studentStats} = window.__latestStats || computeStats();
-    const rows = [['座號','姓名','已繳交','應繳交','繳交率','未繳交任務']];
+    const rows = [['座號','姓名','已繳交','應繳交（已扣除請假）','繳交率','請假項目','未繳交任務']];
     for(const s of studentStats){
-      rows.push([s.seat, s.name, s.submittedCount, s.total, Math.round(s.rate*100)+'%', s.missingTasks.join('、')]);
+      rows.push([s.seat, s.name, s.submittedCount, s.total, Math.round(s.rate*100)+'%', s.leaveTasks.join('、'), s.missingTasks.join('、')]);
     }
     downloadCsv('學生統計.csv', rows);
   });
