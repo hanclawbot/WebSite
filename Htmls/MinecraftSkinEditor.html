@@ -258,6 +258,12 @@
         <input type="range" id="brushSize" min="1" max="4" value="1" style="width:80px;">
         <span id="brushSizeLabel" style="width:14px;text-align:right;">1</span>
       </div>
+      <div class="row" id="shadeIntensityRow">
+        <label for="shadeIntensity" style="width:56px;">漸層程度</label>
+        <input type="range" id="shadeIntensity" min="1" max="10" value="5" style="flex:1;">
+        <span id="shadeIntensityLabel" style="width:16px;text-align:right;">5</span>
+      </div>
+      <p class="hint" id="shadeIntensityHint" style="margin-top:-2px;">1 = 純色不變（單色），10 = 強烈漸層混色</p>
       <div class="swatches" id="swatches"></div>
     </div>
 
@@ -572,6 +578,7 @@ const state = {
   showParts: { head:true, body:true, arms:true, legs:true },
   animate: false,
   showLabels: true,
+  shadeIntensity: 5,
 };
 
 let undoStack = [];
@@ -810,13 +817,19 @@ function applyToolAt(px,py, isDrag){
     if(!info) return;
     if(state.tool==='eraser'){ setPixel(x,y,null); return; }
     if(state.tool==='shade'){
+      // 漸層程度 1~10：1 = 純色不變（單色，直接覆蓋), 10 = 強烈漸層混色（大量保留原色，淡淡疊上新色）
+      const level = state.shadeIntensity;
+      const targetWeight = 1 - (level-1)*0.1;   // 1 -> 1.0（純色），10 -> 0.1（淡淡疊色)
+      const originalWeight = 1 - targetWeight;
       const cur = getPixelColor(x,y);
       const target = hexToRgba(state.color,1);
-      if(cur===null){ setPixel(x,y,hexToRgba(state.color,0.5)); return; }
-      // blend 50% toward brush color for a shading effect
+      if(cur===null){
+        setPixel(x,y, hexToRgba(state.color, Math.max(0.12, targetWeight)));
+        return;
+      }
       const cm = cur.match(/[\d.]+/g).map(Number);
       const tm = target.match(/[\d.]+/g).map(Number);
-      const mix = cm.map((v,i)=> i<3 ? Math.round(v*0.5+tm[i]*0.5) : 1);
+      const mix = cm.map((v,i)=> i<3 ? Math.round(v*originalWeight+tm[i]*targetWeight) : 1);
       setPixel(x,y, `rgba(${mix[0]},${mix[1]},${mix[2]},1)`);
       return;
     }
@@ -1474,11 +1487,17 @@ function refreshAll(){
 }
 
 // Tools
+function updateShadeIntensityVisibility(){
+  const show = state.tool === 'shade';
+  document.getElementById('shadeIntensityRow').style.display = show ? 'flex' : 'none';
+  document.getElementById('shadeIntensityHint').style.display = show ? 'block' : 'none';
+}
 document.querySelectorAll('.tool-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     state.tool = btn.dataset.tool;
+    updateShadeIntensityVisibility();
   });
 });
 
@@ -1489,6 +1508,11 @@ document.getElementById('colorPicker').addEventListener('input', (e)=>{
 document.getElementById('brushSize').addEventListener('input', (e)=>{
   state.brushSize = parseInt(e.target.value,10);
   document.getElementById('brushSizeLabel').textContent = state.brushSize;
+});
+
+document.getElementById('shadeIntensity').addEventListener('input', (e)=>{
+  state.shadeIntensity = parseInt(e.target.value,10);
+  document.getElementById('shadeIntensityLabel').textContent = state.shadeIntensity;
 });
 
 const PALETTE = ['#000000','#ffffff','#e8b28c','#c99a6f','#3b6ea5','#e2574c','#5cc36b',
@@ -1617,6 +1641,7 @@ function init(){
   resizeEditCanvas();
   refreshAll();
   updateStatusColor();
+  updateShadeIntensityVisibility();
   try{
     initThree();
     if(webglOK){
