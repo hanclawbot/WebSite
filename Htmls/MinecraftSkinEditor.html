@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校園 Minecraft 造型編輯器</title>
+<style>
+  :root{
+    --bg-dark:#1e2530;
+    --bg-panel:#2a3242;
+    --bg-panel2:#323c4f;
+    --accent:#5cc36b;
+    --accent-dark:#469c53;
+    --text:#eef1f6;
+    --text-dim:#a6b0c3;
+    --border:#3d4759;
+    --danger:#e2574c;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:"Microsoft JhengHei","Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bg-dark);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  header{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    padding:8px 16px;
+    background:var(--bg-panel);
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-size:16px;
+    margin:0;
+    white-space:nowrap;
+    color:var(--accent);
+  }
+  header .sep{width:1px;height:24px;background:var(--border);}
+  .btn{
+    background:var(--bg-panel2);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 12px;
+    font-size:13px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:background .15s;
+    white-space:nowrap;
+  }
+  .btn:hover{background:#3a4558;}
+  .btn.primary{background:var(--accent);border-color:var(--accent-dark);color:#0e2a12;font-weight:600;}
+  .btn.primary:hover{background:var(--accent-dark);color:#fff;}
+  .btn.active{outline:2px solid var(--accent);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  main{
+    flex:1;
+    display:flex;
+    min-height:0;
+  }
+  .sidebar{
+    width:250px;
+    flex-shrink:0;
+    background:var(--bg-panel);
+    border-right:1px solid var(--border);
+    overflow-y:auto;
+    padding:12px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .sidebar-right{
+    width:230px;
+    border-right:none;
+    border-left:1px solid var(--border);
+  }
+  .section{
+    background:var(--bg-panel2);
+    border-radius:8px;
+    padding:10px;
+  }
+  .section h2{
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--text-dim);
+    margin:0 0 8px 0;
+  }
+  .tool-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+  }
+  .tool-btn{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:8px 2px;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    font-size:10px;
+    color:var(--text-dim);
+  }
+  .tool-btn span.icon{font-size:16px;}
+  .tool-btn:hover{background:#3a4558;color:var(--text);}
+  .tool-btn.active{background:var(--accent);color:#0e2a12;border-color:var(--accent-dark);font-weight:600;}
+  .row{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;}
+  .row:last-child{margin-bottom:0;}
+  .row label{color:var(--text-dim);flex-shrink:0;}
+  input[type=color]{
+    width:36px;height:28px;border:none;border-radius:4px;background:none;cursor:pointer;padding:0;
+  }
+  input[type=range]{flex:1;}
+  .swatches{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+  .swatch{width:20px;height:20px;border-radius:4px;border:1px solid rgba(255,255,255,.2);cursor:pointer;}
+  select,.text-input{
+    background:var(--bg-panel);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:5px;
+    padding:5px 7px;
+    font-size:12px;
+    width:100%;
+  }
+  .checkbox-row{display:flex;align-items:center;gap:6px;font-size:12px;padding:3px 0;color:var(--text-dim);}
+  .checkbox-row input{cursor:pointer;}
+  .gallery-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .gallery-item{
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    cursor:pointer;
+    padding:4px;
+    text-align:center;
+  }
+  .gallery-item:hover{border-color:var(--accent);}
+  .gallery-item canvas{width:100%;image-rendering:pixelated;border-radius:3px;}
+  .gallery-item .name{font-size:9px;color:var(--text-dim);margin-top:3px;display:block;}
+  .viewport{
+    flex:1;
+    display:flex;
+    min-width:0;
+    background:#12161d;
+  }
+  .pane{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    min-width:0;
+    border-right:1px solid var(--border);
+  }
+  .pane:last-child{border-right:none;}
+  .pane-header{
+    padding:6px 12px;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--text-dim);
+    background:var(--bg-panel);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .pane-body{
+    flex:1;
+    position:relative;
+    overflow:auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      linear-gradient(45deg,#232b38 25%,transparent 25%),
+      linear-gradient(-45deg,#232b38 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#232b38 75%),
+      linear-gradient(-45deg,transparent 75%,#232b38 75%);
+    background-size:20px 20px;
+    background-position:0 0,0 10px,10px -10px,-10px 0px;
+    background-color:#1a1f28;
+  }
+  #editCanvas{
+    cursor:crosshair;
+    image-rendering:pixelated;
+    box-shadow:0 0 0 2px #000;
+  }
+  #viewer3d{display:block;width:100%;height:100%;cursor:grab;}
+  #viewer3d:active{cursor:grabbing;}
+  footer{
+    padding:5px 14px;
+    background:var(--bg-panel);
+    border-top:1px solid var(--border);
+    font-size:11px;
+    color:var(--text-dim);
+    display:flex;
+    gap:20px;
+    flex-shrink:0;
+  }
+  .zoom-controls{display:flex;align-items:center;gap:4px;}
+  .zoom-controls button{
+    background:var(--bg-panel2);border:1px solid var(--border);color:var(--text);
+    width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:13px;line-height:1;
+  }
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-track{background:var(--bg-dark);}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;}
+  .hint{font-size:11px;color:var(--text-dim);line-height:1.5;}
+  #fileNameInput{width:150px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧑‍🎨 校園 Minecraft 造型編輯器</h1>
+  <div class="sep"></div>
+  <input type="text" id="fileNameInput" class="text-input" value="我的造型">
+  <button class="btn" id="btnNew">📄 新建空白</button>
+  <button class="btn" id="btnImport">📂 匯入 PNG</button>
+  <input type="file" id="fileInput" accept="image/png" style="display:none;">
+  <button class="btn primary" id="btnExport">💾 匯出 PNG</button>
+  <div class="sep"></div>
+  <button class="btn" id="btnUndo" title="復原 (Ctrl+Z)">↶ 復原</button>
+  <button class="btn" id="btnRedo" title="重做 (Ctrl+Y)">↷ 重做</button>
+</header>
+
+<main>
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="section">
+      <h2>繪圖工具</h2>
+      <div class="tool-grid">
+        <div class="tool-btn active" data-tool="pencil"><span class="icon">✏️</span>鉛筆</div>
+        <div class="tool-btn" data-tool="eraser"><span class="icon">🧽</span>橡皮擦</div>
+        <div class="tool-btn" data-tool="eyedropper"><span class="icon">💧</span>取色器</div>
+        <div class="tool-btn" data-tool="bucket"><span class="icon">🪣</span>填色</div>
+        <div class="tool-btn" data-tool="shade"><span class="icon">🌓</span>漸層筆</div>
+        <div class="tool-btn" data-tool="mirror"><span class="icon">🪞</span>鏡像筆</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>顏色</h2>
+      <div class="row">
+        <input type="color" id="colorPicker" value="#3b6ea5">
+        <label for="brushSize" style="margin-left:auto;">粗細</label>
+        <input type="range" id="brushSize" min="1" max="4" value="1" style="width:80px;">
+        <span id="brushSizeLabel" style="width:14px;text-align:right;">1</span>
+      </div>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="section">
+      <h2>圖層</h2>
+      <div class="checkbox-row"><input type="checkbox" id="layerBase" checked> <label for="layerBase">底層 (身體膚色)</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="layerOverlay" checked> <label for="layerOverlay">外層 (帽子/外套/配件)</label></div>
+      <div class="row" style="margin-top:6px;">
+        <label>編輯目標</label>
+        <select id="paintLayerSelect">
+          <option value="base">底層</option>
+          <option value="overlay">外層</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>部位顯示 (3D)</h2>
+      <div class="checkbox-row"><input type="checkbox" id="partHead" checked> <label for="partHead">頭部</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="partBody" checked> <label for="partBody">身體</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="partArms" checked> <label for="partArms">手臂</label></div>
+      <div class="checkbox-row"><input type="checkbox" id="partLegs" checked> <label for="partLegs">腿部</label></div>
+    </div>
+
+  </div>
+
+  <!-- CENTER + RIGHT VIEWPORTS -->
+  <div class="viewport">
+    <div class="pane">
+      <div class="pane-header">
+        <span>2D 材質編輯（點擊像素上色）</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button class="btn active" id="btnToggleLabels" style="padding:3px 10px;font-size:11px;">🏷️ 區塊名稱</button>
+          <div class="zoom-controls">
+            <button id="zoomOut">－</button>
+            <span id="zoomLabel">8x</span>
+            <button id="zoomIn">＋</button>
+          </div>
+        </div>
+      </div>
+      <div class="pane-body">
+        <canvas id="editCanvas" width="512" height="512"></canvas>
+      </div>
+    </div>
+    <div class="pane">
+      <div class="pane-header">
+        <span>3D 即時預覽（拖曳旋轉／滾輪縮放）</span>
+        <button class="btn" id="btnAnimate" style="padding:3px 10px;font-size:11px;">▶ 待機動畫</button>
+      </div>
+      <div class="pane-body" style="background:#12161d;">
+        <canvas id="viewer3d" width="800" height="600"></canvas>
+        <div id="viewer3dMsg" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;text-align:center;padding:24px;color:#e2a94c;font-size:13px;line-height:1.7;background:#12161d;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <div class="sidebar sidebar-right">
+    <div class="section">
+      <h2>手臂類型</h2>
+      <div class="row">
+        <select id="armType">
+          <option value="classic">Classic（4px 一般手臂）</option>
+          <option value="slim">Slim（3px 纖細手臂）</option>
+        </select>
+      </div>
+      <p class="hint">切換後 3D 模型與材質範本會自動對應調整。</p>
+    </div>
+
+    <div class="section">
+      <h2>範例造型</h2>
+      <div class="gallery-grid" id="sampleGallery"></div>
+    </div>
+
+    <div class="section">
+      <h2>使用說明</h2>
+      <p class="hint">
+        1. 在左側選擇畫筆與顏色。<br>
+        2. 於左方 2D 展開圖上點擊或拖曳繪製像素。<br>
+        3. 右方 3D 會即時同步顯示成果。<br>
+        4. 完成後按「匯出 PNG」即可下載，可直接匯入 Minecraft 使用。<br>
+        本工具完全離線運作於本機瀏覽器，不會連接任何外部伺服器或廣告。
+      </p>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span id="statusCoord">像素座標：--, --</span>
+  <span id="statusPart">部位：--</span>
+  <span id="statusColor">顏色：--</span>
+</footer>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   1. 資料定義：Minecraft 64x64 造型材質版型（標準官方 UV 版型）
+   ========================================================================= */
+const TEX_SIZE = 64;
+
+// 每個部位的尺寸 (dx=寬 X, dy=高 Y, dz=深 Z，單位＝像素) 與材質原點 (u,v)
+// 標準 Box-UV 公式： top(u+dz,v,dx,dz) bottom(u+dz+dx,v,dx,dz)
+//                    right(u,v+dz,dz,dy) front(u+dz,v+dz,dx,dy)
+//                    left(u+dz+dx,v+dz,dz,dy) back(u+dz+dx+dz,v+dz,dx,dy)
+const PART_DEFS = {
+  head:     { dx:8, dy:8,  dz:8, baseUV:[0,0],   overlayUV:[32,0], isArm:false },
+  body:     { dx:8, dy:12, dz:4, baseUV:[16,16], overlayUV:[16,32], isArm:false },
+  rightArm: { dx:4, dy:12, dz:4, baseUV:[40,16], overlayUV:[40,32], isArm:true, side:-1 },
+  leftArm:  { dx:4, dy:12, dz:4, baseUV:[32,48], overlayUV:[48,48], isArm:true, side:1 },
+  rightLeg: { dx:4, dy:12, dz:4, baseUV:[0,16],  overlayUV:[0,32], isArm:false, side:-1 },
+  leftLeg:  { dx:4, dy:12, dz:4, baseUV:[16,48], overlayUV:[0,48], isArm:false, side:1 },
+};
+
+function boxUVRects(u, v, dx, dy, dz){
+  return {
+    top:    {x:u+dz,        y:v,      w:dx, h:dz},
+    bottom: {x:u+dz+dx,     y:v,      w:dx, h:dz},
+    right:  {x:u,           y:v+dz,   w:dz, h:dy},   // 角色本身的「右側」貼圖
+    front:  {x:u+dz,        y:v+dz,   w:dx, h:dy},
+    left:   {x:u+dz+dx,     y:v+dz,   w:dz, h:dy},   // 角色本身的「左側」貼圖
+    back:   {x:u+dz+dx+dz,  y:v+dz,   w:dx, h:dy},
+  };
+}
+
+// 取得某部位在目前手臂模式下，實際使用的 6 面矩形（含 slim 手臂寬度修正）
+function getPartRects(partName, layer, slim){
+  const def = PART_DEFS[partName];
+  const uv = layer === 'base' ? def.baseUV : def.overlayUV;
+  const rects = boxUVRects(uv[0], uv[1], def.dx, def.dy, def.dz);
+  if(def.isArm && slim){
+    // slim 手臂：寬度方向 (top/bottom/front/back) 少 1px，原點不變，最右 1px 欄位保持透明不使用
+    rects.top.w = 3;
+    rects.bottom.w = 3;
+    rects.front.w = 3;
+    rects.back.w = 3;
+  }
+  return rects;
+}
+
+function getPartWidth(partName, slim){
+  const def = PART_DEFS[partName];
+  if(def.isArm && slim) return 3;
+  return def.dx;
+}
+
+/* =========================================================================
+   2. 材質畫布 (texture canvas) - 資料來源，64x64，所有繪圖動作都畫在這裡
+   ========================================================================= */
+const texCanvas = document.createElement('canvas');
+texCanvas.width = TEX_SIZE;
+texCanvas.height = TEX_SIZE;
+const texCtx = texCanvas.getContext('2d', { willReadFrequently:true });
+texCtx.imageSmoothingEnabled = false;
+
+function clearTexture(){
+  texCtx.clearRect(0,0,TEX_SIZE,TEX_SIZE);
+}
+
+/* =========================================================================
+   3. 範例造型（程式產生的原創範例，避免版權疑慮）
+   ========================================================================= */
+function drawSampleClassicBlue(ctx){
+  ctx.clearRect(0,0,64,64);
+  const skin = '#e8b28c', hair='#3a2a1e', shirt='#3b6ea5', shirtDark='#2c5480',
+        pants='#3a3a4a', shoe='#5a3a25';
+  function fillRect(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+  // Head base
+  fillRect(8,8,8,8,skin);   // front
+  fillRect(0,8,8,8,skin);   // right
+  fillRect(16,8,8,8,skin);  // left
+  fillRect(24,8,8,8,skin);  // back
+  fillRect(8,0,8,8,hair);   // top
+  fillRect(16,0,8,8,skin);  // bottom
+  // simple face
+  fillRect(10,11,1,1,'#2b1a10'); fillRect(13,11,1,1,'#2b1a10');
+  fillRect(10,14,4,1,'#c98a63');
+  // Head overlay hair fringe
+  fillRect(40,8,8,3,hair); fillRect(32,8,8,3,hair); fillRect(48,8,8,3,hair); fillRect(56,8,8,3,hair);
+  fillRect(40,0,8,8,hair);
+  // Body
+  fillRect(20,20,8,12,shirt); fillRect(16,20,4,12,shirtDark); fillRect(28,20,4,12,shirtDark); fillRect(32,20,8,12,shirt);
+  fillRect(20,16,8,4,shirt); fillRect(28,16,8,4,shirtDark);
+  // Arms (classic 4px)
+  fillRect(44,20,4,12,shirt); fillRect(40,20,4,12,skin); fillRect(48,20,4,12,skin); fillRect(52,20,4,12,shirt);
+  fillRect(44,16,4,4,shirt); fillRect(48,16,4,4,skin);
+  fillRect(36,52,4,12,shirt); fillRect(32,52,4,12,skin); fillRect(40,52,4,12,skin); fillRect(44,52,4,12,shirt);
+  fillRect(36,48,4,4,shirt); fillRect(40,48,4,4,skin);
+  // Legs
+  fillRect(4,20,4,12,pants); fillRect(0,20,4,12,pants); fillRect(8,20,4,12,pants); fillRect(12,20,4,12,pants);
+  fillRect(4,16,4,4,pants); fillRect(8,16,4,4,shoe);
+  fillRect(20,52,4,12,pants); fillRect(16,52,4,12,pants); fillRect(24,52,4,12,pants); fillRect(28,52,4,12,pants);
+  fillRect(20,48,4,4,pants); fillRect(24,48,4,4,shoe);
+}
+
+function drawSampleSlimNinja(ctx){
+  ctx.clearRect(0,0,64,64);
+  const skin='#d9a878', mask='#26262f', body='#7a1f2b', bodyDark='#5a1620', belt='#1c1c1c';
+  function r(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+  r(8,8,8,8,mask); r(0,8,8,8,mask); r(16,8,8,8,mask); r(24,8,8,8,mask);
+  r(8,0,8,8,mask); r(16,0,8,8,mask);
+  r(9,11,2,1,skin); r(13,11,2,1,skin);
+  r(20,20,8,12,body); r(16,20,4,12,bodyDark); r(28,20,4,12,bodyDark); r(32,20,8,12,body);
+  r(20,16,8,4,body); r(28,16,8,4,bodyDark);
+  r(20,28,8,2,belt);
+  // slim arms 3px wide
+  r(44,20,3,12,body); r(40,20,4,12,mask); r(48,20,4,12,mask); r(52,20,3,12,body);
+  r(44,16,3,4,body); r(48,16,3,4,mask);
+  r(36,52,3,12,body); r(32,52,4,12,mask); r(40,52,4,12,mask); r(44,52,3,12,body);
+  r(36,48,3,4,body); r(40,48,3,4,mask);
+  r(4,20,4,12,belt); r(0,20,4,12,belt); r(8,20,4,12,belt); r(12,20,4,12,belt);
+  r(4,16,4,4,belt); r(8,16,4,4,belt);
+  r(20,52,4,12,belt); r(16,52,4,12,belt); r(24,52,4,12,belt); r(28,52,4,12,belt);
+  r(20,48,4,4,belt); r(24,48,4,4,belt);
+}
+
+function drawSampleForestCamo(ctx){
+  ctx.clearRect(0,0,64,64);
+  const skin='#c99a6f', hair='#4a3320', c1='#4a5e35', c2='#6b7f45', c3='#33421f', boot='#332417';
+  function r(x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x,y,w,h); }
+  function camo(x,y,w,h){
+    r(x,y,w,h,c1);
+    for(let i=0;i<Math.max(2,(w*h)/6);i++){
+      const cx = x+Math.floor(Math.random()*w), cy = y+Math.floor(Math.random()*h);
+      r(cx,cy,1,1, Math.random()>0.5?c2:c3);
+    }
+  }
+  r(8,8,8,8,skin); r(0,8,8,8,skin); r(16,8,8,8,skin); r(24,8,8,8,skin);
+  camo(8,0,8,8); r(16,0,8,8,skin);
+  r(10,11,1,1,'#26170d'); r(13,11,1,1,'#26170d');
+  camo(20,20,8,12); camo(16,20,4,12); camo(28,20,4,12); camo(32,20,8,12);
+  camo(20,16,8,4); camo(28,16,8,4);
+  camo(44,20,4,12); r(40,20,4,12,skin); r(48,20,4,12,skin); camo(52,20,4,12);
+  camo(44,16,4,4); r(48,16,4,4,skin);
+  camo(36,52,4,12); r(32,52,4,12,skin); r(40,52,4,12,skin); camo(44,52,4,12);
+  camo(36,48,4,4); r(40,48,4,4,skin);
+  camo(4,20,4,12); camo(0,20,4,12); camo(8,20,4,12); camo(12,20,4,12);
+  camo(4,16,4,4); r(8,16,4,4,boot);
+  camo(20,52,4,12); camo(16,52,4,12); camo(24,52,4,12); camo(28,52,4,12);
+  camo(20,48,4,4); r(24,48,4,4,boot);
+}
+
+// 內嵌的官方風格範例造型（base64 直接內嵌於檔案中，無需網路即可載入）
+const SKIN_STEVE_B64 = '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';
+const SKIN_ALEX_B64 = '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';
+const SKIN_WHITE_B64 = 'iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAA00lEQVR4nO3aQQ6EIBBEUdt4/yvjWmPskFb+ov9bD6RSwRGV2BJjjJH95k1ERGX833Y6AM0C6AA0C6AD0CyADkCL6n2+HADeJ7RfARZAB6BZAB2AZgF0AFo8bAOyfUF2367uK6rzX8Zn24z2K8AC6AC0Y5u/Zv9+dqjOfx//+ifQfgVYAB2AZgF0AJoF0AFoFkAHoFkAHUCSJEmSJGm18hk94HzB1Pf/TPs3QhZAB6AdH8yx+nzB1Pf/TPsVYAF0AJoF0AFoFkAHoFkAHYBmAXQA2gmEwhpcaZv6cwAAAABJRU5ErkJggg==';
+
+// 由 base64 字串建立範例造型物件：圖片非同步載入完成後才能繪製，
+// 因此 draw 一開始是 no-op，載入完成後才換成真正可用的繪製函式，
+// 同時若縮圖已經畫在畫廊上，也一併補畫上去。
+function makeImageSample(name, arm, base64){
+  const sample = { name, arm, draw:function(ctx){ ctx.clearRect(0,0,TEX_SIZE,TEX_SIZE); }, thumbCanvas:null, ready:false };
+  const img = new Image();
+  img.onload = function(){
+    sample.ready = true;
+    sample.draw = function(ctx){
+      ctx.clearRect(0,0,TEX_SIZE,TEX_SIZE);
+      ctx.drawImage(img, 0, 0);
+    };
+    if(sample.thumbCanvas){
+      const tctx = sample.thumbCanvas.getContext('2d');
+      tctx.imageSmoothingEnabled = false;
+      sample.draw(tctx);
+    }
+  };
+  img.onerror = function(){ console.error('內建範例造型載入失敗：', name); };
+  img.src = 'data:image/png;base64,' + base64;
+  return sample;
+}
+
+const SAMPLE_SKINS = [
+  { name:'經典藍衣', arm:'classic', draw:drawSampleClassicBlue },
+  { name:'忍者(纖細)', arm:'slim', draw:drawSampleSlimNinja },
+  { name:'森林迷彩', arm:'classic', draw:drawSampleForestCamo },
+  makeImageSample('Steve', 'classic', SKIN_STEVE_B64),
+  makeImageSample('Alex', 'slim', SKIN_ALEX_B64),
+  makeImageSample('空白畫布', 'classic', SKIN_WHITE_B64),
+];
+
+/* =========================================================================
+   4. State
+   ========================================================================= */
+const state = {
+  tool: 'pencil',
+  color: '#3b6ea5',
+  brushSize: 1,
+  paintLayer: 'base',
+  armType: 'classic',
+  zoom: 8,
+  showBase: true,
+  showOverlay: true,
+  showParts: { head:true, body:true, arms:true, legs:true },
+  animate: false,
+  showLabels: true,
+};
+
+let undoStack = [];
+let redoStack = [];
+
+function pushUndo(){
+  undoStack.push(texCtx.getImageData(0,0,TEX_SIZE,TEX_SIZE));
+  if(undoStack.length>60) undoStack.shift();
+  redoStack = [];
+}
+function undo(){
+  if(undoStack.length===0) return;
+  redoStack.push(texCtx.getImageData(0,0,TEX_SIZE,TEX_SIZE));
+  const img = undoStack.pop();
+  texCtx.putImageData(img,0,0);
+  refreshAll();
+}
+function redo(){
+  if(redoStack.length===0) return;
+  undoStack.push(texCtx.getImageData(0,0,TEX_SIZE,TEX_SIZE));
+  const img = redoStack.pop();
+  texCtx.putImageData(img,0,0);
+  refreshAll();
+}
+
+/* =========================================================================
+   5. 2D 編輯畫布
+   ========================================================================= */
+const editCanvas = document.getElementById('editCanvas');
+const editCtx = editCanvas.getContext('2d');
+editCtx.imageSmoothingEnabled = false;
+
+function resizeEditCanvas(){
+  editCanvas.width = TEX_SIZE * state.zoom;
+  editCanvas.height = TEX_SIZE * state.zoom;
+  document.getElementById('zoomLabel').textContent = state.zoom + 'x';
+}
+
+// 建立目前手臂模式下，每個像素所屬部位的查詢表，用於：
+// 1. 繪製格線/部位外框 2. 判斷滑鼠所在部位（鏡像筆、填色邊界都要用）
+function buildRegionMap(){
+  const map = new Array(TEX_SIZE*TEX_SIZE).fill(null);
+  for(const partName in PART_DEFS){
+    for(const layer of ['base','overlay']){
+      const rects = getPartRects(partName, layer, state.armType==='slim');
+      for(const faceName in rects){
+        const r = rects[faceName];
+        for(let yy=r.y; yy<r.y+r.h; yy++){
+          for(let xx=r.x; xx<r.x+r.w; xx++){
+            map[yy*TEX_SIZE+xx] = { part:partName, layer, face:faceName, rect:r };
+          }
+        }
+      }
+    }
+  }
+  return map;
+}
+let regionMap = buildRegionMap();
+
+const PART_LABEL = { head:'頭部', body:'身體', rightArm:'右手臂', leftArm:'左手臂', rightLeg:'右腿', leftLeg:'左腿' };
+const FACE_LABEL = { top:'上', bottom:'下', front:'前', back:'後', left:'左', right:'右' };
+
+function drawEditCanvas(){
+  const z = state.zoom;
+  editCtx.imageSmoothingEnabled = false;
+  editCtx.clearRect(0,0,editCanvas.width, editCanvas.height);
+  // checkerboard for transparent pixels is via CSS background showing through canvas transparency
+  editCtx.drawImage(texCanvas, 0,0, TEX_SIZE, TEX_SIZE, 0,0, TEX_SIZE*z, TEX_SIZE*z);
+
+  // dim overlay layer if hidden
+  if(!state.showOverlay){
+    editCtx.save();
+    editCtx.fillStyle = 'rgba(10,12,16,0.55)';
+    for(const partName in PART_DEFS){
+      const rects = getPartRects(partName,'overlay', state.armType==='slim');
+      for(const f in rects){ const r=rects[f]; editCtx.fillRect(r.x*z,r.y*z,r.w*z,r.h*z); }
+    }
+    editCtx.restore();
+  }
+  if(!state.showBase){
+    editCtx.save();
+    editCtx.fillStyle = 'rgba(10,12,16,0.55)';
+    for(const partName in PART_DEFS){
+      const rects = getPartRects(partName,'base', state.armType==='slim');
+      for(const f in rects){ const r=rects[f]; editCtx.fillRect(r.x*z,r.y*z,r.w*z,r.h*z); }
+    }
+    editCtx.restore();
+  }
+
+  // grid lines (light, every pixel) + bold region borders
+  editCtx.strokeStyle = 'rgba(255,255,255,0.06)';
+  editCtx.lineWidth = 1;
+  for(let i=0;i<=TEX_SIZE;i++){
+    editCtx.beginPath(); editCtx.moveTo(i*z+0.5,0); editCtx.lineTo(i*z+0.5, TEX_SIZE*z); editCtx.stroke();
+    editCtx.beginPath(); editCtx.moveTo(0,i*z+0.5); editCtx.lineTo(TEX_SIZE*z, i*z+0.5); editCtx.stroke();
+  }
+  editCtx.strokeStyle = 'rgba(255,220,120,0.9)';
+  editCtx.lineWidth = 1.5;
+  for(const partName in PART_DEFS){
+    for(const layer of ['base','overlay']){
+      const rects = getPartRects(partName, layer, state.armType==='slim');
+      for(const f in rects){
+        const r = rects[f];
+        editCtx.strokeRect(r.x*z+0.5, r.y*z+0.5, r.w*z-1, r.h*z-1);
+      }
+    }
+  }
+
+  // 區塊名稱標籤：僅標示每個部位「前面」矩形（最具代表性），標明是底層或外層
+  // 區塊名稱標籤：標示每一個面（前後左右上下）分別屬於哪個部位、哪一層
+  // 格式：部位(層-面)，例如「頭部(底-上)」「右手臂(外-左)」
+  if(state.showLabels){
+    editCtx.save();
+    editCtx.textAlign = 'center';
+    editCtx.textBaseline = 'middle';
+    for(const partName in PART_DEFS){
+      for(const layer of ['base','overlay']){
+        const rects = getPartRects(partName, layer, state.armType==='slim');
+        const layerTxt = layer==='base' ? '底' : '外';
+        for(const faceKey in rects){
+          const r = rects[faceKey];
+          const boxW = r.w*z, boxH = r.h*z;
+          const nameTxt = PART_LABEL[partName];
+          const tagTxt = `(${layerTxt}-${FACE_LABEL[faceKey]})`;
+          const label = nameTxt + tagTxt;
+          const fontSize = Math.max(6, Math.min(13, Math.floor(z*1.05)));
+          editCtx.font = fontSize + 'px "Microsoft JhengHei", sans-serif';
+          const fullWidth = editCtx.measureText(label).width;
+          editCtx.save();
+          editCtx.beginPath();
+          editCtx.rect(r.x*z, r.y*z, boxW, boxH);
+          editCtx.clip();
+          editCtx.lineWidth = Math.max(2, fontSize*0.28);
+          editCtx.strokeStyle = 'rgba(0,0,0,0.85)';
+          editCtx.fillStyle = '#ffffff';
+          const cx = r.x*z + boxW/2, cy = r.y*z + boxH/2;
+          // 空間足夠時單行顯示；放不下且高度允許時，拆成「名稱」「(層-面)」兩行
+          if(fullWidth > boxW - 2 && boxH >= fontSize*2.1){
+            editCtx.strokeText(nameTxt, cx, cy - fontSize*0.55);
+            editCtx.fillText(nameTxt, cx, cy - fontSize*0.55);
+            editCtx.strokeText(tagTxt, cx, cy + fontSize*0.55);
+            editCtx.fillText(tagTxt, cx, cy + fontSize*0.55);
+          } else {
+            editCtx.strokeText(label, cx, cy);
+            editCtx.fillText(label, cx, cy);
+          }
+          editCtx.restore();
+        }
+      }
+    }
+    editCtx.restore();
+  }
+}
+
+function canvasToPixel(evt){
+  const rect = editCanvas.getBoundingClientRect();
+  const scaleX = editCanvas.width / rect.width;
+  const scaleY = editCanvas.height / rect.height;
+  const cx = (evt.clientX - rect.left) * scaleX;
+  const cy = (evt.clientY - rect.top) * scaleY;
+  const px = Math.floor(cx / state.zoom);
+  const py = Math.floor(cy / state.zoom);
+  return {px, py};
+}
+
+function inRegionForCurrentLayer(px,py){
+  if(px<0||py<0||px>=TEX_SIZE||py>=TEX_SIZE) return null;
+  const info = regionMap[py*TEX_SIZE+px];
+  if(!info) return null;
+  if(info.layer !== state.paintLayer) return null;
+  return info;
+}
+
+function setPixel(x,y,rgba){
+  if(x<0||y<0||x>=TEX_SIZE||y>=TEX_SIZE) return;
+  texCtx.clearRect(x,y,1,1);
+  if(rgba !== null){
+    texCtx.fillStyle = rgba;
+    texCtx.fillRect(x,y,1,1);
+  }
+}
+
+function fmtAlpha(a){ return Math.round(a*1000)/1000; }
+
+function getPixelColor(x,y){
+  const d = texCtx.getImageData(x,y,1,1).data;
+  if(d[3]===0) return null;
+  return `rgba(${d[0]},${d[1]},${d[2]},${fmtAlpha(d[3]/255)})`;
+}
+
+function hexToRgba(hex, alpha=1){
+  const v = parseInt(hex.slice(1),16);
+  const r=(v>>16)&255, g=(v>>8)&255, b=v&255;
+  return `rgba(${r},${g},${b},${fmtAlpha(alpha)})`;
+}
+
+// 鏡像筆：在同一個面矩形內，沿水平方向鏡射繪製，適合畫對稱的臉/花紋
+function mirrorPaintAt(px,py,paint){
+  const info = inRegionForCurrentLayer(px,py);
+  paint(px,py);
+  if(!info) return;
+  const r = info.rect;
+  const localX = px - r.x;
+  const mirroredX = r.x + (r.w-1-localX);
+  paint(mirroredX, py);
+}
+
+function floodFill(px,py){
+  const info = inRegionForCurrentLayer(px,py);
+  if(!info) return;
+  const r = info.rect;
+  const target = getPixelColor(px,py);
+  const fillHex = hexToRgba(state.color,1);
+  if(target === fillHex) return;
+  const stack = [[px,py]];
+  const visited = new Set();
+  while(stack.length){
+    const [x,y] = stack.pop();
+    if(x<r.x||y<r.y||x>=r.x+r.w||y>=r.y+r.h) continue;
+    const key = x+','+y;
+    if(visited.has(key)) continue;
+    visited.add(key);
+    const c = getPixelColor(x,y);
+    if(c !== target) continue;
+    setPixel(x,y,fillHex);
+    stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+  }
+}
+
+function applyToolAt(px,py, isDrag){
+  const brush = state.brushSize;
+  const half = Math.floor(brush/2);
+
+  function paintPixel(x,y){
+    const info = inRegionForCurrentLayer(x,y);
+    if(!info) return;
+    if(state.tool==='eraser'){ setPixel(x,y,null); return; }
+    if(state.tool==='shade'){
+      const cur = getPixelColor(x,y);
+      const target = hexToRgba(state.color,1);
+      if(cur===null){ setPixel(x,y,hexToRgba(state.color,0.5)); return; }
+      // blend 50% toward brush color for a shading effect
+      const cm = cur.match(/[\d.]+/g).map(Number);
+      const tm = target.match(/[\d.]+/g).map(Number);
+      const mix = cm.map((v,i)=> i<3 ? Math.round(v*0.5+tm[i]*0.5) : 1);
+      setPixel(x,y, `rgba(${mix[0]},${mix[1]},${mix[2]},1)`);
+      return;
+    }
+    setPixel(x,y,hexToRgba(state.color,1));
+  }
+
+  if(state.tool==='eyedropper'){
+    const info = inRegionForCurrentLayer(px,py);
+    if(!info) return;
+    const c = getPixelColor(px,py);
+    if(c){
+      const m = c.match(/[\d.]+/g).map(Number);
+      const hex = '#'+[m[0],m[1],m[2]].map(v=>v.toString(16).padStart(2,'0')).join('');
+      state.color = hex;
+      document.getElementById('colorPicker').value = hex;
+      updateStatusColor();
+    }
+    return;
+  }
+  if(state.tool==='bucket'){
+    if(isDrag) return;
+    floodFill(px,py);
+    refreshAll();
+    return;
+  }
+  if(state.tool==='mirror'){
+    for(let dx=-half; dx<brush-half; dx++){
+      for(let dy=-half; dy<brush-half; dy++){
+        mirrorPaintAt(px+dx, py+dy, paintPixel);
+      }
+    }
+    refreshAll();
+    return;
+  }
+  for(let dx=-half; dx<brush-half; dx++){
+    for(let dy=-half; dy<brush-half; dy++){
+      paintPixel(px+dx, py+dy);
+    }
+  }
+  refreshAll();
+}
+
+let painting = false;
+editCanvas.addEventListener('mousedown', (e)=>{
+  const {px,py} = canvasToPixel(e);
+  pushUndo();
+  painting = true;
+  applyToolAt(px,py,false);
+});
+window.addEventListener('mouseup', ()=>{ painting=false; });
+editCanvas.addEventListener('mousemove', (e)=>{
+  const {px,py} = canvasToPixel(e);
+  updateStatusCoord(px,py);
+  if(painting && state.tool!=='eyedropper' && state.tool!=='bucket'){
+    applyToolAt(px,py,true);
+  }
+});
+editCanvas.addEventListener('mouseleave', ()=>{});
+editCanvas.addEventListener('contextmenu', (e)=>e.preventDefault());
+
+function updateStatusCoord(px,py){
+  document.getElementById('statusCoord').textContent = `像素座標：${px}, ${py}`;
+  const info = regionMap[py*TEX_SIZE+px];
+  document.getElementById('statusPart').textContent = info ? `部位：${PART_LABEL[info.part]} - ${FACE_LABEL[info.face]}面 (${info.layer==='base'?'底層':'外層'})` : '部位：--';
+}
+function updateStatusColor(){
+  document.getElementById('statusColor').textContent = `顏色：${state.color}`;
+}
+
+/* =========================================================================
+   6. 3D 預覽 — 純手寫 WebGL（不依賴任何外部 CDN／函式庫，完全離線運作）
+   座標系：Y 向上、Z 朝向角色正面。所有旋轉方向已對照官方 Box-UV 版型逐面驗證。
+   ========================================================================= */
+let gl = null;
+let glProgram = null;
+let glLoc = {};
+let glTex = null;
+let parts3d = {};
+let webglOK = false;
+
+function show3DMessage(html){
+  const msg = document.getElementById('viewer3dMsg');
+  const canvasEl = document.getElementById('viewer3d');
+  msg.innerHTML = html;
+  msg.style.display = 'flex';
+  canvasEl.style.display = 'none';
+}
+function hide3DMessage(){
+  document.getElementById('viewer3dMsg').style.display = 'none';
+  document.getElementById('viewer3d').style.display = 'block';
+}
+
+/* ---- 極簡 4x4 矩陣工具（column-major，符合 WebGL 慣例） ---- */
+function m4Identity(){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]); }
+function m4Multiply(a,b){
+  const out = new Float32Array(16);
+  for(let c=0;c<4;c++){
+    for(let r=0;r<4;r++){
+      let sum=0;
+      for(let k=0;k<4;k++) sum += a[k*4+r]*b[c*4+k];
+      out[c*4+r]=sum;
+    }
+  }
+  return out;
+}
+function m4Translate(x,y,z){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
+function m4RotateX(rad){ const c=Math.cos(rad), s=Math.sin(rad); return new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]); }
+function m4RotateY(rad){ const c=Math.cos(rad), s=Math.sin(rad); return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); }
+function m4Perspective(fovyRad, aspect, near, far){
+  const f = 1/Math.tan(fovyRad/2);
+  const out = new Float32Array(16);
+  out[0]=f/aspect; out[5]=f; out[10]=(far+near)/(near-far); out[11]=-1;
+  out[14]=(2*far*near)/(near-far);
+  return out;
+}
+function m4LookAt(eye, center, up){
+  let zx=eye[0]-center[0], zy=eye[1]-center[1], zz=eye[2]-center[2];
+  let len = Math.hypot(zx,zy,zz) || 1; zx/=len; zy/=len; zz/=len;
+  let xx = up[1]*zz-up[2]*zy, xy = up[2]*zx-up[0]*zz, xz = up[0]*zy-up[1]*zx;
+  len = Math.hypot(xx,xy,xz) || 1; xx/=len; xy/=len; xz/=len;
+  const yx = zy*xz-zz*xy, yy = zz*xx-zx*xz, yz = zx*xy-zy*xx;
+  return new Float32Array([
+    xx, yx, zx, 0,
+    xy, yy, zy, 0,
+    xz, yz, zz, 0,
+    -(xx*eye[0]+xy*eye[1]+xz*eye[2]),
+    -(yx*eye[0]+yy*eye[1]+yz*eye[2]),
+    -(zx*eye[0]+zy*eye[1]+zz*eye[2]),
+    1
+  ]);
+}
+function m4TransformPoint(m, p){
+  return [
+    m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],
+    m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],
+    m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14],
+  ];
+}
+
+const VS_SRC = `
+attribute vec3 aPos;
+attribute vec2 aUV;
+uniform mat4 uMVP;
+varying vec2 vUV;
+void main(){
+  gl_Position = uMVP * vec4(aPos, 1.0);
+  vUV = aUV;
+}`;
+const FS_SRC = `
+precision mediump float;
+varying vec2 vUV;
+uniform sampler2D uTex;
+uniform float uShade;
+void main(){
+  vec4 c = texture2D(uTex, vUV);
+  if(c.a < 0.08) discard;
+  gl_FragColor = vec4(c.rgb*uShade, c.a);
+}`;
+
+function compileShader(src, type){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    const info = gl.getShaderInfoLog(s);
+    gl.deleteShader(s);
+    throw new Error('Shader 編譯失敗: '+info);
+  }
+  return s;
+}
+
+function initThree(){
+  const canvas3d = document.getElementById('viewer3d');
+  gl = canvas3d.getContext('webgl', {alpha:true, antialias:true, premultipliedAlpha:false})
+     || canvas3d.getContext('experimental-webgl', {alpha:true, antialias:true, premultipliedAlpha:false});
+  if(!gl){
+    show3DMessage('⚠️ 您的瀏覽器或裝置不支援 WebGL，因此無法顯示 3D 預覽。<br>2D 材質編輯、匯入與匯出 PNG 功能仍可正常使用。');
+    webglOK = false;
+    return;
+  }
+
+  const vs = compileShader(VS_SRC, gl.VERTEX_SHADER);
+  const fs = compileShader(FS_SRC, gl.FRAGMENT_SHADER);
+  glProgram = gl.createProgram();
+  gl.attachShader(glProgram, vs);
+  gl.attachShader(glProgram, fs);
+  gl.linkProgram(glProgram);
+  if(!gl.getProgramParameter(glProgram, gl.LINK_STATUS)){
+    throw new Error('Program 連結失敗: '+gl.getProgramInfoLog(glProgram));
+  }
+  gl.useProgram(glProgram);
+  glLoc.aPos = gl.getAttribLocation(glProgram, 'aPos');
+  glLoc.aUV = gl.getAttribLocation(glProgram, 'aUV');
+  glLoc.uMVP = gl.getUniformLocation(glProgram, 'uMVP');
+  glLoc.uTex = gl.getUniformLocation(glProgram, 'uTex');
+  glLoc.uShade = gl.getUniformLocation(glProgram, 'uShade');
+
+  glTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, glTex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texCanvas);
+
+  gl.enable(gl.DEPTH_TEST);
+  // 注意：不啟用 face culling。因為每個面都是獨立烘焙位置的四邊形（見 makeFaceBuffer），
+  // 為避免三角形環繞方向在各種旋轉組合下被誤判為背面而被剔除，統一雙面繪製最為穩妥安全。
+  gl.disable(gl.CULL_FACE);
+  gl.clearColor(0,0,0,0);
+
+  webglOK = true;
+  buildModel();
+  resizeRendererToDisplaySize();
+  animate3d();
+}
+
+// 建立一個面（4 個頂點：左上/右上/左下/右下，畫成 TRIANGLE_STRIP），
+// 位置已依旋轉/平移直接烘焙成最終「部位本地座標」，UV 對應材質矩形。
+// 統一規則：面自己座標系中，左緣=u0 右緣=u1 上緣=v0 下緣=v1；
+// 方向正確與否完全交由旋轉/平移處理（已用官方版型逐面驗證過方位）。
+function makeFaceBuffer(w, h, rect, rotMat, pos, shade){
+  const u0 = rect.x / TEX_SIZE, u1 = (rect.x+rect.w) / TEX_SIZE;
+  const v0 = rect.y / TEX_SIZE, v1 = (rect.y+rect.h) / TEX_SIZE;
+  const local = [
+    [-w/2,  h/2, 0], [ w/2,  h/2, 0],
+    [-w/2, -h/2, 0], [ w/2, -h/2, 0],
+  ];
+  const uvs = [ [u0,v0], [u1,v0], [u0,v1], [u1,v1] ];
+  const verts = new Float32Array(4*5);
+  for(let i=0;i<4;i++){
+    const p = m4TransformPoint(rotMat, local[i]);
+    p[0]+=pos[0]; p[1]+=pos[1]; p[2]+=pos[2];
+    verts[i*5+0]=p[0]; verts[i*5+1]=p[1]; verts[i*5+2]=p[2];
+    verts[i*5+3]=uvs[i][0]; verts[i*5+4]=uvs[i][1];
+  }
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+  return { buf, shade };
+}
+
+// 依 rects 產生一整個箱型的 6 個面（皆已烘焙好方向/位置/UV）
+function buildBoxFaces(width, height, depth, rects, scaleAdd){
+  const w = width+scaleAdd, h = height+scaleAdd, d = depth+scaleAdd;
+  const IDENT = m4Identity();
+  const defs = [
+    { key:'front',  w:w, h:h, rot:IDENT,             pos:[0,0,d/2],  shade:1.0  },
+    { key:'back',   w:w, h:h, rot:m4RotateY(Math.PI),pos:[0,0,-d/2], shade:0.75 },
+    { key:'top',    w:w, h:d, rot:m4RotateX(-Math.PI/2), pos:[0,h/2,0],  shade:1.15 },
+    { key:'bottom', w:w, h:d, rot:m4RotateX(Math.PI/2),  pos:[0,-h/2,0], shade:0.55 },
+    { key:'left',   w:d, h:h, rot:m4RotateY(Math.PI/2),  pos:[w/2,0,0],  shade:0.9  }, // 角色左側 -> 世界 +X
+    { key:'right',  w:d, h:h, rot:m4RotateY(-Math.PI/2), pos:[-w/2,0,0], shade:0.9  }, // 角色右側 -> 世界 -X
+  ];
+  return defs.map(f => makeFaceBuffer(f.w, f.h, rects[f.key], f.rot, f.pos, f.shade));
+}
+
+function buildModel(){
+  if(!webglOK) return;
+  const slim = state.armType==='slim';
+  const legH=12, bodyH=12, headS=8;
+  const armW = getPartWidth('rightArm', slim);
+
+  function part(name, pivotY, centerOffsetY){
+    const def = PART_DEFS[name];
+    const w = getPartWidth(name, slim);
+    const rectsBase = getPartRects(name,'base', slim);
+    const rectsOverlay = getPartRects(name,'overlay', slim);
+    const pad = name==='head' ? 1.0 : 0.5;
+    return {
+      baseFaces: buildBoxFaces(w, def.dy, def.dz, rectsBase, 0),
+      overlayFaces: buildBoxFaces(w, def.dy, def.dz, rectsOverlay, pad),
+      pivotY: pivotY,
+      centerOffsetY: centerOffsetY,
+      visible: true,
+      overlayVisible: state.showOverlay,
+      angle: 0,
+    };
+  }
+
+  parts3d = {
+    head:     part('head',     legH+bodyH+headS/2, 0),
+    body:     part('body',     legH+bodyH/2, 0),
+    rightArm: part('rightArm', legH+bodyH, -6),   // 角色右側 -> 世界 -X
+    leftArm:  part('leftArm',  legH+bodyH, -6),
+    rightLeg: part('rightLeg', legH, -6),
+    leftLeg:  part('leftLeg',  legH, -6),
+  };
+  parts3d.rightArm.x = -(4+armW/2); parts3d.rightArm.z = 0;
+  parts3d.leftArm.x  =  (4+armW/2); parts3d.leftArm.z  = 0;
+  parts3d.rightLeg.x = -2; parts3d.rightLeg.z = 0;
+  parts3d.leftLeg.x  =  2; parts3d.leftLeg.z  = 0;
+  parts3d.head.x = 0; parts3d.head.z = 0;
+  parts3d.body.x = 0; parts3d.body.z = 0;
+
+  applyPartVisibility();
+}
+
+function applyPartVisibility(){
+  if(!parts3d.head) return;
+  parts3d.head.visible = state.showParts.head;
+  parts3d.body.visible = state.showParts.body;
+  parts3d.rightArm.visible = state.showParts.arms;
+  parts3d.leftArm.visible = state.showParts.arms;
+  parts3d.rightLeg.visible = state.showParts.legs;
+  parts3d.leftLeg.visible = state.showParts.legs;
+}
+
+function setOverlayVisible(v){
+  for(const k in parts3d) parts3d[k].overlayVisible = v;
+}
+
+function updateTexture(){
+  if(!webglOK) return;
+  gl.bindTexture(gl.TEXTURE_2D, glTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texCanvas);
+}
+
+// 相機環繞控制（滑鼠拖曳）
+let camAngleY = 0.6, camAngleX = 0.25, camDist = 46;
+let viewProjMat = m4Identity();
+function fitCamera(){ updateCameraPos(); }
+function updateCameraPos(){
+  camAngleX = Math.max(-1.2, Math.min(1.2, camAngleX));
+  camDist = Math.max(18, Math.min(120, camDist));
+  const target = [0, 16, 0];
+  const eye = [
+    target[0] + camDist * Math.sin(camAngleY) * Math.cos(camAngleX),
+    target[1] + camDist * Math.sin(camAngleX) + 6,
+    target[2] + camDist * Math.cos(camAngleY) * Math.cos(camAngleX),
+  ];
+  const view = m4LookAt(eye, target, [0,1,0]);
+  const aspect = (gl && gl.canvas.height) ? gl.canvas.width/gl.canvas.height : 1;
+  const proj = m4Perspective(35*Math.PI/180, aspect, 0.1, 1000);
+  viewProjMat = m4Multiply(proj, view);
+}
+
+const viewer3dEl = document.getElementById('viewer3d');
+let dragging=false, lastX=0, lastY=0;
+viewer3dEl.addEventListener('mousedown', (e)=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener('mouseup', ()=>{ dragging=false; });
+window.addEventListener('mousemove', (e)=>{
+  if(!dragging) return;
+  const dx = e.clientX-lastX, dy = e.clientY-lastY;
+  lastX=e.clientX; lastY=e.clientY;
+  camAngleY -= dx*0.008;
+  camAngleX += dy*0.008;
+  updateCameraPos();
+});
+viewer3dEl.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  camDist += e.deltaY*0.03;
+  updateCameraPos();
+}, {passive:false});
+
+function resizeRendererToDisplaySize(){
+  if(!webglOK) return;
+  const el = viewer3dEl.parentElement;
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round((el.clientWidth || viewer3dEl.clientWidth || 400) * dpr));
+  const h = Math.max(1, Math.round((el.clientHeight || viewer3dEl.clientHeight || 300) * dpr));
+  if(viewer3dEl.width !== w || viewer3dEl.height !== h){
+    viewer3dEl.width = w;
+    viewer3dEl.height = h;
+  }
+  gl.viewport(0,0,w,h);
+  updateCameraPos();
+}
+window.addEventListener('resize', resizeRendererToDisplaySize);
+
+let animClock = 0;
+function drawFaceList(faces, mvp){
+  gl.uniformMatrix4fv(glLoc.uMVP, false, mvp);
+  for(const f of faces){
+    gl.bindBuffer(gl.ARRAY_BUFFER, f.buf);
+    gl.enableVertexAttribArray(glLoc.aPos);
+    gl.vertexAttribPointer(glLoc.aPos, 3, gl.FLOAT, false, 5*4, 0);
+    gl.enableVertexAttribArray(glLoc.aUV);
+    gl.vertexAttribPointer(glLoc.aUV, 2, gl.FLOAT, false, 5*4, 3*4);
+    gl.uniform1f(glLoc.uShade, f.shade);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+}
+
+function animate3d(){
+  requestAnimationFrame(animate3d);
+  if(!webglOK) return;
+
+  if(state.animate){
+    animClock += 0.05;
+    const swing = Math.sin(animClock)*0.5;
+    if(parts3d.rightArm) parts3d.rightArm.angle = swing;
+    if(parts3d.leftArm)  parts3d.leftArm.angle = -swing;
+    if(parts3d.rightLeg) parts3d.rightLeg.angle = -swing;
+    if(parts3d.leftLeg)  parts3d.leftLeg.angle = swing;
+  } else {
+    for(const k in parts3d) parts3d[k].angle = 0;
+  }
+
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.useProgram(glProgram);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, glTex);
+  gl.uniform1i(glLoc.uTex, 0);
+
+  for(const k in parts3d){
+    const p = parts3d[k];
+    if(!p.visible) continue;
+    // 模型矩陣：先平移到樞紐點(肩/髖)，旋轉(待機動畫用)，再平移回部位中心
+    let model = m4Translate(p.x, p.pivotY, p.z);
+    if(p.angle) model = m4Multiply(model, m4RotateX(p.angle));
+    model = m4Multiply(model, m4Translate(0, p.centerOffsetY, 0));
+    const mvp = m4Multiply(viewProjMat, model);
+    drawFaceList(p.baseFaces, mvp);
+    if(p.overlayVisible) drawFaceList(p.overlayFaces, mvp);
+  }
+}
+
+/* =========================================================================
+   7. 匯入 / 匯出
+   ========================================================================= */
+function exportPNG(){
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = TEX_SIZE; outCanvas.height = TEX_SIZE;
+  outCanvas.getContext('2d').drawImage(texCanvas,0,0);
+  const link = document.createElement('a');
+  const fname = (document.getElementById('fileNameInput').value || 'skin').trim() || 'skin';
+  link.download = fname + '.png';
+  link.href = outCanvas.toDataURL('image/png');
+  link.click();
+}
+
+function importPNGFile(file){
+  const img = new Image();
+  const objUrl = URL.createObjectURL(file);
+  img.onload = ()=>{
+    pushUndo();
+    clearTexture();
+    // Support both 64x64 and legacy 64x32 by drawing as-is (browser will just show what's given)
+    texCtx.drawImage(img, 0, 0);
+    refreshAll();
+    URL.revokeObjectURL(objUrl);
+  };
+  img.onerror = ()=>{
+    alert('無法讀取此圖片，請確認為有效的 PNG 造型檔。');
+    URL.revokeObjectURL(objUrl);
+  };
+  img.src = objUrl;
+}
+
+/* =========================================================================
+   8. UI Wiring
+   ========================================================================= */
+function refreshAll(){
+  regionMap = buildRegionMap();
+  drawEditCanvas();
+  updateTexture();
+}
+
+// Tools
+document.querySelectorAll('.tool-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.tool = btn.dataset.tool;
+  });
+});
+
+document.getElementById('colorPicker').addEventListener('input', (e)=>{
+  state.color = e.target.value;
+  updateStatusColor();
+});
+document.getElementById('brushSize').addEventListener('input', (e)=>{
+  state.brushSize = parseInt(e.target.value,10);
+  document.getElementById('brushSizeLabel').textContent = state.brushSize;
+});
+
+const PALETTE = ['#000000','#ffffff','#e8b28c','#c99a6f','#3b6ea5','#e2574c','#5cc36b',
+  '#f4c542','#7a1f2b','#3a3a4a','#4a5e35','#8e5a2f','#7c3fa6','#2c2c2c','#ff9ecf','#00c2c2'];
+const swatchWrap = document.getElementById('swatches');
+PALETTE.forEach(c=>{
+  const d = document.createElement('div');
+  d.className='swatch';
+  d.style.background=c;
+  d.addEventListener('click', ()=>{
+    state.color=c;
+    document.getElementById('colorPicker').value=c;
+    updateStatusColor();
+  });
+  swatchWrap.appendChild(d);
+});
+
+document.getElementById('paintLayerSelect').addEventListener('change', (e)=>{
+  state.paintLayer = e.target.value;
+});
+document.getElementById('layerBase').addEventListener('change', (e)=>{
+  state.showBase = e.target.checked;
+  drawEditCanvas();
+});
+document.getElementById('layerOverlay').addEventListener('change', (e)=>{
+  state.showOverlay = e.target.checked;
+  drawEditCanvas();
+  setOverlayVisible(state.showOverlay);
+});
+
+document.getElementById('partHead').addEventListener('change', e=>{ state.showParts.head=e.target.checked; applyPartVisibility(); });
+document.getElementById('partBody').addEventListener('change', e=>{ state.showParts.body=e.target.checked; applyPartVisibility(); });
+document.getElementById('partArms').addEventListener('change', e=>{ state.showParts.arms=e.target.checked; applyPartVisibility(); });
+document.getElementById('partLegs').addEventListener('change', e=>{ state.showParts.legs=e.target.checked; applyPartVisibility(); });
+
+document.getElementById('armType').addEventListener('change', (e)=>{
+  state.armType = e.target.value;
+  refreshAll();
+  buildModel();
+});
+
+document.getElementById('zoomIn').addEventListener('click', ()=>{
+  state.zoom = Math.min(20, state.zoom+2);
+  resizeEditCanvas(); drawEditCanvas();
+});
+document.getElementById('zoomOut').addEventListener('click', ()=>{
+  state.zoom = Math.max(4, state.zoom-2);
+  resizeEditCanvas(); drawEditCanvas();
+});
+
+document.getElementById('btnAnimate').addEventListener('click', (e)=>{
+  state.animate = !state.animate;
+  e.target.textContent = state.animate ? '⏸ 停止動畫' : '▶ 待機動畫';
+});
+
+document.getElementById('btnToggleLabels').addEventListener('click', (e)=>{
+  state.showLabels = !state.showLabels;
+  e.target.classList.toggle('active', state.showLabels);
+  drawEditCanvas();
+});
+
+document.getElementById('btnUndo').addEventListener('click', undo);
+document.getElementById('btnRedo').addEventListener('click', redo);
+window.addEventListener('keydown', (e)=>{
+  if(e.ctrlKey && e.key==='z'){ e.preventDefault(); undo(); }
+  if(e.ctrlKey && (e.key==='y' || (e.shiftKey && e.key==='Z'))){ e.preventDefault(); redo(); }
+});
+
+document.getElementById('btnNew').addEventListener('click', ()=>{
+  if(!confirm('確定要建立新的空白造型嗎？目前的內容將會清除（可用復原還原）。')) return;
+  pushUndo();
+  clearTexture();
+  refreshAll();
+});
+
+document.getElementById('btnImport').addEventListener('click', ()=>{
+  document.getElementById('fileInput').click();
+});
+document.getElementById('fileInput').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(file) importPNGFile(file);
+  e.target.value = '';
+});
+document.getElementById('btnExport').addEventListener('click', exportPNG);
+
+// Sample gallery
+const galleryEl = document.getElementById('sampleGallery');
+SAMPLE_SKINS.forEach(sample=>{
+  const item = document.createElement('div');
+  item.className = 'gallery-item';
+  const thumb = document.createElement('canvas');
+  thumb.width = 64; thumb.height = 64;
+  sample.thumbCanvas = thumb;
+  const tctx = thumb.getContext('2d');
+  tctx.imageSmoothingEnabled = false;
+  sample.draw(tctx);
+  const label = document.createElement('span');
+  label.className='name';
+  label.textContent = sample.name;
+  item.appendChild(thumb);
+  item.appendChild(label);
+  item.addEventListener('click', ()=>{
+    function apply(){
+      pushUndo();
+      sample.draw(texCtx);
+      state.armType = sample.arm;
+      document.getElementById('armType').value = sample.arm;
+      refreshAll();
+      buildModel();
+    }
+    if(sample.ready === false){
+      setTimeout(apply, 50); // 圖片為極小的內嵌 base64，理論上瞬間即載入完成，此為保險機制
+    } else {
+      apply();
+    }
+  });
+  galleryEl.appendChild(item);
+});
+
+/* =========================================================================
+   9. Init
+   ========================================================================= */
+function init(){
+  drawSampleClassicBlue(texCtx);
+  resizeEditCanvas();
+  refreshAll();
+  updateStatusColor();
+  try{
+    initThree();
+    if(webglOK){
+      new ResizeObserver(resizeRendererToDisplaySize).observe(viewer3dEl.parentElement);
+    }
+  }catch(err){
+    console.error('3D 預覽初始化失敗:', err);
+    show3DMessage('⚠️ 3D 預覽初始化時發生錯誤：<br>' + (err && err.message ? err.message : err) +
+      '<br><br>2D 材質編輯、匯入與匯出 PNG 功能不受影響，仍可正常使用。<br>' +
+      '若需要協助，請按 F12 開啟開發人員工具查看主控台（Console）訊息。');
+  }
+}
+init();
+
+</script>
+</body>
+</html>
