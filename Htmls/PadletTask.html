@@ -213,6 +213,7 @@
 <div class="app">
   <h1>🌸 繳交作業儀表板 ✨</h1>
   <p class="subtitle">上傳學生名單與 Padlet 匯出的 md 檔案，自動比對每項任務的繳交狀況</p>
+  <p id="publishedNotice" class="hidden" style="text-align:center;color:var(--text);opacity:.75;font-size:.85rem;margin:-14px 0 20px;"></p>
 
   <div class="card" id="uploadCard">
     <h2>📤 上傳檔案</h2>
@@ -241,6 +242,13 @@
     <div class="card">
       <h2>📊 總覽</h2>
       <div class="overview-grid" id="overviewGrid"></div>
+    </div>
+
+    <div class="card" id="publishCard">
+      <h2>📢 另存為公告用網頁</h2>
+      <p style="font-size:.85rem;color:var(--text2);margin:0 0 12px;">將目前的名單、繳交狀況、請假與已確認的異常校正，一起存成一個新的獨立 HTML 檔。之後任何人打開這個新檔案，會直接看到目前的儀表板，<b>不需要重新上傳名單或 md 檔</b>，適合公告或分享給其他老師、家長查看。</p>
+      <button class="btn" id="publishBtn">💾 另存為公告用網頁</button>
+      <span class="status-msg" id="publishMsg" style="display:inline-block;margin-left:12px;"></span>
     </div>
 
     <div id="anomalyBanner" class="anomaly-banner hidden"></div>
@@ -327,6 +335,9 @@
     <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
+
+<!-- 若此檔案是由「另存為公告用網頁」功能產生，資料會內嵌於下方，開啟時會自動載入，不需重新上傳檔案 -->
+<script type="application/json" id="embeddedDataScript">null</script>
 
 <script>
 (function(){
@@ -935,12 +946,92 @@
     downloadCsv('學生統計.csv', rows);
   });
 
+  // ---------- 另存為公告用網頁（內嵌目前資料，開啟時不需重新上傳） ----------
+  const publishBtn = $('#publishBtn');
+  const publishMsg = $('#publishMsg');
+
+  function buildEmbeddedPayload(){
+    return {
+      generatedAt: new Date().toISOString(),
+      teacherSeat,
+      roster: rosterOrder.map(seat=>[seat, rosterMap.get(seat)||'', seatToId.get(seat)||'']),
+      tasks,
+      resolutions: [...resolutions.entries()]
+    };
+  }
+
+  publishBtn && publishBtn.addEventListener('click', ()=>{
+    try{
+      const payload = buildEmbeddedPayload();
+      const jsonStr = JSON.stringify(payload).replace(/</g, '\\u003c');
+
+      // 複製整個頁面到記憶體中的副本，只在這份副本上動刀，不影響目前畫面
+      const clone = document.documentElement.cloneNode(true);
+      const cloneUploadCard = clone.querySelector('#uploadCard');
+      if(cloneUploadCard) cloneUploadCard.classList.add('hidden');
+      const clonePublishCard = clone.querySelector('#publishCard');
+      if(clonePublishCard) clonePublishCard.classList.add('hidden');
+      const cloneNotice = clone.querySelector('#publishedNotice');
+      if(cloneNotice){
+        cloneNotice.textContent = `📌 資料公告版・產生於 ${new Date().toLocaleString('zh-TW')}`;
+        cloneNotice.classList.remove('hidden');
+      }
+      const cloneEmbedScript = clone.querySelector('#embeddedDataScript');
+      if(cloneEmbedScript) cloneEmbedScript.textContent = jsonStr;
+
+      const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+      const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      a.href = url; a.download = `繳交儀表板_公告版_${dateStr}.html`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      publishMsg.textContent = '✅ 已產生公告用網頁（不含上傳與另存區塊），請至瀏覽器下載項目查看。';
+      publishMsg.classList.remove('error');
+    }catch(err){
+      publishMsg.textContent = '❌ 產生失敗：'+err.message;
+      publishMsg.classList.add('error');
+    }
+  });
+
+  function tryLoadEmbeddedData(){
+    const script = document.getElementById('embeddedDataScript');
+    if(!script) return false;
+    let data;
+    try{ data = JSON.parse(script.textContent); }catch(e){ return false; }
+    if(!data || !Array.isArray(data.roster) || !Array.isArray(data.tasks)) return false;
+
+    teacherSeat = data.teacherSeat || '60099';
+    teacherSeatInput.value = teacherSeat;
+
+    rosterMap = new Map(); rosterOrder = []; studentIdMap = new Map(); seatToId = new Map();
+    data.roster.forEach(([seat,name,sid])=>{
+      if(!seat || rosterMap.has(seat)) return;
+      rosterMap.set(seat, name); rosterOrder.push(seat);
+      if(sid){ seatToId.set(seat, sid); studentIdMap.set(sid, seat); }
+    });
+    tasks = data.tasks;
+    resolutions = new Map(data.resolutions||[]);
+
+    let genLabel = data.generatedAt;
+    try{ genLabel = new Date(data.generatedAt).toLocaleString('zh-TW'); }catch(e){}
+    statusMsg.classList.remove('error');
+    statusMsg.textContent = `✅ 已載入本頁內建資料（產生於 ${genLabel}）：名單 ${rosterOrder.length} 人，任務 ${tasks.length} 項。如需改用其他名單或 md 檔，請重新上傳並按「開始分析」。`;
+    $('#dashboard').classList.remove('hidden');
+    refresh();
+    switchTab('matrix');
+    return true;
+  }
+
   // ---------- helpers ----------
   function escapeHtml(str){
     return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
   function escapeAttr(str){ return escapeHtml(str); }
   function shorten(str,n){ return str.length>n ? str.slice(0,n)+'…' : str; }
+
+  tryLoadEmbeddedData();
 
 })();
 </script>
