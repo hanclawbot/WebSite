@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>暑期育樂營_麥塊 點名單</title>
+<title>MinecraftClass-1 點名單</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI','Microsoft JhengHei',sans-serif; background:#fce4ec; min-height:100vh; padding:20px; }
@@ -56,7 +56,7 @@ button:hover { opacity:.82; }
 </style>
 </head>
 <body>
-<h1>📋 暑期育樂營_麥塊 點名單</h1>
+<h1>📋 MinecraftClass-1 點名單</h1>
 <div class="date-row" id="dateRow"></div>
 <div class="toolbar">
   <button style="background:#ef9a9a;color:#fff" onclick="clearAllStatus()">🧹 清除出缺席</button>
@@ -87,8 +87,8 @@ button:hover { opacity:.82; }
   </div>
 </div>
 <script>
-var rows = 6, cols = 6;
-var seats = [{"name":"許瀚文(taip14)","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"陳俊熹(taip05)","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"蕭士宇(taip07)","status":""},{"name":"唐祤翔(taip13)","status":""},{"name":"陳易陞(taip12)","status":""},{"name":"丁彥翔(taip17)","status":""},{"name":"李芊和(taip03)","status":""},{"name":"","status":""},{"name":"葉承育(taip02)","status":""},{"name":"林杰叡(taip11)","status":""},{"name":"葉彧希(taip04)","status":""},{"name":"","status":""},{"name":"謝嘉恩(taip18)","status":""},{"name":"","status":""},{"name":"李光濬(taip15)","status":""},{"name":"陳松嶽(taip16)","status":""},{"name":"李承緯(taip06)","status":""},{"name":"陳昕佑(taip10)","status":""},{"name":"蘇勁宇(taip01)","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"呂柏橙(taip08)","status":""},{"name":"石哲宇(taip09)","status":""},{"name":"","status":""},{"name":"","status":""},{"name":"","status":""}];
+var rows = 5, cols = 5;
+var seats = [{"name":"許瀚文(taip14)","status":""},{"name":"李芊和(taip03)","status":""},{"name":"陳俊熹(taip05)","status":""},{"name":"唐祤翔(taip13)","status":""},{"name":"","status":""},{"name":"蕭士宇(taip07)","status":""},{"name":"葉承育(taip02)","status":""},{"name":"陳易陞(taip12)","status":""},{"name":"丁彥翔(taip17)","status":""},{"name":"","status":""},{"name":"陳松嶽(taip16)","status":""},{"name":"林杰叡(taip11)","status":""},{"name":"","status":""},{"name":"葉彧希(taip04)","status":""},{"name":"","status":""},{"name":"李光濬(taip15)","status":""},{"name":"陳昕佑(taip10)","status":""},{"name":"李承緯(taip06)","status":""},{"name":"","status":""},{"name":"謝嘉恩(taip18)","status":""},{"name":"","status":""},{"name":"呂柏橙(taip08)","status":""},{"name":"石哲宇(taip09)","status":""},{"name":"","status":""},{"name":"蘇勁宇(taip01)","status":""}];
 var swapPending = -1;
 
 document.getElementById('dateRow').textContent = '日期：' + new Date().toLocaleDateString('zh-TW', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
