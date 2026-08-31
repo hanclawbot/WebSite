@@ -99,6 +99,18 @@ input[type=text]:focus,input[type=number]:focus,select:focus{
 #fieldList li.on{background:#FFF4F8;border-color:var(--pink);box-shadow:0 4px 12px rgba(255,182,193,.35);}
 #fieldList li.dragging{opacity:.45;transform:scale(.99);}
 #fieldList li.dragover{border-style:dashed;border-color:var(--orange);}
+#fieldList li.cus{background:#F5FBFF;border-color:#C9E3F5;}
+#fieldList li.cus.on{background:#EAF6FE;border-color:#6FB6E8;box-shadow:0 4px 12px rgba(111,182,232,.30);}
+#fieldList li.cus .fname{color:#3E8FC4;}
+#fieldList li.cus input[type=checkbox]{accent-color:#6FB6E8;}
+#fieldList .del{
+  border:none;background:#FFB3C1;color:#fff;border-radius:50%;
+  width:28px;height:28px;cursor:pointer;font-size:.9rem;transition:transform .15s;flex:none;
+}
+#fieldList .del:hover{transform:scale(1.15) rotate(90deg);}
+.fmeta input.tpl{width:230px;}
+.fmeta select{padding:5px 8px;font-size:.82rem;}
+code{background:#FFF0F5;border-radius:6px;padding:1px 6px;font-size:.85em;color:#D45C7E;}
 .grip{cursor:grab;font-size:1.15rem;color:#D9BFC8;user-select:none;}
 .grip:active{cursor:grabbing;}
 .fname{font-weight:800;min-width:110px;font-size:.95rem;}
@@ -126,6 +138,14 @@ input[type=checkbox]{width:19px;height:19px;accent-color:var(--pink);cursor:poin
 }
 .cond .del:hover{transform:scale(1.15) rotate(90deg);}
 .cond input[type=text]{width:170px;}
+.cond input[type=text].wideval{width:330px;max-width:100%;}
+.cond .warn{
+  flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  font-size:.84rem;color:#B4622A;background:#FFF6E5;
+  border:2px solid #FFE0A3;border-radius:14px;padding:7px 13px;
+}
+.cond .warn button{background:var(--orange);box-shadow:0 3px 9px rgba(255,183,77,.45);}
+.cond select{max-width:230px;}
 /* ---------- preview ---------- */
 .tablebox{overflow:auto;max-height:400px;border:2px solid var(--pink-soft);border-radius:18px;background:#fff;}
 table{border-collapse:collapse;width:100%;font-size:.88rem;white-space:nowrap;}
@@ -133,6 +153,9 @@ th{
   position:sticky;top:0;background:var(--pink);color:#fff;font-weight:700;
   padding:9px 12px;text-align:left;
 }
+th.sortable{cursor:pointer;user-select:none;transition:background .15s;}
+th.sortable:hover{background:#F4779A;}
+select:disabled,input:disabled{opacity:.45;cursor:not-allowed;background:#F8F2F4;}
 td{padding:7px 12px;border-bottom:1px solid #F6E6EB;}
 tbody tr:nth-child(even){background:#FFFAFC;}
 tbody tr:hover{background:#FFF0F5;}
@@ -197,8 +220,14 @@ footer{text-align:center;color:var(--text-soft);font-size:.82rem;padding-top:6px
     <button class="kawaii-btn ghost sm" id="btnAll">全部勾選</button>
     <button class="kawaii-btn ghost sm" id="btnNone">全部取消</button>
     <button class="kawaii-btn ghost sm" id="btnReset">還原原始順序</button>
+    <button class="kawaii-btn sky sm" id="btnAddCustom">✨ 新增自訂欄位</button>
     <span class="hint" style="margin:0">拖曳 ⣿ 或按 ↑ ↓ 可調整匯出順序</span>
   </div>
+  <p class="hint" style="margin:0 0 12px">
+    <strong>自訂欄位</strong>：在公式中用 <code>{欄位名}</code> 代表原欄位的值，其餘文字原樣輸出。
+    例如 <code>{學號}@aaa.tp.edu.tw</code>、<code>{姓名}（{班級}-{座號}）</code>。
+    原欄位不會被取代，仍可同時勾選匯出。
+  </p>
   <ul id="fieldList"></ul>
 </section>
 
@@ -208,15 +237,24 @@ footer{text-align:center;color:var(--text-soft);font-size:.82rem;padding-top:6px
   <div id="condList"></div>
   <div class="row" style="margin-top:12px">
     <button class="kawaii-btn sky sm" id="btnAddCond">＋ 新增條件</button>
-    <span class="hint" style="margin:0">例如：班級 等於 302</span>
+    <span class="hint" style="margin:0">例如：班級 <strong>等於</strong> 302；或 學號 <strong>是其中之一</strong> <code>110034,111142,123456</code></span>
   </div>
 </section>
 
 <!-- 5 預覽 -->
 <section class="card hidden" id="secPreview">
   <h2><span class="step">5</span> 結果預覽 <span class="badge" id="resStat">－</span></h2>
+  <div class="row" id="sortBar" style="margin-bottom:12px">
+    <label for="sort1">排序依據：</label>
+    <select id="sort1"></select>
+    <select id="dir1"><option value="asc">遞增 ↑</option><option value="desc">遞減 ↓</option></select>
+    <label for="sort2">次要：</label>
+    <select id="sort2"></select>
+    <select id="dir2"><option value="asc">遞增 ↑</option><option value="desc">遞減 ↓</option></select>
+    <button class="kawaii-btn ghost sm" id="btnSortClear">清除排序</button>
+  </div>
   <div class="tablebox" id="previewBox"></div>
-  <p class="hint">預覽最多顯示前 100 筆，匯出時會輸出全部符合條件的資料。</p>
+  <p class="hint">預覽最多顯示前 100 筆，匯出時會輸出全部符合條件的資料（含排序結果）。也可以直接點表格標題快速切換排序。</p>
 </section>
 
 <!-- 6 匯出 -->
@@ -272,13 +310,17 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 "use strict";
 
 /* ---------------- 狀態 ---------------- */
-var WB=null, AOA=[], HEADERS=[], FIELDS=[], CONDS=[], CONDSEQ=0, FILENAME="";
+var WB=null, AOA=[], HEADERS=[], NAMEIDX={}, FIELDS=[], CONDS=[], SEQ=0, FILENAME="";
+var SORT=[{key:"",dir:"asc"},{key:"",dir:"asc"}];
 
 var OPS=[
   {v:"eq",   t:"等於",     need:true },
   {v:"ne",   t:"不等於",   need:true },
+  {v:"in",   t:"是其中之一（逗號分隔）",   need:true, list:true},
+  {v:"nin",  t:"不是其中之一（逗號分隔）", need:true, list:true},
   {v:"has",  t:"包含",     need:true },
   {v:"nhas", t:"不包含",   need:true },
+  {v:"hasany",t:"包含其中之一（逗號分隔）",need:true, list:true},
   {v:"sw",   t:"開頭是",   need:true },
   {v:"ew",   t:"結尾是",   need:true },
   {v:"gt",   t:"大於",     need:true },
@@ -301,7 +343,6 @@ function esc(s){
   });
 }
 function show(id){ $(id).classList.remove("hidden"); }
-function hide(id){ $(id).classList.add("hidden"); }
 
 /* ---------------- 1. 讀檔 ---------------- */
 var drop=$("drop"), fileInput=$("fileInput");
@@ -338,9 +379,9 @@ function readFile(file){
       var o=document.createElement("option"); o.value=n; o.textContent=n; sel.appendChild(o);
     });
     $("headerRow").value=1;
-    show("secSheet"); show("secField"); show("secCond"); show("secPreview"); show("secExport");
+    ["secSheet","secField","secCond","secPreview","secExport"].forEach(show);
     if(!$("outName").value) $("outName").value=FILENAME+"_匯出";
-    CONDS=[]; renderConds();
+    CONDS=[]; FIELDS=[];
     loadSheet();
   };
   r.readAsArrayBuffer(file);
@@ -352,24 +393,32 @@ $("headerRow").addEventListener("change",loadSheet);
 
 function loadSheet(){
   if(!WB) return;
-  var name=$("sheetSel").value;
-  var ws=WB.Sheets[name];
+  var ws=WB.Sheets[$("sheetSel").value];
   AOA=XLSX.utils.sheet_to_json(ws,{header:1,defval:"",raw:false,blankrows:false});
   var hr=parseInt($("headerRow").value,10); if(isNaN(hr)||hr<1){hr=1;$("headerRow").value=1;}
-  var head=AOA[hr-1]||[];
-  var width=0;
+  var head=AOA[hr-1]||[], width=0;
   AOA.forEach(function(r){ if(r.length>width) width=r.length; });
-  HEADERS=[];
+
+  HEADERS=[]; NAMEIDX={};
   for(var i=0;i<width;i++){
     var h=(head[i]===undefined||String(head[i]).trim()==="")?("欄位"+(i+1)):String(head[i]).trim();
-    HEADERS.push(h);
+    if(NAMEIDX[h]!==undefined){                 /* 標題重複時自動加序號 */
+      var k=2; while(NAMEIDX[h+"("+k+")"]!==undefined) k++;
+      h=h+"("+k+")";
+    }
+    NAMEIDX[h]=i; HEADERS.push(h);
   }
+  /* 原始欄位重建，自訂欄位保留 */
+  var customs=FIELDS.filter(function(f){ return f.kind==="cus"; });
   FIELDS=HEADERS.map(function(h,i){
-    return {idx:i,orig:h,name:h,prefix:"",suffix:"",checked:true};
-  });
-  CONDS.forEach(function(c){ if(c.col>=HEADERS.length) c.col=0; });
+    return {kind:"col",key:"c"+i,idx:i,orig:h,name:h,prefix:"",suffix:"",checked:true};
+  }).concat(customs);
+  var keys={}; FIELDS.forEach(function(f){ keys[f.key]=1; });
+  CONDS=CONDS.filter(function(c){ return keys[c.key]; });
+  SORT.forEach(function(sv){ if(sv.key&&!keys[sv.key]) sv.key=""; });
+
   $("sheetStat").textContent="資料 "+dataRows().length+" 筆・欄位 "+HEADERS.length+" 個";
-  renderFields(); renderConds(); render();
+  renderFields(); renderConds(); renderSort(); render();
 }
 
 function dataRows(){
@@ -379,6 +428,30 @@ function dataRows(){
   });
 }
 
+/* ---------------- 欄位值計算 ---------------- */
+function cell(row,i){
+  var v=row[i];
+  return (v===undefined||v===null)?"":String(v).trim();
+}
+function valueOf(f,row){
+  if(f.kind==="col"){
+    var v=cell(row,f.idx);
+    return v===""?"":(f.prefix+v+f.suffix);
+  }
+  var allEmpty=true, found=false;
+  var out=String(f.tpl).replace(/\{([^{}]*)\}/g,function(m,name){
+    var i=NAMEIDX[name.trim()];
+    if(i===undefined) return m;              /* 找不到欄位名，原樣保留以便發現錯字 */
+    found=true;
+    var v=cell(row,i);
+    if(v!=="") allEmpty=false;
+    return v;
+  });
+  return (found&&allEmpty)?"":out;
+}
+function fieldTitle(f){ return f.name===""?(f.kind==="col"?f.orig:"自訂欄位"):f.name; }
+function selected(){ return FIELDS.filter(function(f){return f.checked;}); }
+
 /* ---------------- 3. 欄位設定 ---------------- */
 function renderFields(){
   var ul=$("fieldList"); ul.innerHTML="";
@@ -386,17 +459,33 @@ function renderFields(){
     var li=document.createElement("li");
     li.draggable=true; li.dataset.pos=pos;
     if(f.checked) li.classList.add("on");
-    li.innerHTML=
-      '<span class="grip" title="拖曳排序">&#9903;</span>'+
-      '<input type="checkbox" data-a="chk" '+(f.checked?"checked":"")+'>'+
-      '<span class="fname">'+esc(f.orig)+'</span>'+
-      '<span class="fmeta">'+
-        '<span class="tag">前贅詞</span><input type="text" data-a="pre" value="'+esc(f.prefix)+'" placeholder="(">'+
-        '<span class="tag">後贅詞</span><input type="text" data-a="suf" value="'+esc(f.suffix)+'" placeholder="@xxx.tp.edu.tw">'+
-        '<span class="tag">輸出標題</span><input type="text" class="wide" data-a="nam" value="'+esc(f.name)+'">'+
-      '</span>'+
-      '<span class="mv"><button data-a="up" title="上移">&#9650;</button>'+
-      '<button data-a="dn" title="下移">&#9660;</button></span>';
+    var mv='<span class="mv"><button data-a="up" title="上移">&#9650;</button>'+
+           '<button data-a="dn" title="下移">&#9660;</button></span>';
+    if(f.kind==="col"){
+      li.innerHTML=
+        '<span class="grip" title="拖曳排序">&#9903;</span>'+
+        '<input type="checkbox" data-a="chk" '+(f.checked?"checked":"")+'>'+
+        '<span class="fname">'+esc(f.orig)+'</span>'+
+        '<span class="fmeta">'+
+          '<span class="tag">前贅詞</span><input type="text" data-a="pre" value="'+esc(f.prefix)+'">'+
+          '<span class="tag">後贅詞</span><input type="text" data-a="suf" value="'+esc(f.suffix)+'">'+
+          '<span class="tag">輸出標題</span><input type="text" class="wide" data-a="nam" value="'+esc(f.name)+'">'+
+        '</span>'+mv;
+    }else{
+      li.classList.add("cus");
+      var opts='<option value="">＋ 插入欄位</option>';
+      HEADERS.forEach(function(h){ opts+='<option value="'+esc(h)+'">'+esc(h)+'</option>'; });
+      li.innerHTML=
+        '<span class="grip" title="拖曳排序">&#9903;</span>'+
+        '<input type="checkbox" data-a="chk" '+(f.checked?"checked":"")+'>'+
+        '<span class="fname">✨ 自訂</span>'+
+        '<span class="fmeta">'+
+          '<span class="tag">欄位名稱</span><input type="text" data-a="nam" value="'+esc(f.name)+'" placeholder="電子郵件">'+
+          '<span class="tag">公式</span><input type="text" class="tpl" data-a="tpl" value="'+esc(f.tpl)+'" placeholder="{學號}@aaa.tp.edu.tw">'+
+          '<select data-a="ins">'+opts+'</select>'+
+        '</span>'+
+        '<button class="del" data-a="del" title="刪除此自訂欄位">&#10005;</button>'+mv;
+    }
     ul.appendChild(li);
   });
 }
@@ -407,25 +496,46 @@ $("fieldList").addEventListener("input",function(e){
   if(a==="pre") f.prefix=e.target.value;
   else if(a==="suf") f.suffix=e.target.value;
   else if(a==="nam") f.name=e.target.value;
+  else if(a==="tpl") f.tpl=e.target.value;
   else return;
+  if(a==="nam"){ renderConds(); renderSort(); }
   render();
 });
 $("fieldList").addEventListener("change",function(e){
-  if(e.target.dataset.a!=="chk") return;
-  var li=e.target.closest("li");
-  FIELDS[+li.dataset.pos].checked=e.target.checked;
-  li.classList.toggle("on",e.target.checked);
-  render();
+  var li=e.target.closest("li"); if(!li) return;
+  var f=FIELDS[+li.dataset.pos], a=e.target.dataset.a;
+  if(a==="chk"){
+    f.checked=e.target.checked;
+    li.classList.toggle("on",e.target.checked);
+    render();
+  }else if(a==="ins"){
+    var v=e.target.value; e.target.value="";
+    if(!v) return;
+    var inp=li.querySelector('input[data-a="tpl"]');
+    var s=inp.selectionStart, t=inp.value;
+    if(s===null||s===undefined) s=t.length;
+    var ins="{"+v+"}";
+    inp.value=t.slice(0,s)+ins+t.slice(inp.selectionEnd||s);
+    f.tpl=inp.value;
+    inp.focus(); inp.setSelectionRange(s+ins.length,s+ins.length);
+    render();
+  }
 });
 $("fieldList").addEventListener("click",function(e){
   var b=e.target.closest("button"); if(!b) return;
-  var pos=+b.closest("li").dataset.pos;
-  if(b.dataset.a==="up"&&pos>0) move(pos,pos-1);
-  else if(b.dataset.a==="dn"&&pos<FIELDS.length-1) move(pos,pos+1);
+  var pos=+b.closest("li").dataset.pos, a=b.dataset.a;
+  if(a==="up"&&pos>0) move(pos,pos-1);
+  else if(a==="dn"&&pos<FIELDS.length-1) move(pos,pos+1);
+  else if(a==="del"){
+    var key=FIELDS[pos].key;
+    FIELDS.splice(pos,1);
+    CONDS=CONDS.filter(function(c){ return c.key!==key; });
+    SORT.forEach(function(sv){ if(sv.key===key) sv.key=""; });
+    renderFields(); renderConds(); renderSort(); render();
+  }
 });
 function move(from,to){
-  var it=FIELDS.splice(from,1)[0];
-  FIELDS.splice(to,0,it);
+  FIELDS.splice(to,0,FIELDS.splice(from,1)[0]);
   renderFields(); render();
 }
 
@@ -464,16 +574,29 @@ $("btnNone").addEventListener("click",function(){
   FIELDS.forEach(function(f){f.checked=false;}); renderFields(); render();
 });
 $("btnReset").addEventListener("click",function(){
-  FIELDS.sort(function(a,b){return a.idx-b.idx;}); renderFields(); render();
+  var cols=FIELDS.filter(function(f){return f.kind==="col";}).sort(function(a,b){return a.idx-b.idx;});
+  FIELDS=cols.concat(FIELDS.filter(function(f){return f.kind==="cus";}));
+  renderFields(); render();
+});
+$("btnAddCustom").addEventListener("click",function(){
+  if(!HEADERS.length){ toast("請先載入檔案"); return; }
+  FIELDS.push({kind:"cus",key:"x"+(++SEQ),name:"自訂欄位"+SEQ,tpl:"",checked:true});
+  renderFields(); renderConds(); renderSort(); render();
+  var lis=$("fieldList").children;
+  var inp=lis[lis.length-1].querySelector('input[data-a="nam"]');
+  if(inp){ inp.focus(); inp.select(); }
 });
 
 /* ---------------- 4. 條件 ---------------- */
 $("btnAddCond").addEventListener("click",function(){
-  if(!HEADERS.length){ toast("請先載入檔案"); return; }
-  CONDS.push({id:++CONDSEQ,col:0,op:"eq",val:""});
+  if(!FIELDS.length){ toast("請先載入檔案"); return; }
+  CONDS.push({key:FIELDS[0].key,op:"eq",val:""});
   renderConds(); render();
 });
 
+function needWarn(c){
+  return (c.op==="eq"||c.op==="ne") && /[,\uFF0C;\uFF1B]/.test(String(c.val));
+}
 function renderConds(){
   var box=$("condList"); box.innerHTML="";
   if(!CONDS.length){
@@ -484,17 +607,24 @@ function renderConds(){
     var d=document.createElement("div");
     d.className="cond"; d.dataset.i=i;
     var opDef=OPS.filter(function(o){return o.v===c.op;})[0]||OPS[0];
-    var html='<strong style="font-size:.88rem">條件 '+(i+1)+'</strong><select data-a="col">';
-    HEADERS.forEach(function(h,idx){
-      html+='<option value="'+idx+'"'+(idx===c.col?" selected":"")+'>'+esc(h)+'</option>';
+    var html='<strong style="font-size:.88rem">條件 '+(i+1)+'</strong><select data-a="key">';
+    FIELDS.forEach(function(f){
+      var label=(f.kind==="cus"?"✨ ":"")+fieldTitle(f);
+      html+='<option value="'+esc(f.key)+'"'+(f.key===c.key?" selected":"")+'>'+esc(label)+'</option>';
     });
     html+='</select><select data-a="op">';
     OPS.forEach(function(o){
       html+='<option value="'+o.v+'"'+(o.v===c.op?" selected":"")+'>'+o.t+'</option>';
     });
-    html+='</select><input type="text" data-a="val" value="'+esc(c.val)+'" placeholder="輸入值，例如 302"'+
+    var ph=opDef.list?"多個值用逗號分隔，例如 110034,111142,123456":"輸入值，例如 302";
+    html+='</select><input type="text" data-a="val" value="'+esc(c.val)+'" placeholder="'+esc(ph)+'"'+
+          (opDef.list?' class="wideval"':'')+
           (opDef.need?"":" disabled style=\"opacity:.4\"")+'>'+
-          '<button class="del" data-a="del" title="刪除">&#10005;</button>';
+          '<button class="del" data-a="del" title="刪除">&#10005;</button>'+
+          '<span class="warn" data-a="warn"'+(needWarn(c)?"":' style="display:none"')+'>'+
+            '⚠️ 值中有逗號，但運算子是「'+esc(opDef.t)+'」，會被當成一整串比對。'+
+            '<button class="kawaii-btn sm" data-a="fix">改用「'+(c.op==="ne"?"不是":"是")+'其中之一」</button>'+
+          '</span>';
     d.innerHTML=html;
     box.appendChild(d);
   });
@@ -502,33 +632,49 @@ function renderConds(){
 $("condList").addEventListener("change",function(e){
   var d=e.target.closest(".cond"); if(!d) return;
   var c=CONDS[+d.dataset.i], a=e.target.dataset.a;
-  if(a==="col") c.col=+e.target.value;
+  if(a==="key") c.key=e.target.value;
   else if(a==="op"){ c.op=e.target.value; renderConds(); }
   render();
 });
 $("condList").addEventListener("input",function(e){
   var d=e.target.closest(".cond"); if(!d||e.target.dataset.a!=="val") return;
-  CONDS[+d.dataset.i].val=e.target.value; render();
+  var c=CONDS[+d.dataset.i];
+  c.val=e.target.value;
+  var w=d.querySelector('[data-a="warn"]');
+  if(w) w.style.display=needWarn(c)?"":"none";
+  render();
 });
 $("condList").addEventListener("click",function(e){
-  if(e.target.dataset.a!=="del") return;
-  CONDS.splice(+e.target.closest(".cond").dataset.i,1);
-  renderConds(); render();
+  var d=e.target.closest(".cond"); if(!d) return;
+  var a=e.target.dataset.a;
+  if(a==="del"){
+    CONDS.splice(+d.dataset.i,1);
+    renderConds(); render();
+  }else if(a==="fix"){
+    var c=CONDS[+d.dataset.i];
+    c.op=(c.op==="ne")?"nin":"in";
+    renderConds(); render();
+    toast("✨ 已改用清單比對");
+  }
 });
 
 /* ---------------- 篩選與組裝 ---------------- */
-function cell(row,i){
-  var v=row[i];
-  return (v===undefined||v===null)?"":String(v).trim();
-}
 function num(s){
   var n=parseFloat(String(s).replace(/,/g,""));
   return isNaN(n)?null:n;
 }
-function test(v,op,t){
+function parseList(t){
+  return String(t).split(/[,\uFF0C\n\r;\uFF1B]+/).map(function(x){
+    return x.trim();
+  }).filter(function(x){ return x!==""; });
+}
+function test(v,op,t,list){
   switch(op){
     case "eq":   return v===t;
     case "ne":   return v!==t;
+    case "in":   return list.indexOf(v)>=0;
+    case "nin":  return list.indexOf(v)<0;
+    case "hasany": return list.some(function(x){ return v.indexOf(x)>=0; });
     case "has":  return t===""||v.indexOf(t)>=0;
     case "nhas": return t===""||v.indexOf(t)<0;
     case "sw":   return v.indexOf(t)===0;
@@ -551,25 +697,81 @@ function test(v,op,t){
   if(op==="lte")return a<=b;
   return true;
 }
+function fieldByKey(k){
+  return FIELDS.filter(function(f){ return f.key===k; })[0];
+}
 function filtered(){
-  var cs=CONDS.filter(function(c){
+  var cs=[];
+  CONDS.forEach(function(c){
     var o=OPS.filter(function(x){return x.v===c.op;})[0];
-    return o && (!o.need || c.val!=="");
+    var f=fieldByKey(c.key);
+    if(!f||!o) return;
+    var list=o.list?parseList(c.val):[];
+    if(o.list){ if(!list.length) return; }
+    else if(o.need && c.val==="") return;
+    cs.push({f:f,op:c.op,val:String(c.val).trim(),list:list});
   });
   return dataRows().filter(function(row){
-    return cs.every(function(c){ return test(cell(row,c.col),c.op,String(c.val).trim()); });
+    return cs.every(function(c){ return test(valueOf(c.f,row),c.op,c.val,c.list); });
   });
 }
-function selected(){ return FIELDS.filter(function(f){return f.checked;}); }
+/* ---------------- 排序 ---------------- */
+function renderSort(){
+  [0,1].forEach(function(n){
+    var sel=$("sort"+(n+1)), cur=SORT[n].key;
+    var html='<option value="">（不排序）</option>';
+    FIELDS.forEach(function(f){
+      var label=(f.kind==="cus"?"✨ ":"")+fieldTitle(f);
+      html+='<option value="'+esc(f.key)+'"'+(f.key===cur?" selected":"")+'>'+esc(label)+'</option>';
+    });
+    sel.innerHTML=html;
+    if(!FIELDS.some(function(f){return f.key===cur;})) SORT[n].key="";
+    $("dir"+(n+1)).value=SORT[n].dir;
+  });
+  $("sort2").disabled=$("dir2").disabled=!SORT[0].key;
+  $("dir1").disabled=!SORT[0].key;
+}
+[0,1].forEach(function(n){
+  $("sort"+(n+1)).addEventListener("change",function(){
+    SORT[n].key=this.value;
+    if(n===0&&!this.value){ SORT[1].key=""; }
+    renderSort(); render();
+  });
+  $("dir"+(n+1)).addEventListener("change",function(){
+    SORT[n].dir=this.value; render();
+  });
+});
+$("btnSortClear").addEventListener("click",function(){
+  SORT=[{key:"",dir:"asc"},{key:"",dir:"asc"}];
+  renderSort(); render();
+});
+function cmp(a,b){
+  if(a===b) return 0;
+  if(a==="") return 1;          /* 空值一律排最後 */
+  if(b==="") return -1;
+  var x=num(a), y=num(b);
+  if(x!==null&&y!==null) return x<y?-1:(x>y?1:0);
+  return a.localeCompare(b,"zh-Hant",{numeric:true,sensitivity:"base"});
+}
+function sortRows(rows){
+  var keys=SORT.filter(function(sv){ return sv.key; }).map(function(sv){
+    return {f:fieldByKey(sv.key), sign:(sv.dir==="desc"?-1:1)};
+  }).filter(function(k){ return k.f; });
+  if(!keys.length) return rows;
+  return rows.map(function(r,i){ return {r:r,i:i}; }).sort(function(A,B){
+    for(var n=0;n<keys.length;n++){
+      var c=cmp(valueOf(keys[n].f,A.r),valueOf(keys[n].f,B.r))*keys[n].sign;
+      if(c) return c;
+    }
+    return A.i-B.i;             /* 保持穩定排序 */
+  }).map(function(o){ return o.r; });
+}
 
 function buildAOA(){
-  var fs=selected(), rows=filtered();
-  var out=[fs.map(function(f){ return f.name===""?f.orig:f.name; })];
+  var fs=selected(), rows=sortRows(filtered());
+  var out=[fs.map(fieldTitle)];
   rows.forEach(function(r){
-    out.push(fs.map(function(f){
-      var v=cell(r,f.idx);
-      return v===""?"":(f.prefix+v+f.suffix);
-    }));
+    out.push(fs.map(function(f){ return valueOf(f,r); }));
   });
   return out;
 }
@@ -584,16 +786,28 @@ function render(){
   if(!rows.length){ box.innerHTML='<p class="empty">🍂 沒有符合條件的資料</p>'; return; }
   var aoa=buildAOA(), lim=Math.min(aoa.length,101);
   var h="<table><thead><tr><th>#</th>";
-  aoa[0].forEach(function(t){ h+="<th>"+esc(t)+"</th>"; });
+  aoa[0].forEach(function(t,ci){
+    var f=fs[ci], mark="";
+    if(SORT[0].key===f.key) mark=SORT[0].dir==="asc"?" ▲":" ▼";
+    else if(SORT[1].key===f.key) mark=SORT[1].dir==="asc"?" ▵":" ▿";
+    h+='<th class="sortable" data-key="'+esc(f.key)+'" title="點一下切換排序">'+esc(t)+mark+"</th>";
+  });
   h+="</tr></thead><tbody>";
   for(var i=1;i<lim;i++){
     h+="<tr><td>"+i+"</td>";
     aoa[i].forEach(function(v){ h+="<td>"+esc(v)+"</td>"; });
     h+="</tr>";
   }
-  h+="</tbody></table>";
-  box.innerHTML=h;
+  box.innerHTML=h+"</tbody></table>";
 }
+$("previewBox").addEventListener("click",function(e){
+  var th=e.target.closest("th.sortable"); if(!th) return;
+  var k=th.dataset.key;
+  if(SORT[0].key===k) SORT[0].dir=(SORT[0].dir==="asc"?"desc":"asc");
+  else { SORT[1]={key:SORT[0].key,dir:SORT[0].dir}; SORT[0]={key:k,dir:"asc"}; }
+  if(SORT[1].key===SORT[0].key) SORT[1].key="";
+  renderSort(); render();
+});
 
 /* ---------------- 6. 匯出 ---------------- */
 function safeName(){
@@ -606,43 +820,37 @@ function guard(){
   if(!filtered().length){ toast("沒有符合條件的資料"); return false; }
   return true;
 }
+function download(blob,ext){
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=safeName()+ext;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1200);
+}
 $("btnXlsx").addEventListener("click",function(){
   if(!guard()) return;
-  var ws=XLSX.utils.aoa_to_sheet(buildAOA());
   var wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"匯出結果");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(buildAOA()),"匯出結果");
   XLSX.writeFile(wb,safeName()+".xlsx");
   toast("📗 Excel 匯出完成！");
 });
 $("btnCsv").addEventListener("click",function(){
   if(!guard()) return;
-  var ws=XLSX.utils.aoa_to_sheet(buildAOA());
-  var csv=XLSX.utils.sheet_to_csv(ws);
-  var blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"});
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=safeName()+".csv";
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1200);
+  var csv=XLSX.utils.sheet_to_csv(XLSX.utils.aoa_to_sheet(buildAOA()));
+  download(new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8;"}),".csv");
   toast("📄 CSV 匯出完成！");
 });
-
 $("btnTxt").addEventListener("click",function(){
   if(!guard()) return;
   var sep=$("txtSep").value.replace(/\\t/g,"\t").replace(/\\n/g,"\n");
   var aoa=buildAOA();
   var rows=$("txtHead").checked?aoa:aoa.slice(1);
   var txt=rows.map(function(r){ return r.join(sep); }).join("\r\n");
-  var blob=new Blob(["\ufeff"+txt],{type:"text/plain;charset=utf-8;"});
-  var a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download=safeName()+".txt";
-  document.body.appendChild(a); a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },1200);
-  toast("\ud83d\udcdd TXT \u532f\u51fa\u5b8c\u6210\uff01");
+  download(new Blob(["﻿"+txt],{type:"text/plain;charset=utf-8;"}),".txt");
+  toast("📝 TXT 匯出完成！");
 });
 
-window.__app={buildAOA:buildAOA,filtered:filtered,headers:function(){return HEADERS;}};
+window.__app={buildAOA:buildAOA,filtered:filtered,fields:function(){return FIELDS;}};
 })();
 </script>
 </body>
