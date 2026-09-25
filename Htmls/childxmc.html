@@ -1,0 +1,747 @@
+<title>兒童新樂園奪標作戰中心</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&family=IBM+Plex+Mono:wght@400;600&display=swap">
+
+<style>
+:root{
+  --ink:#191D38; --ink-soft:#4A5070; --ink-faint:#7B819E;
+  --ground:#F2F3F8; --surface:#FFFFFF; --surface-2:#E9EBF3;
+  --line:#D3D7E6; --line-soft:#E4E7F1;
+  --amber:#B26A0B; --amber-bright:#D98A1E; --amber-wash:#FBF0DC;
+  --teal:#1C6C75; --teal-wash:#DDEDEF;
+  --good:#2C7A4B; --warn:#B26A0B; --crit:#B03A34;
+  --good-wash:#E0F0E6; --crit-wash:#FAE4E2;
+  --shadow:0 1px 2px rgba(25,29,56,.07), 0 8px 24px -12px rgba(25,29,56,.18);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#E7E9F5; --ink-soft:#A9AFCC; --ink-faint:#7F86A8;
+    --ground:#12142A; --surface:#1B1E3A; --surface-2:#242847;
+    --line:#343A62; --line-soft:#2A2F52;
+    --amber:#F0B155; --amber-bright:#F5C177; --amber-wash:#3A2C15;
+    --teal:#5FBCC6; --teal-wash:#153338;
+    --good:#6FCB92; --warn:#F0B155; --crit:#F08078;
+    --good-wash:#16301F; --crit-wash:#3A1C1A;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 28px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#E7E9F5; --ink-soft:#A9AFCC; --ink-faint:#7F86A8;
+  --ground:#12142A; --surface:#1B1E3A; --surface-2:#242847;
+  --line:#343A62; --line-soft:#2A2F52;
+  --amber:#F0B155; --amber-bright:#F5C177; --amber-wash:#3A2C15;
+  --teal:#5FBCC6; --teal-wash:#153338;
+  --good:#6FCB92; --warn:#F0B155; --crit:#F08078;
+  --good-wash:#16301F; --crit-wash:#3A1C1A;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 28px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:16px; line-height:1.75; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin:0 auto; padding:0 24px 96px}
+h1,h2,h3,h4{font-family:"Noto Serif TC",Georgia,serif; text-wrap:balance; margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* ---------- header ---------- */
+.hero{
+  border-bottom:1px solid var(--line);
+  background:
+    radial-gradient(120% 140% at 88% -20%, var(--amber-wash) 0%, transparent 58%),
+    var(--surface);
+}
+.hero-in{max-width:1120px; margin:0 auto; padding:44px 24px 34px;
+  display:flex; flex-wrap:wrap; gap:32px; align-items:flex-end; justify-content:space-between}
+.eyebrow{font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--teal); font-weight:700; margin-bottom:12px}
+h1{font-size:clamp(30px,4.4vw,46px); font-weight:900; line-height:1.2; letter-spacing:-.01em}
+.hero p{margin:12px 0 0; color:var(--ink-soft); max-width:46ch; font-size:15px}
+
+.countdown{
+  background:var(--surface-2); border:1px solid var(--line); border-radius:14px;
+  padding:18px 24px; min-width:230px; box-shadow:var(--shadow);
+}
+.countdown .num{font-size:52px; font-weight:600; line-height:1; color:var(--amber)}
+.countdown .unit{font-size:15px; color:var(--ink-soft); margin-left:6px; font-family:"Noto Sans TC",sans-serif}
+.countdown .cap{font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin-bottom:8px}
+.countdown .sub{font-size:13px; color:var(--ink-soft); margin-top:8px; border-top:1px solid var(--line); padding-top:8px}
+
+/* ---------- nav ---------- */
+nav{position:sticky; top:0; z-index:20; background:var(--surface);
+  border-bottom:1px solid var(--line); box-shadow:0 1px 0 var(--line-soft)}
+.nav-in{max-width:1120px; margin:0 auto; padding:0 24px; display:flex; gap:4px; overflow-x:auto}
+nav a{padding:13px 14px; font-size:14px; font-weight:500; color:var(--ink-soft);
+  text-decoration:none; white-space:nowrap; border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink); border-bottom-color:var(--line)}
+nav a:focus-visible{outline:2px solid var(--teal); outline-offset:-3px; border-radius:4px}
+
+/* ---------- sections ---------- */
+section{padding-top:56px; scroll-margin-top:56px}
+.sec-head{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;
+  border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:26px}
+.sec-head h2{font-size:25px; font-weight:700}
+.sec-head .note{font-size:13px; color:var(--ink-faint); margin-left:auto}
+p{margin:0 0 14px}
+.lede{max-width:68ch; color:var(--ink-soft)}
+
+/* ---------- tiles ---------- */
+.tiles{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:28px}
+.tile{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px; box-shadow:var(--shadow)}
+.tile .k{font-size:11px; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700}
+.tile .v{font-size:34px; font-weight:600; line-height:1.15; margin-top:6px}
+.tile .d{font-size:13px; color:var(--ink-soft); margin-top:4px; line-height:1.55}
+.tile.hot .v{color:var(--amber)}
+.tile.cool .v{color:var(--teal)}
+
+/* ---------- table ---------- */
+.scroll{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface); box-shadow:var(--shadow)}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:14.5px}
+th,td{text-align:left; padding:12px 16px; border-bottom:1px solid var(--line-soft); vertical-align:top}
+thead th{background:var(--surface-2); font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-soft); font-weight:700; border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums; white-space:nowrap}
+
+/* ---------- verdict chips ---------- */
+.chip{display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:700;
+  line-height:1.6; white-space:nowrap}
+.chip.ok{background:var(--good-wash); color:var(--good)}
+.chip.no{background:var(--crit-wash); color:var(--crit)}
+.chip.mid{background:var(--amber-wash); color:var(--amber)}
+
+/* ---------- timeline ---------- */
+.phases{display:flex; flex-direction:column; gap:0}
+.phase{display:grid; grid-template-columns:112px 1fr; gap:24px; position:relative;
+  padding:20px 0; border-bottom:1px solid var(--line-soft)}
+.phase:last-child{border-bottom:none}
+.phase .when{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink-soft);
+  font-variant-numeric:tabular-nums}
+.phase .when .step{display:block; font-size:26px; font-weight:600; color:var(--amber); line-height:1}
+.phase .when .days{display:block; font-size:11px; color:var(--ink-faint); margin-top:4px; letter-spacing:.08em}
+.phase h3{font-size:18px; font-weight:700; margin-bottom:6px}
+.phase ul{margin:8px 0 0; padding-left:19px; color:var(--ink-soft); font-size:14.5px}
+.phase li{margin-bottom:5px}
+.phase .flag{display:inline-block; font-size:12px; font-weight:700; padding:2px 9px;
+  border-radius:999px; background:var(--teal-wash); color:var(--teal); margin-left:8px; vertical-align:2px}
+
+/* ---------- checklist / facilities ---------- */
+.meter{display:flex; align-items:center; gap:14px; margin-bottom:20px; flex-wrap:wrap}
+.bar{flex:1; min-width:200px; height:9px; background:var(--surface-2); border-radius:999px;
+  overflow:hidden; border:1px solid var(--line)}
+.bar > i{display:block; height:100%; width:0; background:var(--amber); transition:width .3s ease}
+.meter .read{font-family:"IBM Plex Mono",monospace; font-size:14px; color:var(--ink-soft);
+  font-variant-numeric:tabular-nums}
+.btn{font:inherit; font-size:13px; padding:5px 13px; border-radius:8px; cursor:pointer;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-soft)}
+.btn:hover{border-color:var(--ink-faint); color:var(--ink)}
+.btn:focus-visible{outline:2px solid var(--teal); outline-offset:2px}
+
+.facs{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px}
+.fac{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:16px 18px; box-shadow:var(--shadow); display:flex; gap:13px; align-items:flex-start}
+.fac.done{border-color:var(--good); background:linear-gradient(var(--good-wash),var(--good-wash)) padding-box, var(--surface)}
+.fac input[type=checkbox]{margin-top:5px; width:17px; height:17px; accent-color:var(--teal); flex:0 0 auto; cursor:pointer}
+.fac .id{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-faint); font-weight:600}
+.fac h4{font-size:16.5px; font-weight:700; margin:2px 0 4px}
+.fac .type{font-size:12.5px; color:var(--teal); font-weight:700; margin-bottom:7px}
+.fac .key{font-size:13.5px; color:var(--ink-soft); line-height:1.65}
+.fac .key b{color:var(--ink); font-weight:700}
+.fac .spec{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--ink-faint);
+  margin-top:8px; padding-top:7px; border-top:1px dashed var(--line)}
+
+/* ---------- script table ---------- */
+.script td.t{font-family:"IBM Plex Mono",monospace; white-space:nowrap; color:var(--amber); font-weight:600}
+
+/* ---------- check items ---------- */
+.checks{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:22px}
+.checkgroup{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+  padding:18px 20px; box-shadow:var(--shadow)}
+.checkgroup h4{font-size:15px; font-weight:700; margin-bottom:12px; padding-bottom:9px;
+  border-bottom:1px solid var(--line-soft); display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+.checkgroup h4 span{font-size:11px; letter-spacing:.12em; color:var(--ink-faint); font-weight:700}
+.checkgroup label{display:flex; gap:10px; align-items:flex-start; font-size:14px;
+  color:var(--ink-soft); padding:5px 0; cursor:pointer; line-height:1.6}
+.checkgroup label:hover{color:var(--ink)}
+.checkgroup input[type=checkbox]{margin-top:4px; width:16px; height:16px; accent-color:var(--teal); flex:0 0 auto; cursor:pointer}
+.checkgroup input:checked + span{color:var(--ink-faint); text-decoration:line-through}
+
+/* ---------- callout ---------- */
+.call{border-left:3px solid var(--amber); background:var(--amber-wash);
+  padding:14px 18px; border-radius:0 10px 10px 0; margin:20px 0; font-size:14.5px; color:var(--ink)}
+.call.danger{border-left-color:var(--crit); background:var(--crit-wash)}
+.call.calm{border-left-color:var(--teal); background:var(--teal-wash)}
+.call b{font-weight:700}
+.call p:last-child{margin-bottom:0}
+
+footer{margin-top:64px; padding-top:22px; border-top:1px solid var(--line);
+  font-size:13px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+a{color:var(--teal)}
+@media (max-width:640px){
+  .phase{grid-template-columns:1fr; gap:8px}
+  .hero-in{padding:32px 20px 26px}
+  .wrap{padding:0 20px 72px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <div class="eyebrow">115 年度臺北市兒童新樂園 · 數位設計競賽</div>
+      <h1>奪標作戰中心</h1>
+      <p>國小組 ‧ Minecraft 教育版 ‧ 目標前三名或佳作。這頁把辦法拆成可執行的每日動作，勾選狀態會留在這台裝置上。</p>
+    </div>
+    <div class="countdown">
+      <div class="cap">距收件截止</div>
+      <div><span class="num mono" id="days">—</span><span class="unit">天</span></div>
+      <div class="sub">115/10/11（日）下午 5:00 前<br>逾期不予受理</div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-in">
+    <a href="#math">分數數學</a>
+    <a href="#plan">48 天時程</a>
+    <a href="#facs">13 項設施</a>
+    <a href="#video">影片作戰</a>
+    <a href="#creative">創意 40 分</a>
+    <a href="#check">交件自檢</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- ============ 分數數學 ============ -->
+<section id="math">
+  <div class="sec-head">
+    <h2>分數數學：為什麼 13 項不能少做</h2>
+    <div class="note">決賽採專業評審 100%，初賽成績不帶入</div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile hot">
+      <div class="k">指定設施配分</div>
+      <div class="v mono">52</div>
+      <div class="d">13 項 × 每項 4 分，佔決賽總分的一半以上</div>
+    </div>
+    <div class="tile">
+      <div class="k">結構與完成度</div>
+      <div class="v mono">60</div>
+      <div class="d">設施 52 ＋ 可進入可遊玩 4 ＋ 完整繳交 4</div>
+    </div>
+    <div class="tile cool">
+      <div class="k">創意設計與展示</div>
+      <div class="v mono">40</div>
+      <div class="d">創意 10、美感 8、遊玩 8、理念 7、導覽 7</div>
+    </div>
+    <div class="tile hot">
+      <div class="k">第一名最低門檻</div>
+      <div class="v mono">85</div>
+      <div class="d">第二名 80、第三名 75、佳作 70，未達即從缺</div>
+    </div>
+  </div>
+
+  <p class="lede">辦法第十二點訂了「最低錄取標準」，所以名次不是排名前幾就有，是要跨過絕對分數線。把幾種情境代進去算，路徑其實只有一條。</p>
+
+  <div class="scroll">
+    <table>
+      <thead>
+        <tr><th>建造情境</th><th class="num">結構分</th><th class="num">創意分需求</th><th>能拿到什麼</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>13 項全部達 4 分</td>
+          <td class="num">60</td>
+          <td class="num">25 / 40</td>
+          <td><span class="chip ok">第一名射程內</span></td>
+        </tr>
+        <tr>
+          <td>13 項全做，平均 3.5 分</td>
+          <td class="num">53.5</td>
+          <td class="num">31.5 / 40</td>
+          <td><span class="chip mid">要拚，第二三名可期</span></td>
+        </tr>
+        <tr>
+          <td>13 項全做，平均 3 分</td>
+          <td class="num">47</td>
+          <td class="num">38 / 40</td>
+          <td><span class="chip no">幾乎不可能拿第一</span></td>
+        </tr>
+        <tr>
+          <td>只做 10 項且全滿分</td>
+          <td class="num">48</td>
+          <td class="num">37 / 40</td>
+          <td><span class="chip no">天花板約 88，風險極高</span></td>
+        </tr>
+        <tr>
+          <td>只做 8 項且全滿分</td>
+          <td class="num">40</td>
+          <td class="num">40 / 40</td>
+          <td><span class="chip no">天花板就是 80</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="call">
+    <p><b>結論一：13 項全做是入場券，不是加分項。</b>少做一項不只丟 4 分，是直接把獎項天花板往下砍。</p>
+    <p><b>結論二：真正的勝負在「3 分和 4 分的差距」。</b>辦法把 4 分定義為「比例、主要輪廓及結構合理，細節完整，且玩家可正常接近、觀看或進入適當區域」；3 分是「可明確辨識，但比例、座艙、支架、軌道、入口或周邊細節仍有少部分不足」。差別就在<b>座艙、支架、軌道、入口、周邊</b>這五個字眼——每一項設施都要把這五樣做出來。</p>
+  </div>
+
+  <div class="call calm">
+    <p><b>初賽怎麼看？</b>初賽＝人氣票 50% ＋ 專業初評 50%，各組取前 100 名進決賽。人氣分是相對值（你的票數 ÷ 該組最高票數 × 100），但決賽時初賽成績歸零。所以人氣票的唯一任務是「確保擠進前 100」，不必打到頭破血流——把時間放在建築品質上，回報率高得多。</p>
+  </div>
+</section>
+
+<!-- ============ 時程 ============ -->
+<section id="plan">
+  <div class="sec-head">
+    <h2>48 天倒數作戰時程</h2>
+    <div class="note">8/24 起算，10/10 完工，留 1 天緩衝</div>
+  </div>
+  <p class="lede">這是一條有先後依賴的鏈：沒有比例基準就不能開工，沒有建完就沒得錄影，沒有演練就錄不出 8 分鐘內講完 13 項的影片。編號代表順序，不能跳。</p>
+
+  <div class="phases">
+
+    <div class="phase">
+      <div class="when"><span class="step mono">01</span><span class="days">8/24 – 8/31</span></div>
+      <div>
+        <h3>定基準與畫藍圖<span class="flag">最容易被跳過</span></h3>
+        <p class="lede">這一週不蓋任何東西，但決定後面 40 天會不會白做。</p>
+        <ul>
+          <li>下載主辦提供的<b>教育版指定地圖</b>（.mcworld），確認能正常開啟、進得去建造區</li>
+          <li>到地圖的「導覽區」把 13 個指令方塊全部按過一次，記下每項設施對應的建造區座標與白色混凝土邊界範圍</li>
+          <li><b>決定比例尺並寫下來</b>：建議 1 方塊 = 1 公尺，摩天輪輪圈直徑就是 40 格。之後每一項都用摩天輪目測比對</li>
+          <li>上兒童新樂園官網與 Google 地圖衛星圖，把 13 項設施的<b>樓層與相對位置</b>畫成一張手繪平面圖（1 樓 4 項、3 樓 9 項，其中 4 項有頂棚）</li>
+          <li>先填報名表單、下載檔案，確認雲端硬碟空間與分享權限設定方式</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">02</span><span class="days">9/1 – 9/14</span></div>
+      <div>
+        <h3>五大地標衝刺</h3>
+        <p class="lede">先做辨識度最高、也最容易讓評審一眼認出的五項。這五項做好，作品氣勢就定了。</p>
+        <ul>
+          <li>摩天輪（唯一有官方數據，比例錯了最刺眼）</li>
+          <li>宇宙迴旋（八大行星座艙，園區最上鏡）</li>
+          <li>叢林吼吼樹屋（垂直塔體，撐起天際線）</li>
+          <li>尋寶船（木造戰船，造型辨識度高）</li>
+          <li>海洋總動員（旋轉木馬，可直接接你已寫好的 MakeCode 旋轉程式）</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">03</span><span class="days">9/15 – 9/24</span></div>
+      <div>
+        <h3>補齊其餘八項與園區骨架</h3>
+        <ul>
+          <li>飛天神奇號、星空小飛碟、轉轉咖啡杯、巡弋飛椅、小飛龍、幸福碰碰車</li>
+          <li><b>銀河號單軌繞園一圈</b>——這條線定義園區輪廓，不能只做一小段</li>
+          <li><b>魔法星際飛車沿 3 樓外緣牆架設</b>——這是它最獨特的空間特徵，做對了評審一眼認得</li>
+          <li>做出 1 樓與 3 樓的<b>高低差</b>與連通樓梯／電梯。沒有分層，整個園區就不像</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">04</span><span class="days">9/25 – 9/30</span></div>
+      <div>
+        <h3>美感、互動與無障礙<span class="flag">創意 40 分在這裡</span></h3>
+        <ul>
+          <li>統一色彩與材質語言（全園區用同一組主色，不要每項各自為政）</li>
+          <li>夜間燈光：螢光石、海燈籠、燈條，讓場景有樂園氛圍</li>
+          <li>景觀細節：樹木、花圃、長椅、垃圾桶、指標告示牌、排隊動線圍欄</li>
+          <li>互動功能：紅石 / MakeCode / NPC 至少各一處，且必須<b>穩定啟動</b></li>
+          <li>無障礙設計：斜坡、輪椅動線，特別是海洋總動員的<b>潛水艇造型輪椅座艙</b>（這是官方特徵，做出來就是送分）</li>
+          <li>設計一條清楚的參觀動線，讓評審自己走也不會迷路</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">05</span><span class="days">10/1 – 10/5</span></div>
+      <div>
+        <h3>逐字稿與彩排</h3>
+        <ul>
+          <li>依下方時間表寫出完整逐字稿，念一次計時，超過就砍字</li>
+          <li>規劃飛行路線：從哪裡起飛、經過順序、在哪裡停多久</li>
+          <li><b>至少完整彩排 3 次</b>，每次計時。目標落在 7:20–7:40</li>
+          <li>檢查遊戲內設定：關閉不必要的 HUD、調整視野距離、確認畫面是橫式</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">06</span><span class="days">10/6 – 10/8</span></div>
+      <div>
+        <h3>正式錄影<span class="flag">單次連續，不得剪輯</span></h3>
+        <ul>
+          <li>預留錄 <b>3 到 5 次</b>的時間，取最好的一次。第一次一定會出錯，這是正常的</li>
+          <li>錄影前關閉通知、確認麥克風、確認電腦效能足以流暢飛行</li>
+          <li>錄完立刻檢查：長度在 5–8 分鐘內、橫式、聲音清楚、畫面沒有卡頓</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">07</span><span class="days">10/9 – 10/10</span></div>
+      <div>
+        <h3>上傳、開權限、逐項自檢</h3>
+        <ul>
+          <li>地圖檔與影片上傳雲端，<b>用無痕視窗測試連結能不能開</b>（這是最常見的失誤）</li>
+          <li>檔名依報名表單所示格式命名</li>
+          <li>把本頁最下方的交件自檢表逐項勾完</li>
+          <li>送出報名表單，截圖存證</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="when"><span class="step mono">08</span><span class="days">10/11</span></div>
+      <div>
+        <h3>緩衝日</h3>
+        <p class="lede">這天什麼都不該做。留著是為了應付上傳失敗、連結失效、臨時發現漏講——不是拿來趕工的。下午 5 點截止，不要挑戰系統塞車。</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="call calm">
+    <p><b>票選期間的提醒：</b>10/21 起開放人氣票選，11/4 中午 12 時截止計入初賽。這段時間作品已經送出、不能再改，把力氣放在請親友投票即可。11/12 公告入圍名單，11/24 公告得獎。<b>雲端連結必須維持到 11/24</b>，中間千萬不要刪檔或改權限。</p>
+  </div>
+</section>
+
+<!-- ============ 13 項設施 ============ -->
+<section id="facs">
+  <div class="sec-head">
+    <h2>13 項設施建造攻略</h2>
+    <div class="note">勾選＝該項已達 4 分水準</div>
+  </div>
+  <p class="lede">每張卡片列的是「讓評審一眼認出來」的核心特徵。官方公布的數據只有摩天輪一項，其餘全部沒有尺寸資料——所以務必用摩天輪當比例錨點目測推算，不要憑空編數字。</p>
+
+  <div class="meter">
+    <div class="bar"><i id="facbar"></i></div>
+    <div class="read" id="facread">0 / 13</div>
+    <button class="btn" id="facreset" type="button">清除勾選</button>
+  </div>
+
+  <div class="facs" id="faclist">
+
+    <label class="fac"><input type="checkbox" data-k="f1">
+      <div>
+        <div class="id">01</div><h4>海洋總動員</h4>
+        <div class="type">音樂旋轉木馬 · 1 樓</div>
+        <div class="key">座騎<b>不是白馬</b>，是海豚、海獅、海馬、鯊魚、章魚等海洋生物。頂棚傘蓋要有彩繪感。另設 <b>1 座潛水艇造型座艙</b>供輪椅推入——這是官方列出的無障礙特徵，做出來同時吃「設施辨識」與「公共參與」兩項分數。
+        <div class="spec">中央柱 + 傘蓋 + 座騎 + 圍欄；可接 MakeCode 旋轉動畫</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f2">
+      <div>
+        <div class="id">02</div><h4>摩天輪</h4>
+        <div class="type">密閉座艙摩天輪 · 3 樓露天</div>
+        <div class="key">全園最大地標，也是<b>唯一有官方數據</b>的一項，比例做錯最刺眼。27 個座艙沿輪圈均分，每個座艙<b>顏色／圖案都不同</b>（原為 12 樣臺灣水果彩繪，近年改為卡通角色主題，做成「27 個彩色車廂」兩者都成立）。
+        <div class="spec">直徑 40 m → 40 格 · 27 座艙（約每 13.3°一個）· 每艙 6 人</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f3">
+      <div>
+        <div class="id">03</div><h4>銀河號</h4>
+        <div class="type">單軌遊園列車 · 環繞 3 樓</div>
+        <div class="key">7 節空調車廂的單軌列車，<b>軌道要真的繞園區一圈</b>並架高。辦法的辨識重點寫明「車站及園區串聯關係完整」——所以車站、月台、上下車動線都要做，不能只放一段軌道。
+        <div class="spec">7 車廂 · 每廂 6 人（首節 4 人）· 軌道長度無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f4">
+      <div>
+        <div class="id">04</div><h4>飛天神奇號</h4>
+        <div class="type">迴旋舉昇巴士 · 1 樓</div>
+        <div class="key"><b>巴士造型</b>的旋轉升降設施，現況為黃色主題巴士，最高點有<b>臺灣黑熊造型高舉雙臂</b>。中央支撐塔 + 放射狀懸臂 + 巴士車廂，升降意象要看得出來。
+        <div class="spec">每排 3 人 · 台數與舉昇高度無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f5">
+      <div>
+        <div class="id">05</div><h4>宇宙迴旋</h4>
+        <div class="type">輻射飛椅 · 3 樓露天</div>
+        <div class="key">主題是<b>八大行星環繞太陽</b>：中央做太陽造型主體，每個座艙做成一顆行星（土星要有環）。這是全園最上鏡的一項，值得多花時間，美感分好拿。
+        <div class="spec">每艙 1 人 · 座艙數無官方數據（八大行星主題可做 8 個）</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f6">
+      <div>
+        <div class="id">06</div><h4>星空小飛碟</h4>
+        <div class="type">自控旋轉小飛機 · 3 樓露天</div>
+        <div class="key">飛碟造型座艙<b>繽紛多色</b>環繞中央軸呈圓形配置，乘客可自行升降。辨識重點是「圓形配置與座艙」，所以圓要圓、間距要均勻，星空裝飾（星星、月亮）要做。
+        <div class="spec">每艙 2 人 · 座艙數無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f7">
+      <div>
+        <div class="id">07</div><h4>轉轉咖啡杯</h4>
+        <div class="type">公轉＋自轉咖啡杯 · 3 樓頂棚</div>
+        <div class="key">粉色系夢幻主題，杯體 + 大圓盤 + 中央裝飾柱。<b>這一項有頂棚，屋頂一定要做</b>——沒做屋頂就不像。每個杯子的杯耳、杯口造型是辨識關鍵。
+        <div class="spec">每杯 4 人 · 杯數無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f8">
+      <div>
+        <div class="id">08</div><h4>巡弋飛椅</h4>
+        <div class="type">旋轉升降座艙 · 3 樓頂棚</div>
+        <div class="key">不是傳統鏈條飛椅。意象是「<b>飛艦起飛</b>」：中央做飛艦／太空船造型主體，四周環繞小飛碟座艙。辦法特別點名要有「<b>安全區界線</b>」，記得畫出地面圍欄或標線。
+        <div class="spec">每艙 4 人 · 有頂棚 · 座艙數無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f9">
+      <div>
+        <div class="id">09</div><h4>尋寶船</h4>
+        <div class="type">海盜船擺盪 · 1 樓夢想海</div>
+        <div class="key"><b>仿木造古戰船</b>：木紋船身、船首船尾翹起、桅杆、船帆、海盜旗。辨識重點寫明「擺盪支架」——兩側的 A 字形支架與吊臂一定要做出來，只做船身會被判 3 分。
+        <div class="spec">每排 5 人 · 排數與擺盪高度無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f10">
+      <div>
+        <div class="id">10</div><h4>魔法星際飛車</h4>
+        <div class="type">科幻主題雲霄飛車 · 3 樓外緣</div>
+        <div class="key">最獨特的空間特徵是<b>軌道沿著園區 3 樓外緣邊牆架設</b>，坡度起伏不大、以迴旋與轉彎為主。做對這個「貼牆」關係，辨識度立刻拉滿。起終點站與月台不能省。
+        <div class="spec">每車 4 人 · 軌道長度與高度無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f11">
+      <div>
+        <div class="id">11</div><h4>小飛龍</h4>
+        <div class="type">傾斜轉盤旋轉 · 3 樓頂棚</div>
+        <div class="key">主題是「<b>四條飛龍互相追逐</b>」：4 組龍造型載具（龍頭、龍身、龍尾）裝在可傾斜的轉盤上。龍的造型是全部辨識度的來源，值得單獨花半天雕。有頂棚。
+        <div class="spec">4 組載具 · 每艙 2 人 · 轉盤直徑無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f12">
+      <div>
+        <div class="id">12</div><h4>幸福碰碰車</h4>
+        <div class="type">碰碰車 · 3 樓頂棚</div>
+        <div class="key">辨識重點是「<b>遮棚或場館、車道範圍、圍欄、入口</b>」——場地本身比車還重要。做出平坦地板、四周圍欄、上方通電天花板網、明確的入口與排隊區，再放上五顏六色的跑車造型車體。
+        <div class="spec">每車 2 人 · 場地尺寸與車輛數無官方數據</div></div>
+      </div></label>
+
+    <label class="fac"><input type="checkbox" data-k="f13">
+      <div>
+        <div class="id">13</div><h4>叢林吼吼樹屋</h4>
+        <div class="type">自由落體塔 · 1 樓</div>
+        <div class="key">整座塔用<b>叢林樹屋</b>包裝：樹幹、樹葉、木屋元素環繞升降塔柱。辨識重點明列「<b>升降結構及出入口</b>」，所以塔柱導軌、座椅、地面出入口都要做。這是撐起園區天際線的垂直量體。
+        <div class="spec">每艙 1 人 · 塔高與座位數無官方數據</div></div>
+      </div></label>
+
+  </div>
+
+  <div class="call danger">
+    <p><b>三個會直接扣分的雷區：</b></p>
+    <p>① <b>超出白色混凝土邊界或蓋錯區域</b>——「可進入可遊玩」4 分裡有 1 分是「設施建造於指定位置且未蓋錯區域」，另 1 分是「未超出指定建築範圍」。蓋歪了直接丟 2 分。</p>
+    <p>② <b>沒做出 1 樓與 3 樓的高低差</b>——樓層是這個園區的靈魂，全部攤平在同一個平面上，「園區配置與建築完整性」會很難看。</p>
+    <p>③ <b>用了生成工具卻沒實質修改也沒說明</b>——辦法寫明未清楚揭露或缺乏實質創作者，相關項目得不予計分，情節重大者取消資格。教育版的「遊樂園擴充程式」可以用，但一定要改造，而且要在影片裡講清楚改了什麼。</p>
+  </div>
+</section>
+
+<!-- ============ 影片 ============ -->
+<section id="video">
+  <div class="sec-head">
+    <h2>影片作戰：8 分鐘講完 13 項</h2>
+    <div class="note">橫式 · 單次連續 · 不得剪輯拼接後製加字幕</div>
+  </div>
+
+  <div class="tiles">
+    <div class="tile hot"><div class="k">目標長度</div><div class="v mono">7:30</div><div class="d">規定 5–8 分鐘，落在 7:20–7:40 最安全</div></div>
+    <div class="tile"><div class="k">每項設施平均</div><div class="v mono">19秒</div><div class="d">扣掉開場與其他必講內容後的實際額度</div></div>
+    <div class="tile cool"><div class="k">建議彩排次數</div><div class="v mono">3+</div><div class="d">正式錄影再預留 3–5 次重錄</div></div>
+  </div>
+
+  <p class="lede">影片同時餵養兩張評分表：初賽「導覽表達與資料完整性」20 分，決賽「導覽表達與展示價值」7 分。而且辦法補充說明寫得很明白——<b>影片未說明建築方式或改善建議，導覽項目最高只能拿 3 分</b>。這兩段話不能漏。</p>
+
+  <div class="scroll">
+    <table class="script">
+      <thead><tr><th>時間</th><th>段落</th><th>一定要出現的話</th></tr></thead>
+      <tbody>
+        <tr><td class="t">0:00–0:35</td><td><b>基本介紹</b></td>
+          <td>參賽者姓名、就讀年級、使用 Minecraft <b>教育版</b>、作品名稱、創作主題、整體設計理念（一句話講清楚你想做一個什麼樣的樂園）</td></tr>
+        <tr><td class="t">0:35–4:40</td><td><b>13 項設施依序導覽</b></td>
+          <td>每項約 19 秒：「這是〇〇〇，它是一座〇〇型設施。我做了〇〇（核心辨識特徵），完成度是〇〇。」<b>依編號順序</b>，不要跳來跳去，評審要對照名單打分</td></tr>
+        <tr><td class="t">4:40–5:35</td><td><b>建築方式（至少 3 項）</b></td>
+          <td>挑三項講具體技法：尺寸換算（摩天輪 40 公尺＝40 格怎麼定的）、圓弧怎麼畫、鏡像／旋轉怎麼用、材料為什麼選這個、MakeCode 或紅石怎麼寫。<b>要講「怎麼做到的」，不是「我做了什麼」</b></td></tr>
+        <tr><td class="t">5:35–6:15</td><td><b>問題與解決（至少 1 項）</b></td>
+          <td>完整四段：遇到什麼困難 → 原因是什麼 → 我怎麼測試與修改 → 最後結果如何。<b>並且要在畫面上呈現完成結果</b></td></tr>
+        <tr><td class="t">6:15–7:00</td><td><b>未來設施或改善建議（至少 1 項）</b></td>
+          <td>五要素缺一不可：使用對象是誰、玩法或使用方式、設計理由、預期效益、以及安全與可行性。方向可挑安全、動線、遮陽休息、無障礙、環保、教育、AI 導覽、親子共遊</td></tr>
+        <tr><td class="t">7:00–7:20</td><td><b>來源與工具</b></td>
+          <td>逐一唸出：用了哪些材質包／模組／擴充程式／AI 工具，名稱、來源、用途、使用範圍，以及<b>你自己實質修改了什麼</b></td></tr>
+        <tr><td class="t">7:20–7:30</td><td><b>結尾</b></td>
+          <td>一句總結 + 謝謝評審。不要拖</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="call">
+    <p><b>錄影前的五個檢查：</b>① 畫面是橫式 ② 遊戲設定關掉多餘 HUD、視野距離拉遠 ③ 麥克風測過音量 ④ 飛行路線已經走順（用旁觀者模式或創造模式飛行最穩）⑤ 手邊有逐字稿與計時器，但講的時候不要照唸到沒有感情。</p>
+  </div>
+  <div class="call danger">
+    <p><b>絕對不能做：</b>剪輯、拼接兩段影片、加轉場特效、加字幕、加背景音樂後製、直式拍攝。任何一項都可能讓影片被判不符規範，而「影片無法播放或權限未開放」會讓影片完整性與導覽表達<b>雙雙拿 0 分</b>。</p>
+  </div>
+</section>
+
+<!-- ============ 創意 40 ============ -->
+<section id="creative">
+  <div class="sec-head">
+    <h2>創意 40 分怎麼撿</h2>
+    <div class="note">決賽第二大區塊，也是最容易被忽略的</div>
+  </div>
+  <p class="lede">很多人把全部力氣花在蓋建築，結果創意分只拿一半。這 40 分有明確的細項配分，每一條都可以事先準備。</p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>評分項目</th><th class="num">配分</th><th>具體要做什麼</th></tr></thead>
+      <tbody>
+        <tr><td><b>創意與未來感</b></td><td class="num">10</td>
+          <td>未來設施提案要「具體呈現」——不能只用嘴巴講，要<b>在地圖裡真的蓋出來</b>（4 分）。加上 Minecraft 呈現與創新方法（3 分）、可行性安全與使用者需求（3 分）</td></tr>
+        <tr><td><b>美感與場景氛圍</b></td><td class="num">8</td>
+          <td>整體風格一致（3）、色彩材質燈光搭配（3）、景觀細節與樂園氛圍（2）。<b>全園區訂一組主色</b>，加夜間燈光、花圃、長椅、指標</td></tr>
+        <tr><td><b>遊玩體驗與探索感</b></td><td class="num">8</td>
+          <td>展示順序與節奏（3）、任務與互動設計（3）、自由探索（2）。互動不限程式，動線、情境、建築機關都算，但<b>必須穩定執行</b></td></tr>
+        <tr><td><b>設計理念與公共參與</b></td><td class="num">7</td>
+          <td>兒童與家庭觀點（2）、安全休息通行或無障礙（2）、環保教育或城市公共價值（2）、設計理由清楚（1）。<b>無障礙是最好拿的一項</b></td></tr>
+        <tr><td><b>導覽表達與展示價值</b></td><td class="num">7</td>
+          <td>內容結構與口語表達（2）、建築方式（2）、未來建議（2）、畫面對應時間控制來源交代（1）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="call calm">
+    <p><b>三個高投報率的動作：</b></p>
+    <p>① <b>把海洋總動員的潛水艇輪椅座艙做出來</b>——它同時是官方設施特徵（設施分）與無障礙設計（公共參與分），一個建築吃兩處分數，而且大部分參賽者不會注意到。</p>
+    <p>② <b>真的蓋出你的未來設施提案</b>——辦法寫「未來設施或改善方案<b>具體呈現</b>」才給到 4 分。在指定範圍內留一塊空地蓋出來，比在影片裡講十句都有用。</p>
+    <p>③ <b>全園區統一色彩與材質</b>——這是最省力的美感分。先決定一組主色（例如以海洋藍 + 陽光黃為基調），所有設施的圍欄、地板、屋頂都從這組裡選。</p>
+  </div>
+</section>
+
+<!-- ============ 自檢 ============ -->
+<section id="check">
+  <div class="sec-head">
+    <h2>交件前自檢表</h2>
+    <div class="note">依辦法與附件三評分表逆向製作</div>
+  </div>
+
+  <div class="meter">
+    <div class="bar"><i id="chkbar"></i></div>
+    <div class="read" id="chkread">0 / 0</div>
+    <button class="btn" id="chkreset" type="button">清除勾選</button>
+  </div>
+
+  <div class="checks" id="checklist">
+
+    <div class="checkgroup">
+      <h4>地圖與檔案 <span>資料初審</span></h4>
+      <label><input type="checkbox" data-k="c1"><span>使用主辦單位提供的教育版指定競賽地圖，未自建空白世界</span></label>
+      <label><input type="checkbox" data-k="c2"><span>所有建築都在白色混凝土邊界內，未跨區、未蓋錯位置</span></label>
+      <label><input type="checkbox" data-k="c3"><span>地圖可正常開啟、進入、移動，主要結構都能被檢視</span></label>
+      <label><input type="checkbox" data-k="c4"><span>檔名符合報名表單所示格式</span></label>
+      <label><input type="checkbox" data-k="c5"><span>雲端連結已開放檢視權限，用無痕視窗測試過可下載</span></label>
+      <label><input type="checkbox" data-k="c6"><span>已自行保留地圖、影片、程式的完整備份</span></label>
+    </div>
+
+    <div class="checkgroup">
+      <h4>影片規範 <span>最常被判不符</span></h4>
+      <label><input type="checkbox" data-k="v1"><span>長度在 5 至 8 分鐘之間（建議 7:20–7:40）</span></label>
+      <label><input type="checkbox" data-k="v2"><span>橫式畫面，非直式</span></label>
+      <label><input type="checkbox" data-k="v3"><span>單次連續錄影，未剪輯、未拼接、未後製、未加字幕</span></label>
+      <label><input type="checkbox" data-k="v4"><span>已依編號順序導覽 13 項設施並說明完成情形</span></label>
+      <label><input type="checkbox" data-k="v5"><span>已說明至少 3 項設施的具體建築方式</span></label>
+      <label><input type="checkbox" data-k="v6"><span>已說明至少 1 項問題、原因分析與解決方式，並呈現結果</span></label>
+      <label><input type="checkbox" data-k="v7"><span>已提出至少 1 項未來設施或改善建議，含對象、玩法、理由、效益</span></label>
+      <label><input type="checkbox" data-k="v8"><span>已交代所有工具、素材、AI 的名稱、來源、用途與使用範圍</span></label>
+      <label><input type="checkbox" data-k="v9"><span>雲端影片連結可正常播放，權限已開放</span></label>
+    </div>
+
+    <div class="checkgroup">
+      <h4>作品內容 <span>決賽評分</span></h4>
+      <label><input type="checkbox" data-k="w1"><span>13 項設施全數完成，每項的座艙、支架、軌道、入口、周邊都有做</span></label>
+      <label><input type="checkbox" data-k="w2"><span>做出 1 樓與 3 樓的高低差與連通動線</span></label>
+      <label><input type="checkbox" data-k="w3"><span>紅石／MakeCode／NPC 互動功能實測可穩定啟動</span></label>
+      <label><input type="checkbox" data-k="w4"><span>未來設施提案已在地圖中實際蓋出來，不只是口頭說明</span></label>
+      <label><input type="checkbox" data-k="w5"><span>全園區色彩、材質、燈光風格一致</span></label>
+      <label><input type="checkbox" data-k="w6"><span>有無障礙設計（斜坡、輪椅動線、潛水艇座艙）</span></label>
+      <label><input type="checkbox" data-k="w7"><span>使用擴充程式或生成工具的部分都已實質修改並可說明</span></label>
+    </div>
+
+    <div class="checkgroup">
+      <h4>報名資料 <span>資格</span></h4>
+      <label><input type="checkbox" data-k="r1"><span>個人參賽，本人僅投稿 1 件作品，未重複報名</span></label>
+      <label><input type="checkbox" data-k="r2"><span>報名表填寫的 Minecraft 版本與實際使用版本一致</span></label>
+      <label><input type="checkbox" data-k="r3"><span>作品名稱、創作說明、授權聲明都已填寫完整</span></label>
+      <label><input type="checkbox" data-k="r4"><span>已在報名資料中說明所有外部素材與工具來源</span></label>
+      <label><input type="checkbox" data-k="r5"><span>已在 10/11 下午 5:00 前送出，並截圖存證</span></label>
+      <label><input type="checkbox" data-k="r6"><span>已排定行事曆提醒：雲端連結維持到 11/24 得獎公告日</span></label>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <div>資料來源：115 年度臺北市兒童新樂園數位設計競賽辦法（115/8/7 修訂）、兒童新樂園官網與臺北市政府 play4u 設施資料</div>
+  <div class="mono">勾選狀態儲存於本機瀏覽器</div>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "tcap-2026-progress";
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch(e) { state = {}; }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+
+  // countdown
+  var deadline = new Date("2026-10-11T17:00:00+08:00").getTime();
+  var el = document.getElementById("days");
+  var left = Math.ceil((deadline - Date.now()) / 86400000);
+  el.textContent = left > 0 ? left : 0;
+
+  function wire(listId, barId, readId, resetId){
+    var root = document.getElementById(listId);
+    var bar  = document.getElementById(barId);
+    var read = document.getElementById(readId);
+    var boxes = root.querySelectorAll("input[type=checkbox]");
+    function paint(){
+      var n = 0;
+      for (var i = 0; i < boxes.length; i++){
+        if (boxes[i].checked) n++;
+        var card = boxes[i].closest(".fac");
+        if (card) card.classList.toggle("done", boxes[i].checked);
+      }
+      bar.style.width = boxes.length ? (n / boxes.length * 100) + "%" : "0%";
+      read.textContent = n + " / " + boxes.length;
+    }
+    for (var i = 0; i < boxes.length; i++){
+      (function(b){
+        b.checked = !!state[b.dataset.k];
+        b.addEventListener("change", function(){ state[b.dataset.k] = b.checked; save(); paint(); });
+      })(boxes[i]);
+    }
+    document.getElementById(resetId).addEventListener("click", function(){
+      for (var i = 0; i < boxes.length; i++){ boxes[i].checked = false; delete state[boxes[i].dataset.k]; }
+      save(); paint();
+    });
+    paint();
+  }
+  wire("faclist", "facbar", "facread", "facreset");
+  wire("checklist", "chkbar", "chkread", "chkreset");
+})();
+</script>

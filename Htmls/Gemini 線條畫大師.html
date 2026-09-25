@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini 線條畫大師 - AI 線稿生成器</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background-color: #0f172a; /* slate-900 */
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+        /* Custom Checkbox */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #6366f1;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // ----------------------------------------------------------------------
+        // ICONS
+        // ----------------------------------------------------------------------
+        const Icon = ({ children, size = 20, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const Icons = {
+            PenTool: (props) => <Icon {...props}><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.586 7.586"/><circle cx="11" cy="11" r="2"/></Icon>,
+            Image: (props) => <Icon {...props}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></Icon>,
+            Type: (props) => <Icon {...props}><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></Icon>,
+            Copy: (props) => <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></Icon>,
+            Sparkles: (props) => <Icon {...props}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M9 5H5"/><path d="M19 19v4"/><path d="M23 21h-4"/></Icon>,
+            Settings: (props) => <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></Icon>,
+            Check: (props) => <Icon {...props}><polyline points="20 6 9 17 4 12"/></Icon>
+        };
+
+        // ----------------------------------------------------------------------
+        // DATA & CONSTANTS
+        // ----------------------------------------------------------------------
+
+        // 風格定義：每種風格對應不同的 Prompt 關鍵詞
+        const ART_STYLES = [
+            { id: 'simple', name: '可愛 Q 版 (Simple)', prompt: 'simple cute chibi style, thick lines, minimalist, coloring book page for kids, low detail' },
+            { id: 'sketch', name: '藝術素描 (Sketch)', prompt: 'rough pencil sketch, hand-drawn artistic strokes, hatching, expressive lines, sketchbook style' },
+            { id: 'intricate', name: '精細禪繞 (Intricate)', prompt: 'highly detailed zentangle style, mandala patterns, intricate line work, adult coloring book, fine lines' },
+            { id: 'comic', name: '美式漫畫 (Comic)', prompt: 'classic comic book ink style, bold outlines, dynamic hatching, graphic novel style, clean ink' },
+            { id: 'vector', name: '向量圖示 (Vector)', prompt: 'clean vector line art, continuous line, logo design style, sharp edges, no texture' },
+            { id: 'vintage', name: '復古版畫 (Vintage)', prompt: 'vintage woodcut style, engraving style, etching, detailed cross-hatching, old book illustration' }
+        ];
+
+        const TEXT_FONTS = [
+            { id: 'bubble', name: '泡泡字體 (Bubble)', prompt: 'bubble graffiti font, rounded letters' },
+            { id: 'serif', name: '優雅襯線 (Serif)', prompt: 'elegant serif font, classic typography' },
+            { id: 'bold', name: '粗黑體 (Bold)', prompt: 'bold sans-serif font, impactful, modern' },
+            { id: 'calligraphy', name: '手寫書法 (Script)', prompt: 'cursive calligraphy font, handwritten style' },
+            { id: 'pixel', name: '像素字體 (Pixel)', prompt: '8-bit pixel art font, retro gaming style' }
+        ];
+
+        // ----------------------------------------------------------------------
+        // COMPONENTS
+        // ----------------------------------------------------------------------
+
+        const Header = () => (
+            <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-20 shadow-lg">
+                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-indigo-500 p-2 rounded-xl rotate-3 shadow-lg shadow-indigo-500/20">
+                            <Icons.PenTool className="text-white w-6 h-6" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-white tracking-tight">Gemini 線條畫大師</h1>
+                            <p className="text-xs text-slate-400 font-medium">專注於生成高品質黑白線稿提示詞</p>
+                        </div>
+                    </div>
+                </div>
+            </header>
+        );
+
+        // UI 元件：輸入框標籤
+        const Label = ({ children, icon: IconComponent }) => (
+            <label className="block text-xs font-bold text-indigo-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+                {IconComponent && <IconComponent size={14} />}
+                {children}
+            </label>
+        );
+
+        // UI 元件：輸入欄位
+        const Input = ({ value, onChange, placeholder, className = "" }) => (
+            <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className={`w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${className}`}
+            />
+        );
+
+        // UI 元件：下拉選單
+        const Select = ({ value, onChange, options }) => (
+            <div className="relative">
+                <select
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-sm text-slate-200 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                >
+                    {options.map(opt => (
+                        <option key={opt.id} value={opt.id}>{opt.name}</option>
+                    ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none text-slate-500">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+            </div>
+        );
+
+        // ----------------------------------------------------------------------
+        // MAIN APP
+        // ----------------------------------------------------------------------
+
+        function App() {
+            // State
+            const [subject, setSubject] = useState('');
+            const [background, setBackground] = useState('');
+            const [styleId, setStyleId] = useState('simple');
+            const [details, setDetails] = useState('');
+            
+            // Text State
+            const [includeText, setIncludeText] = useState(false);
+            const [textContent, setTextContent] = useState('');
+            const [fontId, setFontId] = useState('bubble');
+
+            // Copy Feedback State
+            const [copied, setCopied] = useState(false);
+
+            // 產生 Prompt 的邏輯
+            const generatedPrompt = useMemo(() => {
+                const selectedStyle = ART_STYLES.find(s => s.id === styleId);
+                const selectedFont = TEXT_FONTS.find(f => f.id === fontId);
+
+                // 基礎結構
+                let promptParts = [];
+
+                // 1. 風格描述 (Style)
+                promptParts.push(`((${selectedStyle.prompt}))`);
+
+                // 2. 主題 (Subject) - 如果沒有輸入，給個預設值以免空白
+                const mainSubject = subject.trim() ? subject : "a cute character";
+                promptParts.push(`subject: ${mainSubject}`);
+
+                // 3. 額外細節 (Details)
+                if (details.trim()) {
+                    promptParts.push(details);
+                }
+
+                // 4. 文字處理 (Text)
+                if (includeText && textContent.trim()) {
+                    promptParts.push(`with text "${textContent}" written in ${selectedFont.prompt}`);
+                    promptParts.push("text must be clearly visible, black text");
+                } else {
+                    promptParts.push("no text, no letters");
+                }
+
+                // 5. 背景 (Background)
+                if (background.trim()) {
+                    promptParts.push(`background: ${background}, white background`);
+                } else {
+                    promptParts.push("isolated on pure white background");
+                }
+
+                // 6. 強制線條稿關鍵字 (Global Modifiers)
+                // 這些是為了確保產出是黑白線稿的核心咒語
+                const globalModifiers = [
+                    "black and white line art",
+                    "coloring book page style",
+                    "clean lines",
+                    "no shading",
+                    "no grayscale",
+                    "no colors",
+                    "high contrast",
+                    "2D flat"
+                ];
+                
+                return [...promptParts, ...globalModifiers].join(", ");
+            }, [subject, background, styleId, details, includeText, textContent, fontId]);
+
+
+            const handleCopy = () => {
+                navigator.clipboard.writeText(generatedPrompt);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    <Header />
+
+                    <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+                        
+                        {/* 左側：控制面板 (Builder) */}
+                        <div className="w-full lg:w-5/12 space-y-8 animate-slide-in">
+                            
+                            {/* 1. 基本設定 */}
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 backdrop-blur-sm">
+                                <h2 className="text-lg font-bold text-white mb-5 flex items-center gap-2">
+                                    <span className="bg-blue-600 w-2 h-6 rounded-full"></span>
+                                    畫面設定
+                                </h2>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label icon={Icons.Settings}>繪畫風格</Label>
+                                        <Select 
+                                            value={styleId} 
+                                            onChange={setStyleId} 
+                                            options={ART_STYLES} 
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label icon={Icons.Image}>主題描述 (Subject)</Label>
+                                        <Input 
+                                            value={subject} 
+                                            onChange={setSubject} 
+                                            placeholder="例如：一隻戴著耳機的貓、一座魔法城堡..." 
+                                        />
+                                        <p className="text-[10px] text-slate-500 mt-1">* 建議輸入英文以獲得最佳效果，但中文也可以。</p>
+                                    </div>
+
+                                    <div>
+                                        <Label icon={Icons.Sparkles}>背景環境 (Background)</Label>
+                                        <Input 
+                                            value={background} 
+                                            onChange={setBackground} 
+                                            placeholder="例如：森林、純白背景、充滿星星的夜空..." 
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>其他細節 (Details)</Label>
+                                        <Input 
+                                            value={details} 
+                                            onChange={setDetails} 
+                                            placeholder="例如：穿著太空衣、快樂的表情..." 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* 2. 文字設定 */}
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 backdrop-blur-sm">
+                                <div className="flex items-center justify-between mb-5">
+                                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                        <span className="bg-purple-600 w-2 h-6 rounded-full"></span>
+                                        文字設計
+                                    </h2>
+                                    
+                                    {/* Toggle Switch */}
+                                    <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input 
+                                            type="checkbox" 
+                                            name="toggle" 
+                                            id="toggle" 
+                                            checked={includeText}
+                                            onChange={(e) => setIncludeText(e.target.checked)}
+                                            className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600"
+                                        />
+                                        <label 
+                                            htmlFor="toggle" 
+                                            className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer transition-colors duration-200 ${includeText ? 'bg-indigo-500' : 'bg-slate-700'}`}
+                                        ></label>
+                                    </div>
+                                </div>
+
+                                <div className={`space-y-4 transition-all duration-300 ${includeText ? 'opacity-100 max-h-96' : 'opacity-30 max-h-0 overflow-hidden pointer-events-none'}`}>
+                                    <div>
+                                        <Label icon={Icons.Type}>文字內容</Label>
+                                        <Input 
+                                            value={textContent} 
+                                            onChange={setTextContent} 
+                                            placeholder="例如：Happy Birthday, Summer Time..." 
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>字型風格</Label>
+                                        <Select 
+                                            value={fontId} 
+                                            onChange={setFontId} 
+                                            options={TEXT_FONTS} 
+                                        />
+                                    </div>
+                                </div>
+                                {!includeText && (
+                                    <p className="text-xs text-slate-500">開啟開關以在線稿中加入文字。</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 右側：結果預覽 (Result) */}
+                        <div className="w-full lg:w-7/12 animate-slide-in" style={{animationDelay: '0.1s'}}>
+                            <div className="sticky top-24">
+                                <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 rounded-3xl shadow-2xl overflow-hidden">
+                                    
+                                    {/* Card Header */}
+                                    <div className="bg-slate-900/50 p-6 border-b border-slate-700 flex justify-between items-center">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                        </div>
+                                        <div className="text-xs font-mono text-slate-500 uppercase">Prompt Generator Preview</div>
+                                    </div>
+
+                                    {/* Card Content */}
+                                    <div className="p-8">
+                                        <div className="flex flex-col items-center justify-center min-h-[120px] mb-8 text-center space-y-4">
+                                             <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-2 shadow-inner border border-slate-700">
+                                                {styleId === 'simple' && <span className="text-3xl">🧸</span>}
+                                                {styleId === 'sketch' && <span className="text-3xl">✏️</span>}
+                                                {styleId === 'intricate' && <span className="text-3xl">🕸️</span>}
+                                                {styleId === 'comic' && <span className="text-3xl">💥</span>}
+                                                {styleId === 'vector' && <span className="text-3xl">📐</span>}
+                                                {styleId === 'vintage' && <span className="text-3xl">📜</span>}
+                                             </div>
+                                             <h3 className="text-2xl font-bold text-white">
+                                                {subject || "等待輸入主題..."}
+                                             </h3>
+                                             <div className="flex gap-2 text-xs">
+                                                <span className="px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">#線稿</span>
+                                                <span className="px-2 py-1 bg-slate-800 rounded text-slate-400 border border-slate-700">#{ART_STYLES.find(s=>s.id===styleId).name}</span>
+                                                {includeText && <span className="px-2 py-1 bg-indigo-900/50 rounded text-indigo-300 border border-indigo-700/50">#含文字</span>}
+                                             </div>
+                                        </div>
+
+                                        {/* The Prompt Box */}
+                                        <div className="relative group">
+                                            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 blur"></div>
+                                            <div className="relative bg-slate-900 rounded-xl p-6 leading-relaxed font-mono text-sm text-slate-300 shadow-xl">
+                                                {generatedPrompt}
+                                            </div>
+                                            
+                                            {/* Action Buttons */}
+                                            <div className="absolute top-4 right-4 flex gap-2">
+                                                <button 
+                                                    onClick={handleCopy}
+                                                    className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg shadow-lg border border-slate-600 transition-all active:scale-95 flex items-center gap-2"
+                                                >
+                                                    {copied ? <Icons.Check size={16} className="text-green-400" /> : <Icons.Copy size={16} />}
+                                                    <span className="text-xs font-bold">{copied ? '已複製' : '複製提示詞'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-8 grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                                                <div className="text-xs text-slate-500 mb-1">產生風格</div>
+                                                <div className="font-medium text-slate-200">{ART_STYLES.find(s=>s.id===styleId).name}</div>
+                                            </div>
+                                            <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                                                <div className="text-xs text-slate-500 mb-1">色彩模式</div>
+                                                <div className="font-medium text-slate-200">純黑白線稿</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-6 flex justify-center">
+                                            <a 
+                                                href="https://gemini.google.com/" 
+                                                target="_blank" 
+                                                className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                                            >
+                                                前往 Gemini 貼上咒語 <span aria-hidden="true">&rarr;</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p className="text-center text-xs text-slate-600 mt-6 max-w-md mx-auto">
+                                    小撇步：將複製的咒語貼到 Gemini 或其他 AI 繪圖工具中，即可獲得對應的著色線稿圖。
+                                </p>
+                            </div>
+                        </div>
+
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

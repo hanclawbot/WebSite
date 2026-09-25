@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌸 繳交作業儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pink:#FFF0F5;
+    --mint:#F0FFF4;
+    --cream:#FFFDE7;
+    --sky:#E3F2FD;
+    --text:#5D4037;
+    --text2:#4A4A4A;
+    --accent:#FF8FAB;
+    --accent2:#FFB74D;
+    --border:#FADADD;
+    --ok-bg:#DFF6E0;
+    --ok-text:#2E7D4F;
+    --miss-bg:#FFE1E6;
+    --miss-text:#C2185B;
+    --warn-bg:#FFF3CD;
+    --warn-text:#8A6D1D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Nunito','M PLUS Rounded 1c',sans-serif;
+    color:var(--text2);
+    line-height:1.6;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(255,182,193,0.25) 0, transparent 40%),
+      radial-gradient(circle at 92% 85%, rgba(179,229,252,0.3) 0, transparent 45%),
+      linear-gradient(180deg, var(--pink), var(--sky) 60%, var(--mint));
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .app{max-width:1180px;margin:0 auto;}
+  h1{
+    font-family:'M PLUS Rounded 1c',sans-serif;
+    color:var(--text);
+    font-size:1.9rem;
+    text-align:center;
+    margin:6px 0 4px;
+  }
+  .subtitle{text-align:center;color:var(--text);opacity:.8;margin-bottom:24px;font-size:.95rem;}
+  .card{
+    background:#fff;
+    border-radius:24px;
+    border:3px solid var(--border);
+    box-shadow:0 8px 20px rgba(255,143,171,.18);
+    padding:22px 24px;
+    margin-bottom:22px;
+  }
+  .card h2{
+    font-family:'M PLUS Rounded 1c',sans-serif;
+    color:var(--text);
+    font-size:1.2rem;
+    margin:0 0 14px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:760px){.upload-grid{grid-template-columns:1fr;}}
+  .field label{font-weight:700;color:var(--text);display:block;margin-bottom:6px;font-size:.92rem;}
+  .field small{display:block;color:#8a7f7c;font-weight:400;margin-top:4px;font-size:.8rem;}
+  input[type=file]{
+    width:100%;
+    padding:10px 12px;
+    border-radius:16px;
+    border:2px dashed var(--border);
+    background:var(--pink);
+    font-family:inherit;
+    font-size:.85rem;
+  }
+  input[type=text]{
+    width:120px;
+    padding:9px 12px;
+    border-radius:14px;
+    border:2px solid var(--border);
+    font-family:inherit;
+    font-size:.95rem;
+  }
+  .teacher-row{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:50px;
+    padding:12px 28px;
+    font-size:1rem;
+    font-weight:700;
+    font-family:inherit;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(255,143,171,.4);
+    transition:transform .15s,box-shadow .15s;
+  }
+  .btn:hover{transform:scale(1.05);box-shadow:0 6px 16px rgba(255,143,171,.5);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;transform:none;}
+  .btn.secondary{
+    background:#fff;color:var(--accent);border:2px solid var(--accent);
+    box-shadow:none;padding:10px 22px;font-size:.88rem;
+  }
+  .btn.small{padding:7px 16px;font-size:.82rem;border-radius:40px;}
+  .status-msg{margin-top:12px;font-size:.88rem;color:var(--text2);min-height:20px;}
+  .status-msg.error{color:#C2185B;font-weight:700;}
+
+  .overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
+  .stat-box{
+    background:linear-gradient(145deg,#fff,var(--cream));
+    border-radius:20px;border:2px solid var(--border);
+    padding:16px;text-align:center;
+  }
+  .stat-box .num{font-size:1.7rem;font-weight:800;color:var(--accent);font-family:'M PLUS Rounded 1c',sans-serif;}
+  .stat-box .label{font-size:.8rem;color:var(--text2);margin-top:2px;}
+
+  .tabs{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab-btn{
+    background:#fff;border:2px solid var(--border);color:var(--text);
+    padding:9px 20px;border-radius:40px;cursor:pointer;font-family:inherit;font-weight:700;font-size:.9rem;
+    transition:.15s;
+  }
+  .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+  .toolbar input[type=search]{
+    flex:1;min-width:160px;padding:9px 14px;border-radius:14px;border:2px solid var(--border);font-family:inherit;
+  }
+  select{padding:9px 12px;border-radius:14px;border:2px solid var(--border);font-family:inherit;background:#fff;}
+
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:.85rem;}
+  .matrix-wrap{overflow:auto;max-height:560px;border-radius:16px;border:2px solid var(--border);}
+  .matrix-wrap table th, .matrix-wrap table td{padding:8px 10px;text-align:center;white-space:nowrap;}
+  .matrix-wrap thead th{
+    position:sticky;top:0;background:var(--sky);color:var(--text);z-index:2;
+    border-bottom:2px solid var(--border);font-size:.78rem;
+  }
+  .matrix-wrap thead th.corner{left:0;z-index:3;background:var(--sky);}
+  .matrix-wrap tbody th{
+    position:sticky;left:0;background:#fff;text-align:left;z-index:1;
+    border-right:2px solid var(--border);font-weight:700;color:var(--text);
+  }
+  .matrix-wrap tbody tr:nth-child(even) td, .matrix-wrap tbody tr:nth-child(even) th{background:#FFFBF9;}
+  .cell-ok{background:var(--ok-bg);color:var(--ok-text);font-weight:800;border-radius:10px;}
+  .cell-miss{background:var(--miss-bg);color:var(--miss-text);font-weight:800;border-radius:10px;}
+  .cell-leave{background:#E4E4F0;color:#6B6B8A;font-weight:700;border-radius:10px;font-size:.75rem;}
+  .rate-pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:700;margin-left:6px;}
+
+  .anomaly-banner{
+    background:var(--warn-bg);border:2px solid #F1C77A;border-radius:18px;
+    padding:14px 18px;margin-bottom:20px;color:var(--warn-text);
+  }
+  .anomaly-banner strong{cursor:pointer;text-decoration:underline;}
+  .anomaly-table td, .anomaly-table th{padding:8px 10px;border-bottom:1px solid #f0e2b8;font-size:.85rem;text-align:left;}
+  .anomaly-table select{width:100%;}
+
+  .list-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+  .mini-card{background:var(--cream);border:2px solid var(--border);border-radius:18px;padding:14px 16px;}
+  .mini-card .title{font-weight:800;color:var(--text);display:flex;justify-content:space-between;align-items:center;font-size:.92rem;}
+  .mini-card .missing-list{margin-top:8px;font-size:.78rem;color:var(--miss-text);max-height:110px;overflow:auto;}
+  .mini-card .missing-list span{display:inline-block;background:var(--miss-bg);border-radius:10px;padding:2px 8px;margin:2px;}
+  .mini-card .ok-tag{color:var(--ok-text);font-size:.78rem;}
+
+  footer{text-align:center;color:var(--text);opacity:.6;font-size:.78rem;margin-top:30px;}
+  .hidden{display:none !important;}
+  .badge-count{background:var(--accent2);color:#fff;border-radius:10px;padding:0 6px;font-size:.7rem;margin-left:4px;}
+
+  .cell-clickable{cursor:pointer;transition:transform .12s;}
+  .cell-clickable:hover{transform:scale(1.08);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+  .cam-icon{font-size:.75rem;}
+  .warn-icon{font-size:.72rem;opacity:.8;}
+
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(93,64,55,.45);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;
+  }
+  .modal-box{
+    background:#fff;border-radius:24px;border:3px solid var(--border);
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+    max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;
+  }
+  .modal-header{
+    display:flex;justify-content:space-between;align-items:flex-start;
+    padding:16px 20px;border-bottom:2px solid var(--border);background:var(--cream);
+  }
+  .modal-title{font-family:'M PLUS Rounded 1c',sans-serif;font-weight:800;color:var(--text);font-size:1.05rem;}
+  .modal-subtitle{font-size:.8rem;color:var(--text2);margin-top:2px;}
+  .modal-close{
+    background:#fff;border:2px solid var(--border);border-radius:50%;
+    width:32px;height:32px;cursor:pointer;font-size:.9rem;color:var(--text);flex-shrink:0;
+  }
+  .modal-close:hover{background:var(--miss-bg);}
+  .modal-body{padding:18px 20px;overflow-y:auto;}
+  .submission-block{margin-bottom:18px;}
+  .submission-block:last-child{margin-bottom:0;}
+  .submission-block .sub-caption{font-size:.78rem;color:#8a7f7c;margin-bottom:6px;}
+  .attachment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;}
+  .attachment-grid img{
+    width:100%;border-radius:14px;border:2px solid var(--border);display:block;cursor:zoom-in;
+    background:var(--pink);
+  }
+  .attachment-link{
+    display:block;padding:10px 14px;border-radius:14px;background:var(--sky);
+    color:var(--text);font-size:.85rem;text-decoration:none;border:2px solid var(--border);
+  }
+  .no-attachment-note{color:var(--miss-text);font-size:.85rem;}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>🌸 繳交作業儀表板 ✨</h1>
+  <p class="subtitle">上傳學生名單與 Padlet 匯出的 md 檔案，自動比對每項任務的繳交狀況</p>
+  <p id="publishedNotice" class="hidden" style="text-align:center;color:var(--text);opacity:.75;font-size:.85rem;margin:-14px 0 20px;"></p>
+
+  <div class="card" id="uploadCard">
+    <h2>📤 上傳檔案</h2>
+    <div class="upload-grid">
+      <div class="field">
+        <label for="rosterFile">學生名單（.txt / .csv）</label>
+        <input type="file" id="rosterFile" accept=".txt,.csv">
+        <small>格式：每行「座號,姓名」，例如 20407,宋奐禛；可加第 3 欄「學號」（例如 20407,宋奐禛,113077），若貼文誤填學號也能自動比對到正確學生</small>
+      </div>
+      <div class="field">
+        <label for="mdFile">Padlet 匯出檔（.md）</label>
+        <input type="file" id="mdFile" accept=".md,.txt">
+        <small>Padlet 版面匯出的 Markdown 檔，內含各任務區段與貼文</small>
+      </div>
+    </div>
+    <div class="teacher-row">
+      <label for="teacherSeat" style="font-weight:700;color:var(--text);font-size:.92rem;">老師的座號（不計入繳交統計）</label>
+      <input type="text" id="teacherSeat" value="60099">
+      <button class="btn" id="parseBtn" disabled>🔍 開始分析</button>
+    </div>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+
+    <div class="card">
+      <h2>📊 總覽</h2>
+      <div class="overview-grid" id="overviewGrid"></div>
+    </div>
+
+    <div class="card" id="publishCard">
+      <h2>📢 另存為公告用網頁</h2>
+      <p style="font-size:.85rem;color:var(--text2);margin:0 0 12px;">將目前的名單、繳交狀況、請假與已確認的異常校正，一起存成一個新的獨立 HTML 檔。之後任何人打開這個新檔案，會直接看到目前的儀表板，<b>不需要重新上傳名單或 md 檔</b>，適合公告或分享給其他老師、家長查看。</p>
+      <button class="btn" id="publishBtn">💾 另存為公告用網頁</button>
+      <span class="status-msg" id="publishMsg" style="display:inline-block;margin-left:12px;"></span>
+    </div>
+
+    <div id="anomalyBanner" class="anomaly-banner hidden"></div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="matrix">🗂️ 繳交矩陣</button>
+      <button class="tab-btn" data-tab="tasks">📌 任務統計</button>
+      <button class="tab-btn" data-tab="students">🧒 學生統計</button>
+      <button class="tab-btn" data-tab="anomaly">⚠️ 異常座號校正 <span id="anomalyTabBadge"></span></button>
+    </div>
+
+    <div class="tab-panel active" id="panel-matrix">
+      <div class="card">
+        <div class="toolbar">
+          <input type="search" id="matrixSearch" placeholder="搜尋座號或姓名…">
+          <select id="matrixSort">
+            <option value="seat">依座號排序</option>
+            <option value="rateAsc">繳交率：低到高</option>
+            <option value="rateDesc">繳交率：高到低</option>
+          </select>
+          <button class="btn small secondary" id="exportMatrixBtn">⬇️ 匯出矩陣 CSV</button>
+        </div>
+        <p style="font-size:.78rem;color:#8a7f7c;margin:0 0 10px;">藍色「ID」標籤代表該筆繳交是用學號比對到學生，而非座號；灰色「請假」表示該任務老師已標記請假，不計入繳交率</p>
+        <div class="matrix-wrap"><table id="matrixTable"></table></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-tasks">
+      <div class="card">
+        <div class="toolbar">
+          <select id="taskSort">
+            <option value="order">依時間順序</option>
+            <option value="rateAsc">繳交率：低到高</option>
+            <option value="rateDesc">繳交率：高到高</option>
+          </select>
+          <button class="btn small secondary" id="exportTaskBtn">⬇️ 匯出任務統計 CSV</button>
+        </div>
+        <div class="list-cards" id="taskList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-students">
+      <div class="card">
+        <div class="toolbar">
+          <input type="search" id="studentSearch" placeholder="搜尋座號或姓名…">
+          <select id="studentSort">
+            <option value="seat">依座號排序</option>
+            <option value="rateAsc">繳交率：低到高</option>
+            <option value="rateDesc">繳交率：高到低</option>
+          </select>
+          <button class="btn small secondary" id="exportStudentBtn">⬇️ 匯出學生統計 CSV</button>
+        </div>
+        <div class="list-cards" id="studentList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="panel-anomaly">
+      <div class="card">
+        <h2>⚠️ 無法自動比對的貼文</h2>
+        <p style="font-size:.85rem;color:var(--text2);">以下貼文的座號與名單不符，可能是打字錯誤或非班上學生。系統只會「建議」最相近的學生，不會自動套用；請逐筆按下「套用」或用下拉選單指定對應學生，確認後矩陣與統計才會更新。</p>
+        <div style="margin-bottom:12px;">
+          <button class="btn small" id="applyAllSuggestBtn">✨ 一鍵套用所有建議</button>
+        </div>
+        <div style="overflow:auto;">
+          <table class="anomaly-table" id="anomalyTable"></table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>由 Claude 製作 · 資料僅於本機瀏覽器處理，不會上傳到任何伺服器</footer>
+</div>
+
+<div id="imageModalBackdrop" class="modal-backdrop hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-subtitle" id="modalSubtitle"></div>
+      </div>
+      <button class="modal-close" id="modalCloseBtn" aria-label="關閉">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- 若此檔案是由「另存為公告用網頁」功能產生，資料會內嵌於下方，開啟時會自動載入，不需重新上傳檔案 -->
+<script type="application/json" id="embeddedDataScript">null</script>
+
+<script>
+(function(){
+  "use strict";
+
+  let rosterMap = new Map();   // seat -> name
+  let rosterOrder = [];        // ordered seats
+  let studentIdMap = new Map();// studentId -> seat (secondary matching key)
+  let seatToId = new Map();    // seat -> studentId (for display)
+  let cellLookup = new Map();  // "taskIdx|seat" -> {studentSeat, studentName, taskName, submissions}
+  let tasks = [];              // [{name, entries:[{raw, matchType, matchedSeat, timestamp}]}]
+  let resolutions = new Map(); // rawTitle -> seat ('__ignore__' to ignore)
+  let teacherSeat = "60099";
+  let rosterFileText = null, mdFileText = null;
+
+  const $ = sel => document.querySelector(sel);
+  const rosterInput = $('#rosterFile');
+  const mdInput = $('#mdFile');
+  const parseBtn = $('#parseBtn');
+  const statusMsg = $('#statusMsg');
+  const teacherSeatInput = $('#teacherSeat');
+
+  function readFile(file){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = ()=>resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  function updateParseBtn(){
+    parseBtn.disabled = !(rosterFileText && mdFileText);
+  }
+
+  rosterInput.addEventListener('change', async (e)=>{
+    if(e.target.files[0]){
+      rosterFileText = await readFile(e.target.files[0]);
+    } else { rosterFileText = null; }
+    updateParseBtn();
+  });
+  mdInput.addEventListener('change', async (e)=>{
+    if(e.target.files[0]){
+      mdFileText = await readFile(e.target.files[0]);
+    } else { mdFileText = null; }
+    updateParseBtn();
+  });
+
+  function parseRoster(text){
+    const map = new Map();       // seat -> name
+    const order = [];            // ordered seats
+    const idMap = new Map();     // studentId -> seat
+    const seatToId = new Map();  // seat -> studentId (for display)
+    const idConflicts = [];      // studentId that appear on >1 seat
+    text.split(/\r?\n/).forEach(line=>{
+      line = line.trim();
+      if(!line) return;
+      const parts = line.split(',').map(p=>p.trim());
+      if(parts.length >= 2){
+        const seat = parts[0];
+        const name = parts[1];
+        const studentId = (parts[2]||'').trim();
+        if(seat && !map.has(seat)){
+          map.set(seat, name);
+          order.push(seat);
+          if(studentId){
+            seatToId.set(seat, studentId);
+            if(idMap.has(studentId) && idMap.get(studentId)!==seat){
+              idConflicts.push(studentId);
+            } else {
+              idMap.set(studentId, seat);
+            }
+          }
+        }
+      }
+    });
+    return {map, order, idMap, seatToId, idConflicts};
+  }
+
+  function parseMarkdown(text){
+    const lines = text.split(/\r?\n/);
+    const sections = [];
+    let current = null;
+    for(const line of lines){
+      const m = line.match(/^##\s+(.+?)\s*$/);
+      if(m && !line.startsWith('###')){
+        current = {name:m[1].trim(), lines:[]};
+        sections.push(current);
+      } else if(current){
+        current.lines.push(line);
+      }
+    }
+    const result = [];
+    for(const sec of sections){
+      if(sec.name === '總結') continue;
+      const text2 = sec.lines.join('\n');
+      const entryHeadRe = /^###\s+\d+\.\s+(.+?)\s*$/gm;
+      const heads = [];
+      let m;
+      while((m = entryHeadRe.exec(text2)) !== null){
+        heads.push({raw:m[1].trim(), start:m.index, end:m.index+m[0].length});
+      }
+      const entries = [];
+      for(let i=0;i<heads.length;i++){
+        const h = heads[i];
+        const chunkEnd = i+1<heads.length ? heads[i+1].start : text2.length;
+        const chunk = text2.slice(h.end, chunkEnd);
+        const tsMatch = chunk.match(/建立於 \(UTC\):\*\*\s*(.+)/);
+        const attachments = [];
+        const imgRe = /!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+        let im;
+        while((im = imgRe.exec(chunk)) !== null){
+          attachments.push({type:'image', alt: im[1]||'附件', url: im[2]});
+        }
+        const linkRe = /(^|[^!])\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g;
+        let lm;
+        while((lm = linkRe.exec(chunk)) !== null){
+          attachments.push({type:'link', alt: lm[2]||'附件連結', url: lm[3]});
+        }
+        entries.push({
+          raw: h.raw,
+          timestamp: tsMatch ? tsMatch[1].trim() : '',
+          attachments
+        });
+      }
+      if(entries.length){
+        result.push({name: sec.name, entries});
+      }
+    }
+    return result;
+  }
+
+  function levenshtein(a,b){
+    const m=a.length,n=b.length;
+    const dp = Array.from({length:m+1},()=>new Array(n+1).fill(0));
+    for(let i=0;i<=m;i++) dp[i][0]=i;
+    for(let j=0;j<=n;j++) dp[0][j]=j;
+    for(let i=1;i<=m;i++){
+      for(let j=1;j<=n;j++){
+        dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j-1],dp[i-1][j],dp[i][j-1]);
+      }
+    }
+    return dp[m][n];
+  }
+
+  function suggestSeat(raw){
+    let best=null, bestDist=Infinity;
+    for(const seat of rosterOrder){
+      const d = levenshtein(raw, seat);
+      if(d<bestDist){bestDist=d; best=seat;}
+    }
+    for(const [studentId, seat] of studentIdMap.entries()){
+      const d = levenshtein(raw, studentId);
+      if(d<bestDist){bestDist=d; best=seat;}
+    }
+    if(best!==null && bestDist<=2) return best;
+    return null;
+  }
+
+  function classify(raw){
+    if(raw === teacherSeat) return {type:'teacher'};
+    if(rosterMap.has(raw)) return {type:'matched', seat:raw, via:'seat'};
+    if(studentIdMap.has(raw)) return {type:'matched', seat:studentIdMap.get(raw), via:'id'};
+    if(resolutions.has(raw)){
+      const r = resolutions.get(raw);
+      if(r === '__ignore__') return {type:'ignored'};
+      return {type:'matched', seat:r, via:'manual'};
+    }
+    return {type:'unmatched'};
+  }
+
+  // 貼文標題形如「請假-40113,30102」（分隔符可為 - : ： 、 , ， 或空白，後面允許附加原因文字）
+  const LEAVE_RE = /^請假[\s\-–—:：、,，]*([\d][\d\s,，、]*)/;
+  function extractLeaveTokens(raw){
+    const m = raw.match(LEAVE_RE);
+    if(!m) return null;
+    return m[1].split(/[\s,，、]+/).map(s=>s.trim()).filter(Boolean);
+  }
+
+  function computeAnomalies(){
+    const map = new Map(); // raw -> {count, sections:Set}
+    const add = (raw, sectionLabel)=>{
+      if(!map.has(raw)) map.set(raw, {count:0, sections:new Set()});
+      const o = map.get(raw);
+      o.count++; o.sections.add(sectionLabel);
+    };
+    for(const task of tasks){
+      for(const e of task.entries){
+        const leaveTokens = extractLeaveTokens(e.raw);
+        if(leaveTokens){
+          for(const tok of leaveTokens){
+            const c = classify(tok);
+            if(c.type === 'unmatched') add(tok, task.name+'（請假名單）');
+          }
+          continue;
+        }
+        const c = classify(e.raw);
+        if(c.type === 'unmatched') add(e.raw, task.name);
+      }
+    }
+    return map;
+  }
+
+  function computeStats(){
+    // submission map: task.name -> Map(seat -> {count, viaId, submissions:[{timestamp,via,attachments}]})
+    const taskStats = tasks.map(task=>{
+      const submitted = new Map(); // seat -> {count, viaId, submissions}
+      const leave = new Set();     // seats marked on leave for this task
+      for(const e of task.entries){
+        const leaveTokens = extractLeaveTokens(e.raw);
+        if(leaveTokens){
+          for(const tok of leaveTokens){
+            const c = classify(tok);
+            if(c.type === 'matched') leave.add(c.seat);
+          }
+          continue;
+        }
+        const c = classify(e.raw);
+        if(c.type === 'matched'){
+          const cur = submitted.get(c.seat) || {count:0, viaId:0, submissions:[]};
+          cur.count++;
+          if(c.via === 'id') cur.viaId++;
+          cur.submissions.push({timestamp:e.timestamp, via:c.via, attachments:e.attachments||[]});
+          submitted.set(c.seat, cur);
+        }
+      }
+      const applicable = rosterOrder.filter(s=>!leave.has(s));
+      const missing = applicable.filter(s=>!submitted.has(s));
+      return {
+        name: task.name,
+        submitted,
+        leave,
+        missing,
+        total: applicable.length,
+        rate: applicable.length ? (applicable.length-missing.length)/applicable.length : 0
+      };
+    });
+
+    const studentStats = rosterOrder.map(seat=>{
+      const missingTasks = [];
+      const leaveTasks = [];
+      let count=0, applicableCount=0;
+      for(const ts of taskStats){
+        if(ts.leave.has(seat)){ leaveTasks.push(ts.name); continue; }
+        applicableCount++;
+        if(ts.submitted.has(seat)) count++;
+        else missingTasks.push(ts.name);
+      }
+      return {
+        seat, name: rosterMap.get(seat),
+        submittedCount: count,
+        total: applicableCount,
+        rate: applicableCount ? count/applicableCount : 0,
+        missingTasks,
+        leaveTasks
+      };
+    });
+
+    return {taskStats, studentStats};
+  }
+
+  function rateColor(rate){
+    if(rate >= 0.9) return {bg:'#DFF6E0', text:'#2E7D4F'};
+    if(rate >= 0.6) return {bg:'#FFF3CD', text:'#8A6D1D'};
+    return {bg:'#FFE1E6', text:'#C2185B'};
+  }
+
+  // ---------- Rendering ----------
+  function renderOverview(taskStats, studentStats, anomalies, teacherPostCount){
+    const totalStudents = rosterOrder.length;
+    const totalTasks = taskStats.length;
+    const totalApplicable = studentStats.reduce((a,s)=>a+s.total,0); // 已扣除請假的應繳分母
+    const totalSubmitted = studentStats.reduce((a,s)=>a+s.submittedCount,0);
+    const overallRate = totalApplicable ? Math.round((totalSubmitted/totalApplicable)*1000)/10 : 0;
+    const anomalyCount = [...anomalies.values()].reduce((a,o)=>a+o.count,0);
+    let idMatchCount = 0, leaveCount = 0;
+    for(const t of taskStats){
+      for(const info of t.submitted.values()) idMatchCount += info.viaId;
+      leaveCount += t.leave.size;
+    }
+
+    const items = [
+      {num:totalStudents, label:'學生人數'},
+      {num:totalTasks, label:'任務數'},
+      {num:overallRate+'%', label:'整體繳交率'},
+      {num:teacherPostCount, label:'教師示範貼文'},
+      {num:anomalyCount, label:'待確認異常筆數'},
+    ];
+    if(idMatchCount>0) items.push({num:idMatchCount, label:'以學號比對筆數'});
+    if(leaveCount>0) items.push({num:leaveCount, label:'請假人次（不計入繳交率）'});
+    $('#overviewGrid').innerHTML = items.map(it=>`
+      <div class="stat-box"><div class="num">${it.num}</div><div class="label">${it.label}</div></div>
+    `).join('');
+  }
+
+  function renderAnomalyBanner(anomalies){
+    const banner = $('#anomalyBanner');
+    const badge = $('#anomalyTabBadge');
+    const count = anomalies.size;
+    if(count===0){
+      banner.classList.add('hidden');
+      badge.textContent = '';
+      return;
+    }
+    banner.classList.remove('hidden');
+    badge.innerHTML = `<span class="badge-count">${count}</span>`;
+    banner.innerHTML = `發現 <strong id="gotoAnomaly">${count}</strong> 筆貼文座號無法自動比對到名單，這些貼文<b>未計入</b>繳交統計。請至「⚠️ 異常座號校正」分頁確認對應學生。`;
+    $('#gotoAnomaly').addEventListener('click', ()=>switchTab('anomaly'));
+  }
+
+  function renderAnomalyTable(anomalies){
+    const rows = [...anomalies.entries()].sort((a,b)=>b[1].count-a[1].count);
+    let html = `<thead><tr><th>貼文座號</th><th>出現次數</th><th>出現任務</th><th>建議</th><th>對應學生（需手動確認才會生效）</th></tr></thead><tbody>`;
+    if(rows.length===0){
+      html += `<tr><td colspan="5" style="text-align:center;color:#8a7f7c;">目前沒有需要確認的異常座號 🎉</td></tr>`;
+    }
+    for(const [raw, info] of rows){
+      const suggestion = suggestSeat(raw);
+      const options = [`<option value="">未選擇（暫不計入）</option>`]
+        .concat(rosterOrder.map(seat=>{
+          const sel = resolutions.get(raw)===seat ? 'selected' : '';
+          return `<option value="${seat}" ${sel}>${seat} - ${rosterMap.get(seat)}</option>`;
+        }))
+        .concat([`<option value="__ignore__" ${resolutions.get(raw)==='__ignore__'?'selected':''}>忽略此貼文（非本班學生）</option>`]);
+      const suggestCell = suggestion
+        ? `<button class="btn small secondary applySuggestBtn" data-raw="${escapeAttr(raw)}" data-seat="${escapeAttr(suggestion)}">套用 ${suggestion} ${escapeHtml(rosterMap.get(suggestion)||'')}</button>`
+        : `<span style="color:#8a7f7c;font-size:.78rem;">無建議</span>`;
+      html += `<tr>
+        <td><b>${escapeHtml(raw)}</b></td>
+        <td>${info.count}</td>
+        <td>${[...info.sections].join('、')}</td>
+        <td>${suggestCell}</td>
+        <td><select data-raw="${escapeAttr(raw)}" class="resolveSelect">${options.join('')}</select></td>
+      </tr>`;
+    }
+    html += '</tbody>';
+    $('#anomalyTable').innerHTML = html;
+    document.querySelectorAll('.resolveSelect').forEach(sel=>{
+      sel.addEventListener('change', (e)=>{
+        const raw = e.target.getAttribute('data-raw');
+        const val = e.target.value;
+        if(val==='') resolutions.delete(raw);
+        else resolutions.set(raw, val);
+        refresh();
+      });
+    });
+    document.querySelectorAll('.applySuggestBtn').forEach(btn=>{
+      btn.addEventListener('click', (e)=>{
+        const raw = e.target.getAttribute('data-raw');
+        const seat = e.target.getAttribute('data-seat');
+        resolutions.set(raw, seat);
+        refresh();
+      });
+    });
+  }
+
+  function renderMatrix(taskStats, studentStats){
+    const search = ($('#matrixSearch').value||'').trim().toLowerCase();
+    const sortMode = $('#matrixSort').value;
+    let rows = studentStats.filter(s=> !search || s.seat.includes(search) || (s.name||'').toLowerCase().includes(search));
+    if(sortMode==='rateAsc') rows = rows.slice().sort((a,b)=>a.rate-b.rate);
+    else if(sortMode==='rateDesc') rows = rows.slice().sort((a,b)=>b.rate-a.rate);
+    else rows = rows.slice().sort((a,b)=>a.seat.localeCompare(b.seat));
+
+    let thead = `<thead><tr><th class="corner">座號 / 姓名</th>`;
+    for(const t of taskStats){
+      thead += `<th title="${escapeAttr(t.name)}">${escapeHtml(shorten(t.name,10))}</th>`;
+    }
+    thead += `<th>繳交率</th></tr></thead>`;
+
+    cellLookup.clear();
+    let tbody = '<tbody>';
+    for(const s of rows){
+      tbody += `<tr><th>${s.seat}<br><span style="font-weight:400;color:#8a7f7c;">${escapeHtml(s.name||'')}</span></th>`;
+      taskStats.forEach((t, tIdx)=>{
+        if(t.leave.has(s.seat)){
+          tbody += `<td class="cell-leave" title="該任務標記請假，不計入繳交率">請假</td>`;
+          return;
+        }
+        const info = t.submitted.get(s.seat);
+        if(info){
+          const dup = info.count>1 ? `<span class="badge-count">×${info.count}</span>` : '';
+          const idTag = info.viaId>0 ? `<span class="badge-count" style="background:#7EA8D6;" title="以學號比對">ID</span>` : '';
+          const totalAttachments = info.submissions.reduce((a,sub)=>a+sub.attachments.length,0);
+          if(totalAttachments>0){
+            const key = tIdx+'|'+s.seat;
+            cellLookup.set(key, {studentSeat:s.seat, studentName:s.name, taskName:t.name, submissions:info.submissions});
+            tbody += `<td class="cell-ok cell-clickable" data-key="${key}" title="點擊查看附件">✓${dup}${idTag} <span class="cam-icon">📷</span></td>`;
+          } else {
+            tbody += `<td class="cell-ok" title="已繳交，但未偵測到附件圖片">✓${dup}${idTag} <span class="warn-icon" title="無附件">⚠️</span></td>`;
+          }
+        } else {
+          tbody += `<td class="cell-miss">✗</td>`;
+        }
+      });
+      const c = rateColor(s.rate);
+      tbody += `<td><span class="rate-pill" style="background:${c.bg};color:${c.text};">${Math.round(s.rate*100)}%</span></td>`;
+      tbody += '</tr>';
+    }
+    tbody += '</tbody>';
+    $('#matrixTable').innerHTML = thead+tbody;
+  }
+
+  function renderTaskList(taskStats){
+    const sortMode = $('#taskSort').value;
+    let list = taskStats.slice();
+    if(sortMode==='rateAsc') list.sort((a,b)=>a.rate-b.rate);
+    else if(sortMode==='rateDesc') list.sort((a,b)=>b.rate-a.rate);
+
+    $('#taskList').innerHTML = list.map(t=>{
+      const c = rateColor(t.rate);
+      const missNames = t.missing.map(seat=>`<span>${seat} ${escapeHtml(rosterMap.get(seat)||'')}</span>`).join('');
+      const leaveNote = t.leave.size>0 ? `<div style="font-size:.75rem;color:#6B6B8A;margin-top:4px;">🌙 另有 ${t.leave.size} 人請假，不列入繳交率</div>` : '';
+      return `<div class="mini-card">
+        <div class="title"><span>${escapeHtml(t.name)}</span>
+          <span class="rate-pill" style="background:${c.bg};color:${c.text};">${t.total-t.missing.length}/${t.total}（${Math.round(t.rate*100)}%）</span>
+        </div>
+        ${t.missing.length ? `<div class="missing-list">${missNames}</div>` : `<div class="ok-tag">✅ 全員繳交</div>`}
+        ${leaveNote}
+      </div>`;
+    }).join('');
+  }
+
+  function renderStudentList(studentStats){
+    const search = ($('#studentSearch').value||'').trim().toLowerCase();
+    const sortMode = $('#studentSort').value;
+    let list = studentStats.filter(s=> !search || s.seat.includes(search) || (s.name||'').toLowerCase().includes(search));
+    if(sortMode==='rateAsc') list = list.slice().sort((a,b)=>a.rate-b.rate);
+    else if(sortMode==='rateDesc') list = list.slice().sort((a,b)=>b.rate-a.rate);
+    else list = list.slice().sort((a,b)=>a.seat.localeCompare(b.seat));
+
+    $('#studentList').innerHTML = list.map(s=>{
+      const c = rateColor(s.rate);
+      const missNames = s.missingTasks.map(n=>`<span>${escapeHtml(n)}</span>`).join('');
+      const leaveNote = s.leaveTasks.length>0 ? `<div style="font-size:.75rem;color:#6B6B8A;margin-top:4px;">🌙 請假 ${s.leaveTasks.length} 項（不列入繳交率）：${escapeHtml(s.leaveTasks.join('、'))}</div>` : '';
+      return `<div class="mini-card">
+        <div class="title"><span>${s.seat} ${escapeHtml(s.name||'')}</span>
+          <span class="rate-pill" style="background:${c.bg};color:${c.text};">${s.submittedCount}/${s.total}（${Math.round(s.rate*100)}%）</span>
+        </div>
+        ${s.missingTasks.length ? `<div class="missing-list">${missNames}</div>` : `<div class="ok-tag">✅ 全部繳交</div>`}
+        ${leaveNote}
+      </div>`;
+    }).join('');
+  }
+
+  function refresh(){
+    const {taskStats, studentStats} = computeStats();
+    const anomalies = computeAnomalies();
+    const teacherPostCount = tasks.reduce((a,t)=>a+t.entries.filter(e=>e.raw===teacherSeat).length,0);
+    renderOverview(taskStats, studentStats, anomalies, teacherPostCount);
+    renderAnomalyBanner(anomalies);
+    renderAnomalyTable(anomalies);
+    renderMatrix(taskStats, studentStats);
+    renderTaskList(taskStats);
+    renderStudentList(studentStats);
+    window.__latestStats = {taskStats, studentStats};
+  }
+
+  function switchTab(tab){
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+tab));
+  }
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.addEventListener('click', ()=>switchTab(b.dataset.tab));
+  });
+
+  // ---------- Attachment image modal ----------
+  const modalBackdrop = $('#imageModalBackdrop');
+  const modalTitle = $('#modalTitle');
+  const modalSubtitle = $('#modalSubtitle');
+  const modalBody = $('#modalBody');
+
+  function openImageModal(entry){
+    modalTitle.textContent = `${entry.studentSeat} ${entry.studentName||''}`;
+    modalSubtitle.textContent = entry.taskName;
+    modalBody.innerHTML = entry.submissions.map((sub, idx)=>{
+      const cap = entry.submissions.length>1 ? `第 ${idx+1} 次繳交${sub.timestamp?'・'+escapeHtml(sub.timestamp):''}${sub.via==='id'?'・以學號比對':''}` : (sub.timestamp?escapeHtml(sub.timestamp)+(sub.via==='id'?'・以學號比對':''):(sub.via==='id'?'以學號比對':''));
+      let body;
+      if(sub.attachments.length===0){
+        body = `<div class="no-attachment-note">（此則貼文沒有偵測到附件圖片）</div>`;
+      } else {
+        body = `<div class="attachment-grid">` + sub.attachments.map(att=>{
+          if(att.type==='image'){
+            return `<a href="${escapeAttr(att.url)}" target="_blank" rel="noopener"><img src="${escapeAttr(att.url)}" alt="${escapeAttr(att.alt)}" loading="lazy"></a>`;
+          }
+          return `<a class="attachment-link" href="${escapeAttr(att.url)}" target="_blank" rel="noopener">🔗 ${escapeHtml(att.alt)}</a>`;
+        }).join('') + `</div>`;
+      }
+      return `<div class="submission-block">${cap?`<div class="sub-caption">${cap}</div>`:''}${body}</div>`;
+    }).join('');
+    modalBackdrop.classList.remove('hidden');
+  }
+  function closeImageModal(){
+    modalBackdrop.classList.add('hidden');
+    modalBody.innerHTML = '';
+  }
+  $('#modalCloseBtn').addEventListener('click', closeImageModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeImageModal(); });
+  window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeImageModal(); });
+
+  $('#matrixTable').addEventListener('click', (e)=>{
+    const cell = e.target.closest('.cell-clickable');
+    if(!cell) return;
+    const key = cell.getAttribute('data-key');
+    const entry = cellLookup.get(key);
+    if(entry) openImageModal(entry);
+  });
+
+  ['matrixSearch','matrixSort'].forEach(id=>$('#'+id).addEventListener('input', refresh));
+  ['taskSort'].forEach(id=>$('#'+id).addEventListener('change', refresh));
+  ['studentSearch','studentSort'].forEach(id=>$('#'+id).addEventListener('input', refresh));
+
+  $('#applyAllSuggestBtn').addEventListener('click', ()=>{
+    const anomalies = computeAnomalies();
+    let applied = 0;
+    for(const raw of anomalies.keys()){
+      if(resolutions.has(raw)) continue;
+      const suggestion = suggestSeat(raw);
+      if(suggestion){ resolutions.set(raw, suggestion); applied++; }
+    }
+    if(applied===0){
+      alert('目前沒有可自動套用的高信心建議，請逐筆手動選擇對應學生。');
+    }
+    refresh();
+  });
+
+  parseBtn.addEventListener('click', ()=>{
+    statusMsg.classList.remove('error');
+    teacherSeat = (teacherSeatInput.value||'60099').trim();
+    try{
+      const r = parseRoster(rosterFileText);
+      if(r.order.length===0){
+        statusMsg.textContent = '⚠️ 名單解析結果為 0 筆，請確認檔案格式為「座號,姓名」每行一筆。';
+        statusMsg.classList.add('error');
+        return;
+      }
+      rosterMap = r.map; rosterOrder = r.order;
+      studentIdMap = r.idMap; seatToId = r.seatToId;
+      tasks = parseMarkdown(mdFileText);
+      resolutions = new Map();
+      if(tasks.length===0){
+        statusMsg.textContent = '⚠️ 找不到任何任務區段（## 標題），請確認上傳的是 Padlet 匯出的 md 檔。';
+        statusMsg.classList.add('error');
+        return;
+      }
+      let msg = `✅ 解析完成：名單 ${rosterOrder.length} 人，任務 ${tasks.length} 項。`;
+      if(studentIdMap.size>0) msg += ` 已讀取 ${studentIdMap.size} 筆學號，可作為次要比對依據。`;
+      if(r.idConflicts.length>0) msg += ` ⚠️ 名單中有 ${r.idConflicts.length} 個學號重複，已略過重複項，請檢查名單檔。`;
+      statusMsg.textContent = msg;
+      $('#dashboard').classList.remove('hidden');
+      refresh();
+      switchTab('matrix');
+    }catch(err){
+      statusMsg.textContent = '❌ 解析發生錯誤：'+err.message;
+      statusMsg.classList.add('error');
+    }
+  });
+
+  // ---------- CSV export ----------
+  function downloadCsv(filename, rows){
+    const csv = rows.map(r=>r.map(csvEscape).join(',')).join('\r\n');
+    const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  function csvEscape(v){
+    v = String(v ?? '');
+    if(/[",\r\n]/.test(v)) return '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }
+
+  $('#exportMatrixBtn').addEventListener('click', ()=>{
+    const {taskStats, studentStats} = window.__latestStats || computeStats();
+    const header = ['座號','姓名', ...taskStats.map(t=>t.name), '繳交率'];
+    const rows = [header];
+    for(const s of studentStats){
+      const row = [s.seat, s.name];
+      for(const t of taskStats){
+        row.push(t.leave.has(s.seat) ? '請假' : (t.submitted.has(s.seat) ? '1' : '0'));
+      }
+      row.push(Math.round(s.rate*100)+'%');
+      rows.push(row);
+    }
+    downloadCsv('繳交矩陣.csv', rows);
+  });
+
+  $('#exportTaskBtn').addEventListener('click', ()=>{
+    const {taskStats} = window.__latestStats || computeStats();
+    const rows = [['任務','已繳交','應繳交（已扣除請假）','繳交率','請假人數','未繳交名單']];
+    for(const t of taskStats){
+      rows.push([t.name, t.total-t.missing.length, t.total, Math.round(t.rate*100)+'%', t.leave.size,
+        t.missing.map(seat=>`${seat}${rosterMap.get(seat)||''}`).join('、')]);
+    }
+    downloadCsv('任務統計.csv', rows);
+  });
+
+  $('#exportStudentBtn').addEventListener('click', ()=>{
+    const {studentStats} = window.__latestStats || computeStats();
+    const rows = [['座號','姓名','已繳交','應繳交（已扣除請假）','繳交率','請假項目','未繳交任務']];
+    for(const s of studentStats){
+      rows.push([s.seat, s.name, s.submittedCount, s.total, Math.round(s.rate*100)+'%', s.leaveTasks.join('、'), s.missingTasks.join('、')]);
+    }
+    downloadCsv('學生統計.csv', rows);
+  });
+
+  // ---------- 另存為公告用網頁（內嵌目前資料，開啟時不需重新上傳） ----------
+  const publishBtn = $('#publishBtn');
+  const publishMsg = $('#publishMsg');
+
+  function buildEmbeddedPayload(){
+    return {
+      generatedAt: new Date().toISOString(),
+      teacherSeat,
+      roster: rosterOrder.map(seat=>[seat, rosterMap.get(seat)||'', seatToId.get(seat)||'']),
+      tasks,
+      resolutions: [...resolutions.entries()]
+    };
+  }
+
+  publishBtn && publishBtn.addEventListener('click', ()=>{
+    try{
+      const payload = buildEmbeddedPayload();
+      const jsonStr = JSON.stringify(payload).replace(/</g, '\\u003c');
+
+      // 複製整個頁面到記憶體中的副本，只在這份副本上動刀，不影響目前畫面
+      const clone = document.documentElement.cloneNode(true);
+      const cloneUploadCard = clone.querySelector('#uploadCard');
+      if(cloneUploadCard) cloneUploadCard.classList.add('hidden');
+      const clonePublishCard = clone.querySelector('#publishCard');
+      if(clonePublishCard) clonePublishCard.classList.add('hidden');
+      const cloneNotice = clone.querySelector('#publishedNotice');
+      if(cloneNotice){
+        cloneNotice.textContent = `📌 資料公告版・產生於 ${new Date().toLocaleString('zh-TW')}`;
+        cloneNotice.classList.remove('hidden');
+      }
+      const cloneEmbedScript = clone.querySelector('#embeddedDataScript');
+      if(cloneEmbedScript) cloneEmbedScript.textContent = jsonStr;
+
+      const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+      const blob = new Blob([html], {type:'text/html;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0,10).replace(/-/g,'');
+      a.href = url; a.download = `繳交儀表板_公告版_${dateStr}.html`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      publishMsg.textContent = '✅ 已產生公告用網頁（不含上傳與另存區塊），請至瀏覽器下載項目查看。';
+      publishMsg.classList.remove('error');
+    }catch(err){
+      publishMsg.textContent = '❌ 產生失敗：'+err.message;
+      publishMsg.classList.add('error');
+    }
+  });
+
+  function tryLoadEmbeddedData(){
+    const script = document.getElementById('embeddedDataScript');
+    if(!script) return false;
+    let data;
+    try{ data = JSON.parse(script.textContent); }catch(e){ return false; }
+    if(!data || !Array.isArray(data.roster) || !Array.isArray(data.tasks)) return false;
+
+    teacherSeat = data.teacherSeat || '60099';
+    teacherSeatInput.value = teacherSeat;
+
+    rosterMap = new Map(); rosterOrder = []; studentIdMap = new Map(); seatToId = new Map();
+    data.roster.forEach(([seat,name,sid])=>{
+      if(!seat || rosterMap.has(seat)) return;
+      rosterMap.set(seat, name); rosterOrder.push(seat);
+      if(sid){ seatToId.set(seat, sid); studentIdMap.set(sid, seat); }
+    });
+    tasks = data.tasks;
+    resolutions = new Map(data.resolutions||[]);
+
+    let genLabel = data.generatedAt;
+    try{ genLabel = new Date(data.generatedAt).toLocaleString('zh-TW'); }catch(e){}
+    statusMsg.classList.remove('error');
+    statusMsg.textContent = `✅ 已載入本頁內建資料（產生於 ${genLabel}）：名單 ${rosterOrder.length} 人，任務 ${tasks.length} 項。如需改用其他名單或 md 檔，請重新上傳並按「開始分析」。`;
+    $('#dashboard').classList.remove('hidden');
+    refresh();
+    switchTab('matrix');
+    return true;
+  }
+
+  // ---------- helpers ----------
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(str){ return escapeHtml(str); }
+  function shorten(str,n){ return str.length>n ? str.slice(0,n)+'…' : str; }
+
+  tryLoadEmbeddedData();
+
+})();
+</script>
+</body>
+</html>

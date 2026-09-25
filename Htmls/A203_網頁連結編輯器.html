@@ -244,7 +244,7 @@
         const theme = THEMES[link.theme];
         const iconSVG = ICONS[link.icon].replace('currentColor', theme.hex);
         const dotColor = encodeURIComponent(theme.hex);
-        const bgPattern = `data:image/svg+xml;utf8,<svg width="20" height="20" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="2" fill="${dotColor}"/></svg>`;
+        const bgPattern = `data:image/svg+xml;utf8,<svg width='20' height='20' xmlns='http://www.w3.org/2000/svg'><circle cx='10' cy='10' r='2' fill='${dotColor}'/></svg>`;
 
         return `
         <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="cute-card bg-white rounded-3xl overflow-hidden group flex flex-col no-underline">
