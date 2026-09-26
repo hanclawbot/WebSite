@@ -163,6 +163,33 @@
   .row .ext { color: var(--muted); font-weight: 700; }
   .err { color: var(--danger); font-size: .85rem; font-weight: 700; }
 
+  /* 壓縮設定 */
+  .compress {
+    margin-top: 18px; padding: 16px; border-radius: var(--radius);
+    background: var(--lemon-soft); border: 2px dashed #f3d77a;
+  }
+  .compress-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+  .compress-head strong { font-size: 1.02rem; flex: 1; }
+  .levels { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .level { cursor: pointer; }
+  .level input { position: absolute; opacity: 0; pointer-events: none; }
+  .level span {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 58px; padding: 6px; border-radius: 14px; text-align: center;
+    background: #fff; border: 2px solid var(--line); font-weight: 700; font-size: .92rem;
+    transition: background .15s, border-color .15s, transform .12s;
+  }
+  .level i { font-style: normal; }
+  .level small { font-weight: 400; font-size: .74rem; color: var(--muted); }
+  .level:hover span { transform: translateY(-2px); }
+  .level input:checked + span { background: var(--pink); border-color: var(--pink-dark); color: #fff; }
+  .level input:checked + span small { color: #fff; }
+  .level input:focus-visible + span { box-shadow: 0 0 0 4px var(--pink-soft); }
+  .level-desc { margin-top: 10px; font-size: .88rem; color: var(--ink); }
+  .level-desc.warn { color: #b3541e; }
+  .size-info { font-size: .85rem; color: var(--muted); }
+  .size-info b { color: #2f9a7a; }
+
   .footer-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 18px; flex-wrap: wrap; }
   .hint { color: var(--muted); font-size: .85rem; margin-top: 10px; }
   .disabled-card { opacity: .5; pointer-events: none; }
@@ -201,6 +228,11 @@
     button:hover:not(:disabled) { transform: none; }
   }
 
+  /* 平板：壓縮選項維持一列 */
+  @media (min-width: 601px) and (max-width: 760px) {
+    .level small { display: none; }
+  }
+
   /* 平板（601px ~ 1023px） */
   @media (min-width: 601px) and (max-width: 1023px) {
     body { padding: 28px 24px 60px; }
@@ -230,7 +262,16 @@
     .hide-sm { display: none; }
     .file-info { gap: 8px 10px; }
     .file-info .name { flex-basis: calc(100% - 34px); }
-    .tool-btns button { flex: 1; }
+    .tool-btns { gap: 8px; }
+    .tool-btns button { flex: 1; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+    .tool-btns .ico { display: none; }
+    .compress { padding: 12px; }
+    .levels { gap: 6px; }
+    .level span { padding: 6px 2px; font-size: .88rem; }
+    .level small { font-size: .68rem; }
+    .level small { white-space: nowrap; }
+    .level .lbl { display: none; }
+    .compress-head button { width: 100%; }
 
     /* 分割區塊：縮圖在上、欄位在下 */
     .parts { gap: 12px; }
@@ -268,6 +309,8 @@
     header h1 { font-size: 1.35rem; }
     .row.range { gap: 4px; font-size: .9rem; }
     .footer-actions { flex-direction: column; }
+    .levels { grid-template-columns: repeat(3, 1fr); }
+    .tool-btns button { font-size: .8rem; }
   }
 </style>
 </head>
@@ -309,11 +352,27 @@
       <label>個部分</label>
       <span class="spacer"></span>
       <div class="tool-btns">
-        <button class="btn-sky btn-sm" id="evenBtn" type="button">⚖️ 平均分配頁數</button>
-        <button class="btn-ghost btn-sm" id="renameBtn" type="button">🏷️ 重設檔名</button>
+        <button class="btn-ghost btn-sm" id="wholeBtn" type="button"><span class="ico">📄 </span>整份不分割</button>
+        <button class="btn-sky btn-sm" id="evenBtn" type="button"><span class="ico">⚖️ </span>平均分配頁數</button>
+        <button class="btn-ghost btn-sm" id="renameBtn" type="button"><span class="ico">🏷️ </span>重設檔名</button>
       </div>
     </div>
-    <p class="hint">每個部分的起始頁、結束頁與檔名都可以獨立修改；不同部分的頁數範圍可以重疊。</p>
+    <p class="hint">每個部分的起始頁、結束頁與檔名都可以獨立修改；不同部分的頁數範圍可以重疊。只想壓縮整份檔案時，請按「整份不分割」。</p>
+
+    <div class="compress">
+      <div class="compress-head">
+        <strong>🗜️ 壓縮檔案大小</strong>
+        <button class="btn-ghost btn-sm" id="estimateBtn" type="button">📏 試算壓縮後大小</button>
+      </div>
+      <div class="levels" role="radiogroup" aria-label="壓縮程度">
+        <label class="level"><input type="radio" name="level" value="none" checked><span>不壓縮<small>原始品質</small></span></label>
+        <label class="level"><input type="radio" name="level" value="light"><span>輕度<small><i class="lbl">圖片 </i>85%</small></span></label>
+        <label class="level"><input type="radio" name="level" value="medium"><span>標準<small><i class="lbl">圖片 </i>70%</small></span></label>
+        <label class="level"><input type="radio" name="level" value="strong"><span>強力<small><i class="lbl">圖片 </i>50%</small></span></label>
+        <label class="level"><input type="radio" name="level" value="raster"><span>極限<small>整頁轉圖</small></span></label>
+      </div>
+      <p class="level-desc" id="levelDesc"></p>
+    </div>
 
     <div class="parts" id="parts"></div>
 
@@ -341,9 +400,25 @@
     pageCount: 0,
     srcDoc: null,       // pdf-lib 文件（分割用）
     viewDoc: null,      // pdf.js 文件（縮圖用）
-    parts: []           // { start, end, name }
+    parts: [],          // { start, end, name }
+    level: 'none'       // 壓縮程度
   };
   const thumbCache = new Map(); // 頁碼 -> Promise<canvas>
+  const resultCache = new Map(); // 「起-訖-壓縮程度」 -> { bytes, size, baseSize }
+  const imageDocCache = new Map(); // 壓縮程度 -> Promise<PDFDocument>（圖片已重新壓縮）
+
+  // 壓縮程度設定：images = 只重新壓縮圖片（保留文字）；raster = 整頁轉成圖片
+  const LEVELS = {
+    none:   { desc: '保持原始品質，只移除分割後用不到的內容。' },
+    light:  { mode: 'images', quality: 0.85, maxDim: 2400,
+              desc: '保留文字與向量圖形，只將圖片重新壓縮（品質 85%，最長邊 2400 像素）。畫質幾乎看不出差異。' },
+    medium: { mode: 'images', quality: 0.7, maxDim: 1600,
+              desc: '保留文字與向量圖形，圖片品質 70%、最長邊 1600 像素。適合一般分享與列印，建議先試這個。' },
+    strong: { mode: 'images', quality: 0.5, maxDim: 1100,
+              desc: '保留文字與向量圖形，圖片品質 50%、最長邊 1100 像素。檔案更小，圖片細節會變模糊。' },
+    raster: { mode: 'raster', quality: 0.6, dpi: 110, warn: true,
+              desc: '⚠️ 把每一頁轉成圖片（110 DPI），對掃描檔、圖片很多的檔案效果最好；但文字將無法選取、搜尋或複製，純文字檔案反而可能變大。' }
+  };
 
   const $ = (id) => document.getElementById(id);
   const dropZone = $('dropZone');
@@ -419,6 +494,8 @@
 
       if (state.viewDoc) state.viewDoc.destroy();
       thumbCache.clear();
+      resultCache.clear();
+      imageDocCache.clear();
 
       state.bytes = buf;
       state.srcDoc = srcDoc;
@@ -564,6 +641,7 @@
           '</span>' +
           '<button class="btn-pink btn-sm" type="button" data-role="dl">⬇️ 下載</button>' +
         '</div>' +
+        '<div class="size-info" data-role="size"></div>' +
         '<div class="err" data-role="err"></div>' +
       '</div>';
 
@@ -581,6 +659,7 @@
       q('err').textContent = msg ? '⚠️ ' + msg : '';
       q('count').textContent = msg ? '' : '共 ' + (p.end - p.start + 1) + ' 頁';
       q('dl').disabled = !!msg;
+      q('size').innerHTML = msg ? '' : sizeHtml(p);
       fillThumb(q('t1'), Number.isInteger(p.start) ? p.start : null);
       fillThumb(q('t2'), Number.isInteger(p.end) ? p.end : null);
       updateGlobalButtons();
@@ -607,17 +686,236 @@
   function updateGlobalButtons() {
     const ok = allValid();
     $('zipBtn').disabled = !ok;
+    $('estimateBtn').disabled = !ok;
     $('allBtn').disabled = !ok;
   }
 
   /* ---------- 產生與下載 ---------- */
-  async function buildPartPdf(p) {
-    const out = await PDFLib.PDFDocument.create();
+  function partKey(p, level) {
+    return p.start + '-' + p.end + '-' + (level || state.level);
+  }
+
+  function sizeHtml(p) {
+    const r = resultCache.get(partKey(p));
+    if (!r) return '';
+    if (state.level === 'none') return '📦 檔案大小：<b>' + formatSize(r.size) + '</b>';
+    if (r.size >= r.baseSize) {
+      return '📦 ' + formatSize(r.size) + '（此範圍已無法再縮小，使用原始內容）';
+    }
+    const pct = Math.round((1 - r.size / r.baseSize) * 100);
+    return '📦 ' + formatSize(r.baseSize) + ' → <b>' + formatSize(r.size) + '</b>（減少 ' + pct + '%）';
+  }
+
+  function updateSizes() {
+    const els = partsEl.querySelectorAll('.part');
+    state.parts.forEach((p, i) => {
+      const box = els[i] && els[i].querySelector('[data-role="size"]');
+      if (box) box.innerHTML = validate(p) ? '' : sizeHtml(p);
+    });
+  }
+
+  function pageIndices(p) {
     const indices = [];
     for (let k = p.start; k <= p.end; k++) indices.push(k - 1);
-    const pages = await out.copyPages(state.srcDoc, indices);
+    return indices;
+  }
+
+  async function copyPagesFrom(srcDoc, p) {
+    const out = await PDFLib.PDFDocument.create();
+    const pages = await out.copyPages(srcDoc, pageIndices(p));
     pages.forEach((pg) => out.addPage(pg));
-    return out.save();
+    return out.save({ useObjectStreams: true });
+  }
+
+  // 產生某一部分的 PDF（含壓縮），結果會快取起來重複使用
+  async function getPartResult(p, progress) {
+    const level = state.level; // 處理途中切換壓縮程度也不影響這次的結果
+    const key = partKey(p, level);
+    if (resultCache.has(key)) return resultCache.get(key);
+    const cfg = LEVELS[level];
+    const base = await copyPagesFrom(state.srcDoc, p);
+    let bytes = base;
+    if (cfg.mode === 'images') {
+      const doc = await getImageCompressedDoc(level, progress);
+      bytes = await copyPagesFrom(doc, p);
+    } else if (cfg.mode === 'raster') {
+      bytes = await rasterizePart(p, cfg, progress);
+    }
+    // 壓縮後反而變大時，改用原始內容
+    if (bytes.length >= base.length) bytes = base;
+    const result = { bytes: bytes, size: bytes.length, baseSize: base.length };
+    resultCache.set(key, result);
+    updateSizes();
+    return result;
+  }
+
+  /* ---------- 壓縮：重新壓縮圖片（保留文字） ---------- */
+  function getImageCompressedDoc(level, progress) {
+    if (!imageDocCache.has(level)) {
+      const job = (async () => {
+        const doc = await PDFLib.PDFDocument.load(state.bytes, { ignoreEncryption: true });
+        const cfg = LEVELS[level];
+        const images = [];
+        for (const [ref, obj] of doc.context.enumerateIndirectObjects()) {
+          if (obj instanceof PDFLib.PDFRawStream &&
+              obj.dict.lookup(PDFLib.PDFName.of('Subtype')) === PDFLib.PDFName.of('Image')) {
+            images.push([ref, obj]);
+          }
+        }
+        for (let i = 0; i < images.length; i++) {
+          if (progress) progress('壓縮圖片 ' + (i + 1) + '/' + images.length);
+          try {
+            await recompressImage(doc, images[i][0], images[i][1], cfg);
+          } catch (err) {
+            console.warn('略過無法處理的圖片', err);
+          }
+        }
+        return doc;
+      })();
+      job.catch(() => imageDocCache.delete(level));
+      imageDocCache.set(level, job);
+    }
+    return imageDocCache.get(level);
+  }
+
+  function nameOf(s) { return PDFLib.PDFName.of(s); }
+
+  function numberOf(dict, key) {
+    const v = dict.lookup(nameOf(key));
+    return v instanceof PDFLib.PDFNumber ? v.asNumber() : NaN;
+  }
+
+  // 回傳色彩空間的色版數；不支援的色彩空間回傳 0
+  function colorComponents(cs) {
+    if (cs === nameOf('DeviceRGB') || cs === nameOf('CalRGB')) return 3;
+    if (cs === nameOf('DeviceGray') || cs === nameOf('CalGray')) return 1;
+    if (cs instanceof PDFLib.PDFArray) {
+      const kind = cs.lookup(0);
+      if (kind === nameOf('ICCBased')) {
+        const icc = cs.lookup(1);
+        const n = icc && icc.dict ? numberOf(icc.dict, 'N') : NaN;
+        return n === 3 || n === 1 ? n : 0;
+      }
+      if (kind === nameOf('CalRGB')) return 3;
+      if (kind === nameOf('CalGray')) return 1;
+    }
+    return 0;
+  }
+
+  async function inflate(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+
+  function canvasToJpeg(canvas, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return reject(new Error('圖片編碼失敗'));
+        blob.arrayBuffer().then((buf) => resolve(new Uint8Array(buf)), reject);
+      }, 'image/jpeg', quality);
+    });
+  }
+
+  async function recompressImage(doc, ref, stream, cfg) {
+    const dict = stream.dict;
+    const original = stream.contents;
+    if (original.length < 8 * 1024) return;                      // 太小的圖片不值得處理
+    if (dict.lookup(nameOf('ImageMask')) === PDFLib.PDFBool.True) return;
+    if (dict.has(nameOf('Decode'))) return;
+    if (dict.lookup(nameOf('Mask')) instanceof PDFLib.PDFArray) return; // 色鍵遮罩
+    const smask = dict.lookup(nameOf('SMask'));
+    if (smask && smask.dict && smask.dict.has(nameOf('Matte'))) return;
+    if (numberOf(dict, 'BitsPerComponent') !== 8) return;
+
+    const w = numberOf(dict, 'Width'), h = numberOf(dict, 'Height');
+    if (!(w > 0 && h > 0) || w * h > 40e6) return;
+    const comps = colorComponents(dict.lookup(nameOf('ColorSpace')));
+    if (!comps) return;
+
+    let filter = dict.lookup(nameOf('Filter'));
+    if (filter instanceof PDFLib.PDFArray) {
+      if (filter.size() !== 1) return;
+      filter = filter.lookup(0);
+    }
+
+    // 解碼成可以畫到 canvas 上的來源
+    let source;
+    if (filter === nameOf('DCTDecode')) {
+      source = await createImageBitmap(new Blob([original], { type: 'image/jpeg' }));
+    } else if (filter === nameOf('FlateDecode')) {
+      if (typeof DecompressionStream === 'undefined') return;
+      const parms = dict.lookup(nameOf('DecodeParms'));
+      if (parms instanceof PDFLib.PDFDict && numberOf(parms, 'Predictor') > 1) return;
+      if (parms instanceof PDFLib.PDFArray) return;
+      const raw = await inflate(original);
+      if (raw.length < w * h * comps) return;
+      const rgba = new Uint8ClampedArray(w * h * 4);
+      for (let i = 0, j = 0; i < w * h; i++, j += comps) {
+        const o = i * 4;
+        if (comps === 3) { rgba[o] = raw[j]; rgba[o + 1] = raw[j + 1]; rgba[o + 2] = raw[j + 2]; }
+        else { rgba[o] = rgba[o + 1] = rgba[o + 2] = raw[j]; }
+        rgba[o + 3] = 255;
+      }
+      const full = document.createElement('canvas');
+      full.width = w; full.height = h;
+      full.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+      source = full;
+    } else {
+      return; // 其他編碼（JPEG 2000、CCITT 等）維持原樣
+    }
+
+    const scale = Math.min(1, cfg.maxDim / Math.max(w, h));
+    const nw = Math.max(1, Math.round(w * scale)), nh = Math.max(1, Math.round(h * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = nw; canvas.height = nh;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, nw, nh);
+    ctx.drawImage(source, 0, 0, nw, nh);
+    if (source.close) source.close();
+    const jpeg = await canvasToJpeg(canvas, cfg.quality);
+    canvas.width = canvas.height = 0;
+    if (source.width && source.getContext) source.width = source.height = 0;
+
+    if (jpeg.length >= original.length * 0.9) return; // 效果不明顯就保留原圖
+
+    dict.set(nameOf('Filter'), nameOf('DCTDecode'));
+    dict.set(nameOf('ColorSpace'), nameOf('DeviceRGB'));
+    dict.set(nameOf('BitsPerComponent'), PDFLib.PDFNumber.of(8));
+    dict.set(nameOf('Width'), PDFLib.PDFNumber.of(nw));
+    dict.set(nameOf('Height'), PDFLib.PDFNumber.of(nh));
+    dict.delete(nameOf('DecodeParms'));
+    doc.context.assign(ref, PDFLib.PDFRawStream.of(dict, jpeg));
+  }
+
+  /* ---------- 壓縮：整頁轉成圖片 ---------- */
+  async function rasterizePart(p, cfg, progress) {
+    if (!state.viewDoc) throw new Error('這個 PDF 無法轉換為圖片');
+    const out = await PDFLib.PDFDocument.create();
+    const total = p.end - p.start + 1;
+    for (let k = p.start; k <= p.end; k++) {
+      if (progress) progress('轉換頁面 ' + (k - p.start + 1) + '/' + total);
+      const page = await state.viewDoc.getPage(k);
+      const vp1 = page.getViewport({ scale: 1 });
+      // 限制畫布大小，避免手機記憶體不足
+      let scale = cfg.dpi / 72;
+      scale = Math.min(scale, 3000 / Math.max(vp1.width, vp1.height));
+      scale = Math.min(scale, Math.sqrt(12e6 / (vp1.width * vp1.height)));
+      const vp = page.getViewport({ scale: scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.ceil(vp.width);
+      canvas.height = Math.ceil(vp.height);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      const jpeg = await canvasToJpeg(canvas, cfg.quality);
+      canvas.width = canvas.height = 0;
+      const img = await out.embedJpg(jpeg);
+      const newPage = out.addPage([vp1.width, vp1.height]);
+      newPage.drawImage(img, { x: 0, y: 0, width: vp1.width, height: vp1.height });
+    }
+    return out.save({ useObjectStreams: true });
   }
 
   // 同一批下載中若檔名重複，自動加上編號
@@ -657,11 +955,38 @@
     const p = state.parts[i];
     if (validate(p)) return;
     return withBusy(btn, '處理中…', async () => {
-      const bytes = await buildPartPdf(p);
+      const r = await getPartResult(p, (t) => { btn.textContent = t; });
       const name = fileNameOf(i);
-      triggerDownload(new Blob([bytes], { type: 'application/pdf' }), name);
-      toast('已下載「' + name + '」');
+      triggerDownload(new Blob([r.bytes], { type: 'application/pdf' }), name);
+      toast('已下載「' + name + '」（' + formatSize(r.size) + '）');
     });
+  }
+
+  function estimateAll() {
+    if (!allValid()) return;
+    const btn = $('estimateBtn');
+    return withBusy(btn, '試算中…', async () => {
+      let before = 0, after = 0;
+      for (let i = 0; i < state.parts.length; i++) {
+        const tag = '第 ' + (i + 1) + '/' + state.parts.length + ' 部分';
+        btn.textContent = tag;
+        const r = await getPartResult(state.parts[i], (t) => { btn.textContent = tag + '：' + t; });
+        before += r.baseSize;
+        after += r.size;
+      }
+      toast(state.level === 'none'
+        ? '全部合計 ' + formatSize(after)
+        : '全部合計 ' + formatSize(before) + ' → ' + formatSize(after));
+    });
+  }
+
+  function setLevel(level) {
+    state.level = LEVELS[level] ? level : 'none';
+    const cfg = LEVELS[state.level];
+    const desc = $('levelDesc');
+    desc.textContent = cfg.desc;
+    desc.classList.toggle('warn', !!cfg.warn);
+    updateSizes();
   }
 
   function downloadAll() {
@@ -670,9 +995,10 @@
     return withBusy(btn, '處理中…', async () => {
       const names = uniqueNames();
       for (let i = 0; i < state.parts.length; i++) {
-        btn.textContent = '處理中 ' + (i + 1) + '/' + state.parts.length;
-        const bytes = await buildPartPdf(state.parts[i]);
-        triggerDownload(new Blob([bytes], { type: 'application/pdf' }), names[i]);
+        const tag = '第 ' + (i + 1) + '/' + state.parts.length + ' 部分';
+        btn.textContent = tag;
+        const r = await getPartResult(state.parts[i], (t) => { btn.textContent = tag + '：' + t; });
+        triggerDownload(new Blob([r.bytes], { type: 'application/pdf' }), names[i]);
         // 稍微間隔，避免瀏覽器擋下連續下載
         await new Promise((r) => setTimeout(r, 400));
       }
@@ -687,10 +1013,13 @@
       const zip = new JSZip();
       const names = uniqueNames();
       for (let i = 0; i < state.parts.length; i++) {
-        btn.textContent = '打包中 ' + (i + 1) + '/' + state.parts.length;
-        zip.file(names[i], await buildPartPdf(state.parts[i]));
+        const tag = '第 ' + (i + 1) + '/' + state.parts.length + ' 部分';
+        btn.textContent = tag;
+        const r = await getPartResult(state.parts[i], (t) => { btn.textContent = tag + '：' + t; });
+        zip.file(names[i], r.bytes);
       }
-      const blob = await zip.generateAsync({ type: 'blob' });
+      // PDF 本身已壓縮，ZIP 只需打包即可
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
       triggerDownload(blob, state.baseName + '_分割.zip');
       toast('已下載 ZIP 壓縮檔');
     });
@@ -725,6 +1054,20 @@
     state.parts.forEach((p, i) => { p.name = defaultName(i); });
     render();
   });
+  $('wholeBtn').addEventListener('click', () => {
+    setPartCount(1);
+    state.parts[0].start = 1;
+    state.parts[0].end = state.pageCount;
+    if (state.parts[0].name === defaultName(0)) {
+      state.parts[0].name = state.baseName + (state.level === 'none' ? '' : '_壓縮版');
+    }
+    render();
+  });
+  document.querySelectorAll('input[name="level"]').forEach((r) => {
+    r.addEventListener('change', () => { if (r.checked) setLevel(r.value); });
+  });
+  $('estimateBtn').addEventListener('click', estimateAll);
+  setLevel('none');
   $('zipBtn').addEventListener('click', downloadZip);
   $('allBtn').addEventListener('click', downloadAll);
 })();
