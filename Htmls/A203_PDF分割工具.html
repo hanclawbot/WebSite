@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>PDF 分割工具</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
@@ -76,7 +76,7 @@
   .drop:hover, .drop.drag { background: #ffd4e6; transform: scale(1.01); }
   .drop .big { font-size: 2.6rem; }
   .drop strong { display: block; font-size: 1.1rem; margin-top: 6px; }
-  .drop span { color: var(--muted); font-size: .9rem; }
+  .drop > span { color: var(--muted); font-size: .9rem; }
   #fileInput { display: none; }
 
   .file-info {
@@ -117,7 +117,9 @@
 
   .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   .controls label { font-weight: 700; }
-  .controls input[type=number] { width: 90px; }
+  .controls input[type=number] { width: 90px; text-align: center; }
+  .tool-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .drop .tap-text { display: none; }
   .stepper { display: inline-flex; align-items: center; gap: 6px; }
   .stepper button { width: 36px; height: 36px; padding: 0; font-size: 1.2rem; }
   .spacer { flex: 1; }
@@ -156,7 +158,8 @@
   .part-count { color: var(--muted); font-size: .85rem; }
   .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .row input[type=number] { width: 84px; }
-  .row .fname { flex: 1; min-width: 180px; }
+  .fname-wrap { flex: 1; min-width: 180px; display: flex; align-items: center; gap: 6px; }
+  .row .fname { flex: 1; min-width: 0; }
   .row .ext { color: var(--muted); font-weight: 700; }
   .err { color: var(--danger); font-size: .85rem; font-weight: 700; }
 
@@ -178,11 +181,93 @@
     text-align: center; color: var(--muted); font-size: .85rem; margin-top: 8px;
   }
 
+  /* ====== 響應式設計 ====== */
+
+  /* 大螢幕電腦（≥ 1280px）：加寬版面，分割區塊排成兩欄 */
+  @media (min-width: 1280px) {
+    .wrap { max-width: 1200px; }
+    .parts { display: grid; grid-template-columns: 1fr 1fr; }
+  }
+
+  /* 觸控裝置（手機、平板）：加大點擊範圍，隱藏「拖曳」說明 */
+  @media (hover: none) and (pointer: coarse) {
+    button { min-height: 44px; }
+    .btn-sm { padding: 8px 14px; }
+    .stepper button { width: 44px; height: 44px; }
+    input[type=number], input[type=text] { min-height: 44px; }
+    .drop .tap-text { display: inline; }
+    .drop .drag-text { display: none; }
+    .drop:hover { transform: none; }
+    button:hover:not(:disabled) { transform: none; }
+  }
+
+  /* 平板（601px ~ 1023px） */
+  @media (min-width: 601px) and (max-width: 1023px) {
+    body { padding: 28px 24px 60px; }
+    .wrap { max-width: 860px; }
+    .controls { row-gap: 14px; }
+  }
+
+  /* 手機（≤ 600px） */
   @media (max-width: 600px) {
-    header h1 { font-size: 1.6rem; }
-    .part { grid-template-columns: 1fr; }
+    body {
+      padding: 20px max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+      background-attachment: scroll;
+    }
+    header { margin-bottom: 20px; }
+    header h1 { font-size: 1.55rem; }
+    header p { font-size: .88rem; }
+    .card { padding: 16px; border-radius: 16px; margin-bottom: 16px; }
+    .card h2 { font-size: 1.05rem; }
+    .drop { padding: 26px 12px; }
+    .drop .big { font-size: 2.2rem; }
+    .drop strong { font-size: 1rem; }
+
+    /* 分割數量：數字選擇器獨立一列，工具按鈕平分寬度 */
+    .controls { gap: 10px; }
+    .spacer { display: none; }
+    .tool-btns { width: 100%; }
+    .hide-sm { display: none; }
+    .file-info { gap: 8px 10px; }
+    .file-info .name { flex-basis: calc(100% - 34px); }
+    .tool-btns button { flex: 1; }
+
+    /* 分割區塊：縮圖在上、欄位在下 */
+    .parts { gap: 12px; }
+    .part { grid-template-columns: 1fr; padding: 12px; gap: 10px; }
     .thumbs { justify-content: center; }
-    .footer-actions button { flex: 1; }
+    .thumb { width: 54px; height: 72px; }
+
+    /* 頁碼列：不換行，輸入框自動伸縮 */
+    .row.range { flex-wrap: nowrap; gap: 6px; }
+    .row.range label { white-space: nowrap; }
+    .row.range input[type=number] { flex: 1; width: auto; min-width: 0; text-align: center; }
+
+    /* 檔名列：輸入框佔滿一列，下載按鈕在下方 */
+    .name-row > label { width: 100%; }
+    .fname-wrap { min-width: 0; width: 100%; flex-basis: 100%; }
+    .name-row button { width: 100%; }
+
+    /* 下載按鈕固定在畫面底部，方便單手操作 */
+    .footer-actions {
+      position: sticky; bottom: 0; z-index: 10;
+      margin: 16px -16px -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(255, 255, 255, .94);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      border-top: 2px solid var(--line);
+      border-radius: 0 0 16px 16px;
+      gap: 10px; flex-wrap: nowrap;
+    }
+    .footer-actions button { flex: 1; padding: 10px 8px; font-size: .88rem; }
+    #toast { bottom: calc(96px + env(safe-area-inset-bottom)); font-size: .9rem; }
+    .wrap { padding-bottom: 24px; }
+  }
+
+  /* 極窄螢幕（≤ 360px） */
+  @media (max-width: 360px) {
+    header h1 { font-size: 1.35rem; }
+    .row.range { gap: 4px; font-size: .9rem; }
+    .footer-actions { flex-direction: column; }
   }
 </style>
 </head>
@@ -198,7 +283,7 @@
     <h2><span class="step">1</span>上傳 PDF 檔案</h2>
     <label class="drop" id="dropZone" for="fileInput">
       <div class="big">📥</div>
-      <strong>點這裡選擇檔案，或把 PDF 拖曳進來</strong>
+      <strong><span class="tap-text">點這裡選擇 PDF 檔案</span><span class="drag-text">點這裡選擇檔案，或把 PDF 拖曳進來</span></strong>
       <span>僅支援 .pdf 格式</span>
     </label>
     <input type="file" id="fileInput" accept="application/pdf,.pdf">
@@ -218,20 +303,22 @@
       <label for="partCount">分割成</label>
       <div class="stepper">
         <button class="btn-ghost" id="minusBtn" type="button" aria-label="減少一個部分">−</button>
-        <input type="number" id="partCount" min="1" max="100" value="2">
+        <input type="number" inputmode="numeric" id="partCount" min="1" max="100" value="2">
         <button class="btn-ghost" id="plusBtn" type="button" aria-label="增加一個部分">＋</button>
       </div>
       <label>個部分</label>
       <span class="spacer"></span>
-      <button class="btn-sky btn-sm" id="evenBtn" type="button">⚖️ 平均分配頁數</button>
-      <button class="btn-ghost btn-sm" id="renameBtn" type="button">🏷️ 重設檔名</button>
+      <div class="tool-btns">
+        <button class="btn-sky btn-sm" id="evenBtn" type="button">⚖️ 平均分配頁數</button>
+        <button class="btn-ghost btn-sm" id="renameBtn" type="button">🏷️ 重設檔名</button>
+      </div>
     </div>
     <p class="hint">每個部分的起始頁、結束頁與檔名都可以獨立修改；不同部分的頁數範圍可以重疊。</p>
 
     <div class="parts" id="parts"></div>
 
     <div class="footer-actions">
-      <button class="btn-mint" id="zipBtn" type="button">📦 全部打包下載 (ZIP)</button>
+      <button class="btn-mint" id="zipBtn" type="button">📦 全部打包下載<span class="hide-sm"> (ZIP)</span></button>
       <button class="btn-pink" id="allBtn" type="button">⬇️ 逐一下載全部</button>
     </div>
   </section>
@@ -462,17 +549,19 @@
           '<span class="part-title">第 ' + (i + 1) + ' 部分</span>' +
           '<span class="part-count" data-role="count"></span>' +
         '</div>' +
-        '<div class="row">' +
+        '<div class="row range">' +
           '<label>從第</label>' +
-          '<input type="number" data-role="start" min="1" max="' + N + '">' +
+          '<input type="number" inputmode="numeric" data-role="start" min="1" max="' + N + '">' +
           '<label>頁 到第</label>' +
-          '<input type="number" data-role="end" min="1" max="' + N + '">' +
+          '<input type="number" inputmode="numeric" data-role="end" min="1" max="' + N + '">' +
           '<label>頁</label>' +
         '</div>' +
-        '<div class="row">' +
+        '<div class="row name-row">' +
           '<label>檔名</label>' +
-          '<input type="text" class="fname" data-role="name" placeholder="' + escapeAttr(defaultName(i)) + '">' +
-          '<span class="ext">.pdf</span>' +
+          '<span class="fname-wrap">' +
+            '<input type="text" class="fname" data-role="name" placeholder="' + escapeAttr(defaultName(i)) + '">' +
+            '<span class="ext">.pdf</span>' +
+          '</span>' +
           '<button class="btn-pink btn-sm" type="button" data-role="dl">⬇️ 下載</button>' +
         '</div>' +
         '<div class="err" data-role="err"></div>' +
@@ -549,7 +638,7 @@
   }
 
   async function withBusy(btn, label, fn) {
-    const old = btn.textContent;
+    const old = btn.innerHTML;
     btn.disabled = true;
     btn.textContent = label;
     try {
@@ -558,7 +647,7 @@
       console.error(err);
       toast('處理時發生錯誤：' + (err && err.message ? err.message : err), true);
     } finally {
-      btn.textContent = old;
+      btn.innerHTML = old;
       btn.disabled = false;
       updateGlobalButtons();
     }
