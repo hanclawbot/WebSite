@@ -361,6 +361,24 @@ table.k-tbl { border-collapse: collapse; width: 100%; min-width: 480px; backgrou
 }
 .toast.show { transform: translateX(-50%) translateY(0); }
 
+/* ---------- 獨立 3D 互動頁（例：自然五上 四季太陽3D） ---------- */
+.s3d-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+.s3d-grid .block { margin: 0; }
+.s3d-canvas {
+  display: block; width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; border: 3px solid #E1D5F7;
+  touch-action: none; cursor: grab; user-select: none;
+}
+.s3d-canvas:active { cursor: grabbing; }
+.s3d-canvas.space { background: radial-gradient(circle at 50% 45%, #3E4380 0%, #262A5C 60%, #1C1F45 100%); }
+.s3d-canvas.sky { background: linear-gradient(180deg, #E6F4FF 0%, #F6F0FF 70%, #FFF3F7 100%); border-color: #BBDDF7; }
+.s3d-tools { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.s3d-tbl th, .s3d-tbl td { white-space: nowrap; }
+.k-tbl td.s3d-pick { cursor: pointer; }
+.k-tbl td.s3d-pick:hover { background: var(--red-soft); }
+.k-tbl tr.s3d-row td { background: #FFF3F7; }
+.k-tbl td.s3d-on { background: #FFD6E2 !important; font-weight: 800; color: var(--pink-deep); }
+@media (max-width: 860px) { .s3d-grid { grid-template-columns: 1fr; } }
+
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
