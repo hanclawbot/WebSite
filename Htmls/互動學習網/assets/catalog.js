@@ -35,7 +35,11 @@ window.HUB_CATALOG = {
           path: '單元3_神奇的水溶液/', status: 'ready',
           sections: ['3-1 水溶液中的物質', '3-2 水溶液的酸鹼性', '3-3 水溶液的導電性']
         },
-        { id: 'sci5a-u4', no: 4, title: '力與運動', icon: '🧲', path: '單元4_力與運動/', status: 'soon', sections: [] }
+        {
+          id: 'sci5a-u4', no: 4, title: '力與運動', icon: '🧲',
+          path: '單元4_力與運動/', status: 'ready',
+          sections: ['4-1 地球引力', '4-2 力的測量', '4-3 摩擦力']
+        }
       ]
     },
     {
