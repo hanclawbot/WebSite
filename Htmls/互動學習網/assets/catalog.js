@@ -61,7 +61,11 @@ window.HUB_CATALOG = {
           path: '單元1_熱的影響與傳播/', status: 'ready',
           sections: ['1-1 物質的變化與組成', '1-2 熱的傳播', '1-3 保溫與散熱']
         },
-        { id: 'sci6a-u2', no: 2, title: '多變的天氣', icon: '🌦️', path: '單元2_多變的天氣/', status: 'soon', sections: [] },
+        {
+          id: 'sci6a-u2', no: 2, title: '多變的天氣', icon: '🌦️',
+          path: '單元2_多變的天氣/', status: 'ready',
+          sections: ['2-1 水與天氣的關係', '2-2 天氣圖與天氣變化', '2-3 颱風與防災']
+        },
         { id: 'sci6a-u3', no: 3, title: '發現大地的奧祕', icon: '⛰️', path: '單元3_發現大地的奧祕/', status: 'soon', sections: [] },
         { id: 'sci6a-u4', no: 4, title: '電磁與生活', icon: '🧲', path: '單元4_電磁與生活/', status: 'soon', sections: [] }
       ]
