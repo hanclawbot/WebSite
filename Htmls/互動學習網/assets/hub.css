@@ -39,6 +39,7 @@ body {
   background-size: 26px 26px;
 }
 body.theme-mint { background-color: var(--mint); background-image: radial-gradient(rgba(76, 179, 138, 0.13) 2px, transparent 2.5px); }
+body.theme-cream { background-color: var(--cream); background-image: radial-gradient(rgba(255, 183, 77, 0.16) 2px, transparent 2.5px); }
 a { color: inherit; }
 img, svg { max-width: 100%; }
 button { font-family: inherit; }
@@ -151,6 +152,7 @@ a.k-card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 22p
   scrollbar-width: thin;
 }
 body.theme-mint .tabs { background: rgba(240, 255, 244, 0.92); }
+body.theme-cream .tabs { background: rgba(255, 253, 231, 0.92); }
 .tab {
   flex: 0 0 auto;
   border: 3px solid var(--line); background: #fff; color: var(--ink);
