@@ -14,6 +14,7 @@ window.UNIT_DATA = {
   title: '千變萬化的植物',
   icon: '🌱',
   theme: 'mint',
+  shuffleOptions: true,
   intro: '有的植物爭相競賽獲取陽光，有的只需要一點水就能存活，有的完全生活在水中。植物是如何在不同環境延續生命的呢？',
 
   tabs: [
@@ -377,7 +378,7 @@ window.UNIT_DATA = {
           questions: [
             { type: 'single', q: '雌蕊的哪個部位接受花粉？', opts: ['花藥', '柱頭', '子房', '花萼'], ans: 1 },
             { type: 'single', q: '青楓的果實有薄翅，是靠什麼傳播？', opts: ['風力', '水力', '動物', '自身彈力'], ans: 0 },
-            { type: 'single', q: '下列哪一種花，每一朵只有雄蕊或雌蕊？', opts: ['杜鵑', '金桔', '玉米', '以上都是'], ans: 2 },
+            { type: 'single', keepOrder: true, q: '下列哪一種花，每一朵只有雄蕊或雌蕊？', opts: ['杜鵑', '金桔', '玉米', '以上都是'], ans: 2 },
             { type: 'single', q: '甘藷可以用哪些方式繁殖？', opts: ['只能用種子', '只能用根', '種子、根和莖都可以', '只能用葉'], ans: 2 }
           ]
         }
@@ -581,7 +582,7 @@ window.UNIT_DATA = {
               explain: '針狀葉（玉山圓柏）、絨毛（玉山薄雪草）是高山植物的特徵。'
             },
             { type: 'open', src: '習作 p.29', q: '水筆仔的胎生苗對繁殖有什麼幫助？', ref: '幫助水筆仔幼苗在潮溼缺氧且鹽分高的環境中成長。' },
-            { type: 'single', q: '臺灣目前的紅樹林植物有幾種？', opts: ['2 種', '4 種', '10 種', '600 種'], ans: 1 }
+            { type: 'single', keepOrder: true, q: '臺灣目前的紅樹林植物有幾種？', opts: ['2 種', '4 種', '10 種', '600 種'], ans: 1 }
           ]
         }
       ]

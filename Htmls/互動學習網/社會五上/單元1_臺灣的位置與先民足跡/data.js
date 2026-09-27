@@ -18,6 +18,7 @@ window.UNIT_DATA = {
   title: '臺灣的位置與先民足跡',
   icon: '🏝️',
   theme: 'cream',
+  shuffleOptions: true,
   intro: '臺灣是一座四面環海的島嶼，自古以來地理位置就相當重要。從史前文化到原住民族的傳承，看看先民如何就地取材、靈活運用土地和資源。',
 
   tabs: [
@@ -381,7 +382,7 @@ window.UNIT_DATA = {
         {
           kind: 'practice', title: '隨堂小測驗　第3課',
           questions: [
-            { type: 'single', q: '目前經政府認定的臺灣原住民族有幾族？', opts: ['9 族', '12 族', '16 族', '20 族'], ans: 2 },
+            { type: 'single', keepOrder: true, q: '目前經政府認定的臺灣原住民族有幾族？', opts: ['9 族', '12 族', '16 族', '20 族'], ans: 2 },
             { type: 'single', q: '邵族祖先因為追逐什麼動物而發現日月潭？', opts: ['白鹿', '飛魚', '黑熊', '山羌'], ans: 0 },
             { type: 'single', q: '雅美族（達悟族）住在哪裡？', opts: ['日月潭', '蘭嶼', '阿里山', '澎湖'], ans: 1 },
             { type: 'single', q: '泰雅族的共勞團體會做什麼？', opts: ['互相幫忙建造房屋', '一起賣獵物', '決定頭目', '製作鐵器'], ans: 0 }
