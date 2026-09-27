@@ -56,7 +56,11 @@ window.HUB_CATALOG = {
           path: '單元2_臺灣登上國際舞臺/', status: 'ready',
           sections: ['第1課 臺灣為什麼在大航海時代崛起？', '第2課 大航海時代在臺灣留下哪些影響？']
         },
-        { id: 'soc5a-u3', no: 3, title: '成為清帝國的領土', icon: '📜', path: '單元3_成為清帝國的領土/', status: 'soon', sections: [] },
+        {
+          id: 'soc5a-u3', no: 3, title: '成為清帝國的領土', icon: '📜',
+          path: '單元3_成為清帝國的領土/', status: 'ready',
+          sections: ['第1課 早期移民如何在臺灣建立家園？', '第2課 開港通商為什麼改變了臺灣的發展？']
+        },
         { id: 'soc5a-u4', no: 4, title: '土地的利用與變遷', icon: '🏞️', path: '單元4_土地的利用與變遷/', status: 'soon', sections: [] }
       ]
     },
