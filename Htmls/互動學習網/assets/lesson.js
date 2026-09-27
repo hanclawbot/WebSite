@@ -17,6 +17,10 @@
  *   fill     填空   {q, text:'...{{答案|選項1,選項2}}...'}（可含表格 HTML）
  *   open     開放題 {q, ref:'參考答案'}（不計分）
  *   共同欄位：explain（說明）、src（出處標籤，如「習作 p.2」）
+ *
+ * 單元設定 UNIT_DATA.shuffleOptions = true 時，單選題的選項順序會依題目 id
+ * 固定打散（每次開啟順序相同），避免答案集中在同一個位置；
+ * 個別題目可加 keepOrder: true 保留原順序。批改一律以原本的 ans 索引為準。
  * ========================================================= */
 (function () {
   'use strict';
@@ -45,8 +49,15 @@
     const src = q.src ? `<span class="tag wb">${esc(q.src)}</span>` : '';
     let body = '';
     if (q.type === 'single' || q.type === 'multi') {
-      body = `<div class="opts">${q.opts.map((o, i) =>
-        `<button type="button" class="opt ${q.type === 'single' ? 'single' : ''}" data-i="${i}"><span class="box"></span><span>${o}</span></button>`).join('')}</div>`;
+      const order = q.opts.map((o, i) => i);
+      if (D.shuffleOptions && q.type === 'single' && !q.keepOrder) {
+        let h = 2166136261; // FNV-1a 雜湊，再用 mulberry32 產生固定的亂數
+        for (const ch of qid) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619) >>> 0; }
+        const rnd = () => { h = (h + 0x6D2B79F5) >>> 0; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+        for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+      }
+      body = `<div class="opts">${order.map(i =>
+        `<button type="button" class="opt ${q.type === 'single' ? 'single' : ''}" data-i="${i}"><span class="box"></span><span>${q.opts[i]}</span></button>`).join('')}</div>`;
     } else if (q.type === 'classify') {
       body = q.items.map((it, i) => `
         <div class="classify-row" data-i="${i}">
@@ -118,7 +129,8 @@
       const ans = Array.isArray(q.ans) ? q.ans : [q.ans];
       const opts = [...el.querySelectorAll('.opt')];
       if (!opts.some(o => o.classList.contains('sel'))) answered = false;
-      opts.forEach((o, i) => {
+      opts.forEach(o => {
+        const i = Number(o.dataset.i);
         const sel = o.classList.contains('sel'), should = ans.includes(i);
         o.classList.remove('right', 'wrong', 'miss');
         if (sel && should) o.classList.add('right');

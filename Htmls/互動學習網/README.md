@@ -60,6 +60,8 @@
 
 共同欄位：`explain`（作答後顯示的說明）、`src`（出處標籤）。區塊加上 `exam: true` 即為交卷模式。
 
+單元設定 `shuffleOptions: true` 時，單選題選項會依題目 id 固定打散（每次開啟順序相同）；個別題目加 `keepOrder: true` 可保留原順序。
+
 ## 備註
 
 - 學習進度存在各自瀏覽器的 localStorage，不會上傳，也不會在不同裝置間同步。
