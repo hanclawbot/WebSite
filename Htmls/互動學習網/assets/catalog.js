@@ -61,7 +61,11 @@ window.HUB_CATALOG = {
           path: '單元3_成為清帝國的領土/', status: 'ready',
           sections: ['第1課 早期移民如何在臺灣建立家園？', '第2課 開港通商為什麼改變了臺灣的發展？']
         },
-        { id: 'soc5a-u4', no: 4, title: '土地的利用與變遷', icon: '🏞️', path: '單元4_土地的利用與變遷/', status: 'soon', sections: [] }
+        {
+          id: 'soc5a-u4', no: 4, title: '土地的利用與變遷', icon: '🏞️',
+          path: '單元4_土地的利用與變遷/', status: 'ready',
+          sections: ['第1課 人們如何適應不同地形創造所需？', '第2課 沿海的利用為什麼呈現多元發展？', '第3課 土地開發與環境保護該如何抉擇？']
+        }
       ]
     },
     {
