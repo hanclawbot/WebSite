@@ -54,7 +54,17 @@ window.HUB_CATALOG = {
     },
     {
       id: 'sci6a', name: '自然六上', subject: '自然科學', grade: '六年級上學期',
-      icon: '🔭', theme: 'mint', path: '自然六上/', status: 'soon', units: []
+      icon: '🔭', theme: 'mint', path: '自然六上/', status: 'ready',
+      units: [
+        {
+          id: 'sci6a-u1', no: 1, title: '熱的影響與傳播', icon: '🔥',
+          path: '單元1_熱的影響與傳播/', status: 'ready',
+          sections: ['1-1 物質的變化與組成', '1-2 熱的傳播', '1-3 保溫與散熱']
+        },
+        { id: 'sci6a-u2', no: 2, title: '多變的天氣', icon: '🌦️', path: '單元2_多變的天氣/', status: 'soon', sections: [] },
+        { id: 'sci6a-u3', no: 3, title: '發現大地的奧祕', icon: '⛰️', path: '單元3_發現大地的奧祕/', status: 'soon', sections: [] },
+        { id: 'sci6a-u4', no: 4, title: '電磁與生活', icon: '🧲', path: '單元4_電磁與生活/', status: 'soon', sections: [] }
+      ]
     },
     {
       id: 'soc6a', name: '社會六上', subject: '社會', grade: '六年級上學期',
