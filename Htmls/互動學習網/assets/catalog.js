@@ -43,7 +43,11 @@ window.HUB_CATALOG = {
           path: '單元1_臺灣的位置與先民足跡/', status: 'ready',
           sections: ['第1課 從地圖探索位置與發展有何關聯？', '第2課 史前人們如何善用資源維持生活？', '第3課 原住民族的文化與環境有何關聯？']
         },
-        { id: 'soc5a-u2', no: 2, title: '臺灣登上國際舞臺', icon: '⛵', path: '單元2_臺灣登上國際舞臺/', status: 'soon', sections: [] },
+        {
+          id: 'soc5a-u2', no: 2, title: '臺灣登上國際舞臺', icon: '⛵',
+          path: '單元2_臺灣登上國際舞臺/', status: 'ready',
+          sections: ['第1課 臺灣為什麼在大航海時代崛起？', '第2課 大航海時代在臺灣留下哪些影響？']
+        },
         { id: 'soc5a-u3', no: 3, title: '成為清帝國的領土', icon: '📜', path: '單元3_成為清帝國的領土/', status: 'soon', sections: [] },
         { id: 'soc5a-u4', no: 4, title: '土地的利用與變遷', icon: '🏞️', path: '單元4_土地的利用與變遷/', status: 'soon', sections: [] }
       ]
