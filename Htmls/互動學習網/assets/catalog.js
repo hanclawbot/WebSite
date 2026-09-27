@@ -30,7 +30,11 @@ window.HUB_CATALOG = {
           path: '單元2_千變萬化的植物/', status: 'ready',
           sections: ['2-1 不同環境的植物', '2-2 植物存活的本事', '2-3 植物繁衍大顯身手', '2-4 植物的特徵與分類']
         },
-        { id: 'sci5a-u3', no: 3, title: '神奇的水溶液', icon: '🧪', path: '單元3_神奇的水溶液/', status: 'soon', sections: [] },
+        {
+          id: 'sci5a-u3', no: 3, title: '神奇的水溶液', icon: '🧪',
+          path: '單元3_神奇的水溶液/', status: 'ready',
+          sections: ['3-1 水溶液中的物質', '3-2 水溶液的酸鹼性', '3-3 水溶液的導電性']
+        },
         { id: 'sci5a-u4', no: 4, title: '力與運動', icon: '🧲', path: '單元4_力與運動/', status: 'soon', sections: [] }
       ]
     },
