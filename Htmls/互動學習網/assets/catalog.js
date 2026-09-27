@@ -53,12 +53,22 @@ window.HUB_CATALOG = {
       ]
     },
     {
-      id: 'math5a', name: '數學五上', subject: '數學', grade: '五年級上學期',
-      icon: '📐', theme: 'sky', path: '數學五上/', status: 'soon', units: []
+      id: 'sci6a', name: '自然六上', subject: '自然科學', grade: '六年級上學期',
+      icon: '🔭', theme: 'mint', path: '自然六上/', status: 'soon', units: []
     },
     {
-      id: 'chi5a', name: '國語五上', subject: '國語', grade: '五年級上學期',
-      icon: '📖', theme: 'sakura', path: '國語五上/', status: 'soon', units: []
+      id: 'soc6a', name: '社會六上', subject: '社會', grade: '六年級上學期',
+      icon: '🌏', theme: 'sky', path: '社會六上/', status: 'ready',
+      units: [
+        {
+          id: 'soc6a-u1', no: 1, title: '消費選擇與理財規劃', icon: '💰',
+          path: '單元1_消費選擇與理財規劃/', status: 'ready',
+          sections: ['第1課 消費如何聰明選擇並守護權益？', '第2課 為什麼要理財規劃與評估風險？']
+        },
+        { id: 'soc6a-u2', no: 2, title: '戰後經濟轉型與生活轉變', icon: '🏭', path: '單元2_戰後經濟轉型與生活轉變/', status: 'soon', sections: [] },
+        { id: 'soc6a-u3', no: 3, title: '迎向科技發展新挑戰', icon: '🤖', path: '單元3_迎向科技發展新挑戰/', status: 'soon', sections: [] },
+        { id: 'soc6a-u4', no: 4, title: '生活中的規範與運作', icon: '⚖️', path: '單元4_生活中的規範與運作/', status: 'soon', sections: [] }
+      ]
     }
   ]
 };
