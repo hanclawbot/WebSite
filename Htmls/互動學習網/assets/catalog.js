@@ -65,7 +65,11 @@ window.HUB_CATALOG = {
           path: '單元1_消費選擇與理財規劃/', status: 'ready',
           sections: ['第1課 消費如何聰明選擇並守護權益？', '第2課 為什麼要理財規劃與評估風險？']
         },
-        { id: 'soc6a-u2', no: 2, title: '戰後經濟轉型與生活轉變', icon: '🏭', path: '單元2_戰後經濟轉型與生活轉變/', status: 'soon', sections: [] },
+        {
+          id: 'soc6a-u2', no: 2, title: '戰後經濟轉型與生活轉變', icon: '🏭',
+          path: '單元2_戰後經濟轉型與生活轉變/', status: 'ready',
+          sections: ['第1課 政府如何穩定戰後的社會發展？', '第2課 公共建設為何會改變生活型態？', '第3課 臺灣為什麼能成為世界的科技島？']
+        },
         { id: 'soc6a-u3', no: 3, title: '迎向科技發展新挑戰', icon: '🤖', path: '單元3_迎向科技發展新挑戰/', status: 'soon', sections: [] },
         { id: 'soc6a-u4', no: 4, title: '生活中的規範與運作', icon: '⚖️', path: '單元4_生活中的規範與運作/', status: 'soon', sections: [] }
       ]
