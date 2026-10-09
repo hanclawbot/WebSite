@@ -9,6 +9,17 @@ $folders = Get-ChildItem -Path $htmlsFolder -Directory -ErrorAction SilentlyCont
            Where-Object { Test-Path (Join-Path $_.FullName "index.html") } |
            Sort-Object Name
 
+# Subfolders WITHOUT index.html: list each .html inside as its own card (e.g. Stocks/ETF)
+$subFiles = @()
+Get-ChildItem -Path $htmlsFolder -Directory -ErrorAction SilentlyContinue |
+    Where-Object { -not (Test-Path (Join-Path $_.FullName "index.html")) } |
+    Sort-Object Name | ForEach-Object {
+        $dir = $_.Name
+        Get-ChildItem -Path $_.FullName -Filter "*.html" -File | Sort-Object Name | ForEach-Object {
+            $subFiles += [PSCustomObject]@{ Dir = $dir; File = $_ }
+        }
+    }
+
 $cards = ""
 foreach ($folder in $folders) {
     $name = $folder.Name
@@ -18,6 +29,17 @@ foreach ($folder in $folders) {
     $cards += "      <div class=`"card-icon`">&#128193;</div>`n"
     $cards += "      <div class=`"card-info`">`n"
     $cards += "        <div class=`"card-title`">$name</div>`n"
+    $cards += "        <div class=`"card-date`">$modified</div>`n"
+    $cards += "      </div>`n"
+    $cards += "    </a>`n"
+}
+foreach ($sub in $subFiles) {
+    $name = [System.IO.Path]::GetFileNameWithoutExtension($sub.File.Name)
+    $modified = $sub.File.LastWriteTime.ToString("yyyy-MM-dd HH:mm")
+    $cards += "    <a class=`"card`" href=`"./Htmls/$($sub.Dir)/$($sub.File.Name)`">`n"
+    $cards += "      <div class=`"card-icon`">&#128196;</div>`n"
+    $cards += "      <div class=`"card-info`">`n"
+    $cards += "        <div class=`"card-title`">$($sub.Dir)/$name</div>`n"
     $cards += "        <div class=`"card-date`">$modified</div>`n"
     $cards += "      </div>`n"
     $cards += "    </a>`n"
@@ -38,7 +60,7 @@ if ($cards -eq "") {
     $cards = "    <p class=`"empty`">&#30446;&#21069;&#27809;&#26377;&#20219;&#20309;&#32178;&#38913;&#12290;</p>`n"
 }
 
-$count = $files.Count + $folders.Count
+$count = $files.Count + $folders.Count + $subFiles.Count
 $generated = Get-Date -Format "yyyy-MM-dd HH:mm"
 
 $html = "<!DOCTYPE html>`n"
