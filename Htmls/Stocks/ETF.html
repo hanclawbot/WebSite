@@ -1,0 +1,2831 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>台股ETF投資精靈</title>
+<meta name="description" content="用證交所、櫃買中心、集保結算所公開資料分析台股 ETF 的配息方式、含息報酬與配置">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%99%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* 設計代碼（主線撰寫；所有元件樣式只能用這裡的變數，不可寫死顏色）
+   版面概念：粉彩「精靈書桌」——奶白底、圓潤卡片、粗淺色邊框；數字密集區用等寬數字與安靜的底色，
+   可愛感放在吉祥物、精靈卡片與按鈕，資料表與圖表保持清楚好讀。
+   台股慣例：漲＝紅、跌＝綠（與歐美相反），並一律搭配 ▲▼ 符號，不單靠顏色。 */
+:root {
+  /* 底色與卡片 */
+  --bg: #FFF7FA;            /* 粉櫻奶白 */
+  --bg-dot: #FBE3EA;        /* 圓點背景的點 */
+  --card: #FFFFFF;
+  --card-pink: #FFF0F5;
+  --card-mint: #F0FFF4;
+  --card-cream: #FFFDE7;
+  --card-sky: #E8F4FD;
+  --card-lilac: #F4EEFF;
+  --well: #FFF9F2;          /* 表格斑馬紋、輸入框底 */
+  /* 文字 */
+  --fg: #5D4037;            /* 深棕，不用純黑 */
+  --fg-soft: #7A5C52;
+  --muted: #9A7B70;
+  --on-accent: #4A2C2A;     /* 壓在粉紅／橙色按鈕上的字 */
+  /* 邊框與陰影 */
+  --edge: #FADADD;
+  --edge-strong: #F3B8C4;
+  --edge-mint: #BFE8CF;
+  --edge-cream: #F5E3A1;
+  --edge-sky: #BBDDF5;
+  --edge-lilac: #D9C8F5;
+  --shadow: rgba(255, 182, 193, 0.38);
+  --shadow-strong: rgba(240, 130, 160, 0.30);
+  --scrim: rgba(93, 64, 55, 0.35);
+  /* 強調 */
+  --pink: #FF8FAB;
+  --pink-strong: #D6336C;   /* 連結、focus 外框、選取狀態（對白底對比 ≥ 4.5） */
+  --orange: #FFB74D;
+  --orange-strong: #B26A00;
+  --focus: #D6336C;
+  /* 漲跌（台股：漲紅跌綠） */
+  --up: #D6344B;
+  --up-bg: #FFE3E8;
+  --down: #12855F;
+  --down-bg: #DFF5EC;
+  --flat: #8A7A70;
+  --flat-bg: #F1EBE7;
+  /* 狀態 */
+  --warn: #B26A00;
+  --warn-bg: #FFF3D6;
+  --danger: #C0392B;
+  --danger-bg: #FDE7E3;
+  --ok: #12855F;
+  --ok-bg: #DFF5EC;
+  /* 圖表：類別色（固定順序，不輪替；由圖表 worker 以驗證工具確認後可微調數值） */
+  --cat-1: #D6336C;         /* 主角：本策略／本檔／5 日線 */
+  --cat-2: #2F7FC1;         /* 對照一：加權指數／20 日線 */
+  --cat-3: #B26A00;         /* 對照二：全市場／60 日線 */
+  --cat-4: #6B4FBB;         /* 第四條線 */
+  --chart-grid: #F3E3E6;
+  --chart-axis: #9A7B70;
+  --chart-surface: #FFFFFF;
+  /* 圖表：漲跌發散色（熱力圖），中點是中性灰，兩端是紅與綠 */
+  --div-up-3: #D6344B;
+  --div-up-2: #EC7A8A;
+  --div-up-1: #F8C4CC;
+  --div-0: #EFE9E6;
+  --div-down-1: #BFE6D6;
+  --div-down-2: #6FC7A6;
+  --div-down-3: #12855F;
+  --div-na: #F6F1EE;        /* 沒有資料 */
+  /* 因子雷達 */
+  --radar-fill: rgba(255, 143, 171, 0.35);
+  --radar-line: #D6336C;
+  /* 字體與尺度 */
+  --font: 'M PLUS Rounded 1c', 'Nunito', 'Microsoft JhengHei', 'PingFang TC', 'Noto Sans TC', sans-serif;
+  --font-num: 'Nunito', 'M PLUS Rounded 1c', 'Microsoft JhengHei', sans-serif;
+  --fs-xs: 0.78rem; --fs-sm: 0.88rem; --fs-md: 1rem; --fs-lg: 1.2rem; --fs-xl: 1.55rem; --fs-xxl: 2.1rem;
+  --r-sm: 12px; --r-md: 18px; --r-lg: 26px; --r-pill: 999px;
+  --gap-xs: 6px; --gap-sm: 10px; --gap-md: 16px; --gap-lg: 24px; --gap-xl: 36px;
+  --border-w: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #2A2331; --bg-dot: #372D40; --card: #362C40; --card-pink: #46303F; --card-mint: #2C4038; --card-cream: #453F2C; --card-sky: #2B3B4D; --card-lilac: #3B3350; --well: #302838;
+    --fg: #F6EAF0; --fg-soft: #DCC8D2; --muted: #B5A0AC; --on-accent: #3A2030;
+    --edge: #5A4560; --edge-strong: #7A5A78; --edge-mint: #47705C; --edge-cream: #7A6C3E; --edge-sky: #4A6A8A; --edge-lilac: #6A5A95;
+    --shadow: rgba(10, 6, 14, 0.45); --shadow-strong: rgba(10, 6, 14, 0.6); --scrim: rgba(10, 6, 14, 0.6);
+    --pink: #FF9DB5; --pink-strong: #FFA9C0; --orange: #FFC56B; --orange-strong: #FFCB7A; --focus: #FFA9C0;
+    --up: #FF8496; --up-bg: #55303A; --down: #5FD3A8; --down-bg: #244A3D; --flat: #B9A9B0; --flat-bg: #41364A;
+    --warn: #FFCB7A; --warn-bg: #4E4026; --danger: #FF9A8C; --danger-bg: #55302C; --ok: #5FD3A8; --ok-bg: #244A3D;
+    --cat-1: #E65F93; --cat-2: #4396DB; --cat-3: #C2841E; --cat-4: #8F70E0;
+    --chart-grid: #45384F; --chart-axis: #B5A0AC; --chart-surface: #362C40;
+    --div-up-3: #FF7387; --div-up-2: #B5505F; --div-up-1: #6E3A46; --div-0: #473C50; --div-down-1: #2F5A4B; --div-down-2: #3B8E72; --div-down-3: #5FD3A8; --div-na: #3A3043;
+    --radar-fill: rgba(255, 143, 176, 0.28); --radar-line: #FF8FB0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #2A2331; --bg-dot: #372D40; --card: #362C40; --card-pink: #46303F; --card-mint: #2C4038; --card-cream: #453F2C; --card-sky: #2B3B4D; --card-lilac: #3B3350; --well: #302838;
+  --fg: #F6EAF0; --fg-soft: #DCC8D2; --muted: #B5A0AC; --on-accent: #3A2030;
+  --edge: #5A4560; --edge-strong: #7A5A78; --edge-mint: #47705C; --edge-cream: #7A6C3E; --edge-sky: #4A6A8A; --edge-lilac: #6A5A95;
+  --shadow: rgba(10, 6, 14, 0.45); --shadow-strong: rgba(10, 6, 14, 0.6); --scrim: rgba(10, 6, 14, 0.6);
+  --pink: #FF9DB5; --pink-strong: #FFA9C0; --orange: #FFC56B; --orange-strong: #FFCB7A; --focus: #FFA9C0;
+  --up: #FF8496; --up-bg: #55303A; --down: #5FD3A8; --down-bg: #244A3D; --flat: #B9A9B0; --flat-bg: #41364A;
+  --warn: #FFCB7A; --warn-bg: #4E4026; --danger: #FF9A8C; --danger-bg: #55302C; --ok: #5FD3A8; --ok-bg: #244A3D;
+  --cat-1: #E65F93; --cat-2: #4396DB; --cat-3: #C2841E; --cat-4: #8F70E0;
+  --chart-grid: #45384F; --chart-axis: #B5A0AC; --chart-surface: #362C40;
+  --div-up-3: #FF7387; --div-up-2: #B5505F; --div-up-1: #6E3A46; --div-0: #473C50; --div-down-1: #2F5A4B; --div-down-2: #3B8E72; --div-down-3: #5FD3A8; --div-na: #3A3043;
+  --radar-fill: rgba(255, 143, 176, 0.28); --radar-line: #FF8FB0;
+  color-scheme: dark;
+}
+
+/* 版面骨架與共用元件（worker F1）。所有顏色只用 tokens.css 的變數。
+   Kawaii 風格：粉彩底、圓角、3px 粗淺色邊框、偏色柔和陰影；資料表與數字保持清楚好讀。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 76px;
+}
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  line-height: 1.6;
+  color: var(--fg);
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-dot) 1.6px, transparent 1.8px);
+  background-size: 22px 22px;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, h4 { margin: 0 0 var(--gap-xs); line-height: 1.35; font-weight: 800; color: var(--fg); }
+h2 { font-size: var(--fs-lg); }
+h3 { font-size: 1.08rem; }
+p { margin: 0 0 var(--gap-sm); }
+a { color: var(--pink-strong); text-underline-offset: 3px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+img, svg { max-width: 100%; }
+table { border-collapse: collapse; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- 外層與頁首 ---------- */
+#app {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  min-width: 0;
+}
+@media (min-width: 900px) { #app { padding-left: 24px; padding-right: 24px; } }
+
+#app-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: "mascot brand badge btn" "search search search search";
+  align-items: center;
+  column-gap: var(--gap-md);
+  row-gap: var(--gap-sm);
+  padding: calc(14px + env(safe-area-inset-top, 0px)) 0 8px;
+}
+#app-header .mascot { grid-area: mascot; width: 68px; height: 68px; flex: none; }
+#app-header .brand { grid-area: brand; min-width: 0; }
+#app-header h1 { font-size: var(--fs-xl); margin: 0; letter-spacing: 0.02em; }
+#app-header .tagline { margin: 0; font-size: var(--fs-sm); color: var(--fg-soft); }
+#data-badge {
+  grid-area: badge;
+  justify-self: end;
+  display: inline-block;
+  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  color: var(--fg-soft);
+  background: var(--card-mint);
+  border: var(--border-w) solid var(--edge-mint);
+  border-radius: var(--r-pill);
+}
+#btn-data { grid-area: btn; }
+#etf-search-wrap { grid-area: search; position: relative; z-index: 30; width: min(100%, 420px); min-width: 0; }
+#etf-search { width: 100%; max-width: 100%; box-sizing: border-box; }
+#etf-search-list {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  margin: 0; padding: 6px; list-style: none;
+  max-height: min(60vh, 420px); overflow-y: auto;
+  background: var(--card); color: var(--fg);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-md);
+  box-shadow: 0 8px 24px var(--shadow-strong);
+}
+#etf-search-list[hidden] { display: none; }
+.search-item {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  min-height: 40px; padding: 8px 12px; box-sizing: border-box;
+  border-radius: var(--r-sm); cursor: pointer; min-width: 0;
+}
+.search-item:hover, .search-item.is-active { background: var(--card-pink); }
+.search-item.is-active { outline: 2px solid var(--focus); outline-offset: -2px; }
+.search-item .si-code { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-weight: 700; flex: none; }
+.search-item .si-name { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.search-item .si-market { margin-left: auto; font-size: var(--fs-xs); color: var(--fg-soft); flex: none; }
+.search-empty { padding: 10px 12px; color: var(--fg-soft); }
+#glossary-back { margin-bottom: var(--gap-sm); }
+#glossary-back[hidden] { display: none; }
+@media (max-width: 720px) {
+  #app-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "mascot brand btn" "badge badge badge" "search search search";
+  }
+  #app-header .mascot { width: 54px; height: 54px; }
+  #app-header h1 { font-size: 1.35rem; }
+  #data-badge { justify-self: stretch; text-align: center; font-size: var(--fs-xs); padding: 6px 10px; }
+}
+
+.mascot { display: block; overflow: visible; animation: mascot-bob 3.6s ease-in-out infinite; transform-origin: 50% 90%; }
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+/* ---------- 分頁 ---------- */
+#tabs {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  padding: 8px 8px 10px;
+  margin: 0 -8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  background: var(--bg);
+  border-bottom: 3px dotted var(--edge);
+}
+#tabs::-webkit-scrollbar { display: none; }
+#tabs [role="tab"] {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding: 0 12px;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--fg-soft);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--r-pill);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+#tabs [role="tab"]:hover { transform: scale(1.04); background: var(--card-pink); }
+#tabs [role="tab"][aria-selected="true"] {
+  color: var(--on-accent);
+  background: var(--pink);
+  border-color: var(--edge-strong);
+  box-shadow: 0 4px 12px var(--shadow-strong);
+}
+#tabs [role="tab"]:focus-visible { outline-offset: -3px; }
+#watch-count {
+  display: inline-block;
+  min-width: 1.6em;
+  margin-left: 4px;
+  padding: 0 6px;
+  font-family: var(--font-num);
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.6;
+  text-align: center;
+  color: var(--pink-strong);
+  background: var(--card);
+  border: 2px solid var(--edge-strong);
+  border-radius: var(--r-pill);
+}
+#tabs [aria-selected="true"] #watch-count { color: var(--on-accent); }
+@media (max-width: 480px) {
+  #tabs { gap: 4px; }
+  #tabs [role="tab"] { padding: 0 8px; font-size: 0.9rem; }
+}
+
+/* ---------- 主區域 ---------- */
+main { min-width: 0; padding: var(--gap-md) 0 var(--gap-lg); min-height: 50vh; }
+main > section { display: flex; flex-direction: column; gap: var(--gap-md); min-width: 0; }
+main > section > * { min-width: 0; }
+
+#loading, #empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-sm);
+  margin: var(--gap-lg) auto;
+  padding: var(--gap-xl) var(--gap-md);
+  max-width: 560px;
+  text-align: center;
+  background: var(--card-pink);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 8px 22px var(--shadow);
+}
+#loading .mascot, #empty-state .mascot { width: 96px; height: 96px; }
+#loading p, #empty-state p { margin: 0; }
+.loading-title { font-size: var(--fs-lg); font-weight: 800; }
+.loading-dots { display: inline-flex; gap: 8px; margin-top: 4px; }
+.loading-dots i {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--pink);
+  border: 2px solid var(--edge-strong);
+  animation: dot-hop 1s ease-in-out infinite;
+}
+.loading-dots i:nth-child(2) { animation-delay: 0.15s; background: var(--orange); }
+.loading-dots i:nth-child(3) { animation-delay: 0.3s; background: var(--card-lilac); }
+@keyframes dot-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-9px); } }
+
+#disclaimer {
+  margin: var(--gap-md) 0 calc(var(--gap-lg) + env(safe-area-inset-bottom, 0px));
+  padding: var(--gap-sm) var(--gap-md);
+  font-size: var(--fs-xs);
+  line-height: 1.7;
+  text-align: center;
+  color: var(--muted);
+  background: var(--card-cream);
+  border: var(--border-w) dashed var(--edge-cream);
+  border-radius: var(--r-md);
+}
+
+/* ---------- 共用元件 ---------- */
+.card {
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--r-lg);
+  box-shadow: 0 6px 18px var(--shadow);
+  padding: var(--gap-md);
+  min-width: 0;
+}
+@media (min-width: 720px) { .card { padding: 20px; } }
+.card.pink { background: var(--card-pink); border-color: var(--edge-strong); }
+.card.mint { background: var(--card-mint); border-color: var(--edge-mint); }
+.card.cream { background: var(--card-cream); border-color: var(--edge-cream); }
+.card.sky { background: var(--card-sky); border-color: var(--edge-sky); }
+.card.lilac { background: var(--card-lilac); border-color: var(--edge-lilac); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 18px;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--fg);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-pill);
+  box-shadow: 0 3px 0 var(--shadow);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.btn:hover:not(:disabled) { transform: scale(1.04); }
+.btn:active:not(:disabled) { transform: scale(0.97); box-shadow: 0 1px 0 var(--shadow); }
+.btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+.btn-primary { color: var(--on-accent); background: var(--pink); border-color: var(--edge-strong); }
+.btn-soft { color: var(--on-accent); background: var(--orange); border-color: var(--edge-cream); }
+.btn-ghost { background: transparent; box-shadow: none; border-color: var(--edge-strong); }
+.btn-ghost:hover:not(:disabled) { background: var(--card-pink); }
+.btn-sm { min-height: 32px; padding: 0 12px; font-size: var(--fs-sm); border-width: 2px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--fg-soft);
+  background: var(--card-lilac);
+  border: 2px solid var(--edge-lilac);
+  border-radius: var(--r-pill);
+}
+.chip.on { color: var(--on-accent); background: var(--pink); border-color: var(--edge-strong); }
+.chip.warn { color: var(--warn); background: var(--warn-bg); border-color: var(--edge-cream); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: var(--fg-soft);
+  background: var(--flat-bg);
+  border-radius: var(--r-pill);
+}
+.badge.up { color: var(--up); background: var(--up-bg); }
+.badge.down { color: var(--down); background: var(--down-bg); }
+.badge.flat { color: var(--flat); background: var(--flat-bg); }
+.badge.warn { color: var(--warn); background: var(--warn-bg); }
+
+.up { color: var(--up); }
+.down { color: var(--down); }
+.flat { color: var(--flat); }
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.muted { color: var(--muted); }
+.soft { color: var(--fg-soft); }
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  min-width: 0;
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--r-md);
+  box-shadow: 0 4px 12px var(--shadow);
+}
+.tile-label { font-size: var(--fs-sm); font-weight: 700; color: var(--fg-soft); }
+.tile-value { font-family: var(--font-num); font-variant-numeric: tabular-nums; font-size: var(--fs-xl); font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.tile-sub { font-size: var(--fs-xs); color: var(--muted); }
+
+/* 資料表 */
+.table-wrap {
+  overflow: auto;
+  max-width: 100%;
+  max-height: 75vh;
+  background: var(--card);
+  border: var(--border-w) solid var(--edge);
+  border-radius: var(--r-md);
+  -webkit-overflow-scrolling: touch;
+}
+.table-wrap.free { max-height: none; }
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.92rem;
+}
+.table th, .table td {
+  padding: 6px 10px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--edge);
+}
+.table th.num, .table td.num { text-align: right; }
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 44px;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--fg-soft);
+  background: var(--card-pink);
+  border-bottom: var(--border-w) solid var(--edge-strong);
+}
+.table tbody tr { height: 40px; }
+.table tbody tr:nth-child(even) { background: var(--well); }
+.table tbody tr:hover { background: var(--card-pink); }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.table th[aria-sort] { color: var(--pink-strong); }
+
+/* 表單 */
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field > label, .field > .field-label { font-size: var(--fs-sm); font-weight: 700; color: var(--fg-soft); }
+.input, .select {
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 14px;
+  font-size: var(--fs-md);
+  color: var(--fg);
+  background: var(--well);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-md);
+  transition: border-color 0.15s ease;
+}
+.input::placeholder { color: var(--muted); opacity: 1; }
+.input:hover, .select:hover { border-color: var(--pink); }
+.input:focus-visible, .select:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.select { padding-right: 8px; }
+.select[multiple] { padding: 6px 8px; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--pink-strong); width: 1.15rem; height: 1.15rem; }
+input[type="range"] { accent-color: var(--pink-strong); }
+
+/* 名詞小問號 */
+.term {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  margin: 0 2px;
+  vertical-align: middle;
+  font-size: 0.8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--pink-strong);
+  background: var(--card-lilac);
+  border: 2px solid var(--edge-lilac);
+  border-radius: var(--r-pill);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.term:hover { transform: scale(1.15); background: var(--card-pink); }
+
+/* 版面輔助 */
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-sm); min-width: 0; }
+.stack { display: flex; flex-direction: column; gap: var(--gap-md); min-width: 0; }
+.spacer { flex: 1 1 auto; }
+.grid-2, .grid-3, .grid-auto { display: grid; gap: var(--gap-md); min-width: 0; }
+.grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid-auto { grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); }
+.grid-2 > *, .grid-3 > *, .grid-auto > * { min-width: 0; }
+@media (max-width: 960px) { .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .grid-2, .grid-3 { grid-template-columns: minmax(0, 1fr); } }
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-xs);
+  padding: var(--gap-lg) var(--gap-md);
+  text-align: center;
+  color: var(--fg-soft);
+  background: var(--card-cream);
+  border: var(--border-w) dashed var(--edge-cream);
+  border-radius: var(--r-lg);
+}
+.empty > :first-child { font-size: 2rem; line-height: 1.2; }
+.empty p { margin: 0; }
+
+/* ---------- 提示訊息 ---------- */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 100;
+  max-width: calc(100vw - 32px);
+  padding: 10px 20px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--fg);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-pill);
+  box-shadow: 0 8px 24px var(--shadow-strong);
+  transform: translateX(-50%);
+  animation: toast-pop 0.25s ease-out;
+  pointer-events: none;
+}
+@keyframes toast-pop {
+  from { opacity: 0; transform: translate(-50%, 12px) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+
+/* ---------- 資料面板 ---------- */
+body.has-modal { overflow: hidden; }
+#data-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 69;
+  background: var(--scrim);
+}
+#data-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 70;
+  width: min(580px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  transform: translate(-50%, -50%);
+  background: var(--card);
+  border: var(--border-w) solid var(--edge-strong);
+  border-radius: var(--r-lg);
+  box-shadow: 0 14px 40px var(--shadow-strong);
+}
+#data-panel .panel-head { display: flex; align-items: center; gap: var(--gap-sm); margin-bottom: var(--gap-sm); }
+#data-panel .panel-head h2 { flex: 1 1 auto; margin: 0; }
+.data-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px var(--gap-md);
+  margin: 0 0 var(--gap-md);
+  padding: var(--gap-sm) var(--gap-md);
+  font-size: var(--fs-sm);
+  background: var(--well);
+  border: 2px solid var(--edge);
+  border-radius: var(--r-md);
+}
+.data-facts dt { color: var(--fg-soft); font-weight: 700; }
+.data-facts dd { margin: 0; font-family: var(--font-num); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+#data-warnings { margin-bottom: var(--gap-md); font-size: var(--fs-sm); }
+#data-warnings h3 { font-size: var(--fs-md); }
+#data-warnings ul { margin: 0; padding-left: 1.2em; }
+#data-warnings li { color: var(--warn); }
+#update-box { display: flex; flex-direction: column; gap: var(--gap-sm); margin-bottom: var(--gap-md); }
+#update-box .row > .field { flex: 1 1 200px; }
+#update-message:empty { display: none; }
+#update-message { margin: 0; font-size: var(--fs-sm); min-height: 1.5em; color: var(--fg-soft); }
+#update-message.is-error { color: var(--danger); font-weight: 700; }
+#update-hint { margin: 0; font-weight: 700; color: var(--fg-soft); }
+#data-sources { margin: 0; font-size: var(--fs-xs); line-height: 1.7; color: var(--muted); }
+progress {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 16px;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--well);
+  outline: 3px solid var(--edge-strong);
+  outline-offset: -3px;
+}
+progress::-webkit-progress-bar { background: var(--well); }
+progress::-webkit-progress-value { background: var(--pink); border-radius: var(--r-pill); transition: width 0.2s ease; }
+progress::-moz-progress-bar { background: var(--pink); border-radius: var(--r-pill); }
+
+/* ---------- 小辭典 ---------- */
+#view-glossary .glossary-head { display: flex; flex-direction: column; gap: var(--gap-sm); }
+#view-glossary .glossary-head p { margin: 0; color: var(--fg-soft); }
+#glossary-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: var(--gap-md); align-items: start; }
+.term-card { scroll-margin-top: 84px; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.term-card:hover { transform: translateY(-2px); }
+.term-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.term-card h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-bottom: var(--gap-sm); font-size: 1.12rem; }
+.term-card h3 small { font-size: var(--fs-xs); font-weight: 700; color: var(--muted); }
+.term-card .term-group { margin-left: auto; font-size: var(--fs-xs); min-height: 0; padding: 0 10px; }
+.term-card p { margin: 0 0 var(--gap-sm); line-height: 1.75; }
+.term-card p:last-child { margin-bottom: 0; }
+.term-card .term-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+  font-weight: 800;
+  color: var(--on-accent);
+  background: var(--orange);
+  border-radius: var(--r-pill);
+}
+.term-card .term-read .term-tag { background: var(--pink); }
+.term-card.is-focus {
+  border-color: var(--pink-strong);
+  box-shadow: 0 0 0 5px var(--shadow-strong), 0 10px 24px var(--shadow-strong);
+  animation: card-wiggle 0.6s ease-out;
+}
+@keyframes card-wiggle {
+  0% { transform: scale(0.97); }
+  50% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- 無動畫偏好 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:hover:not(:disabled), #tabs [role="tab"]:hover, .term:hover, .term-card:hover { transform: none; }
+}
+
+/* ETF 投資精靈專用樣式。顏色只用 tokens.css 的變數。 */
+.small { font-size: var(--fs-sm); }
+.wrap { flex-wrap: wrap; }
+.between { justify-content: space-between; align-items: center; }
+.row { display: flex; gap: var(--gap-sm); align-items: center; }
+.warn { color: var(--warn); font-weight: 700; }
+.ok { color: var(--ok); font-weight: 700; }
+code { background: var(--well); padding: 1px 6px; border-radius: 6px; }
+main > section > .card, main > section > .grid-2, main > section > .grid-3, main > section > div { margin-bottom: var(--gap-md); }
+.card h2 { margin-bottom: var(--gap-sm); }
+
+/* 頁首搜尋框（沿用 base 的 #etf-search 規則） */
+#etf-search-wrap { grid-area: search; position: relative; }
+#stale-banner { margin: 0 0 var(--gap-sm); padding: 10px 16px; }
+
+/* 首頁主視覺 */
+.hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: var(--gap-lg); align-items: center; }
+.hero-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-sm); }
+@media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--gap-sm); margin: var(--gap-sm) 0 var(--gap-md); }
+.tile .tile-value .num, .tile-value { font-variant-numeric: tabular-nums; }
+
+/* 標籤 */
+.badge.cat { background: var(--card-lilac); border-color: var(--edge-lilac); }
+.badge.cat-market { background: var(--card-pink); border-color: var(--edge-strong); }
+.badge.cat-div { background: var(--card-cream); border-color: var(--edge-cream); }
+.badge.cat-bond, .badge.cat-world, .badge.cat-worldtheme, .badge.cat-balanced { background: var(--card-sky); border-color: var(--edge-sky); }
+.badge.cat-lev, .badge.cat-inv, .badge.cat-commodity { background: var(--warn-bg); border-color: var(--edge-cream); }
+.badge.freq { background: var(--card-mint); border-color: var(--edge-mint); white-space: nowrap; }
+.badge.freq small { margin-left: 4px; font-weight: 500; color: var(--fg-soft); }
+.badge.freq-0, .badge.freq-new { background: var(--flat-bg); border-color: var(--edge); }
+
+/* ETF 連結 */
+.etf-link { background: none; border: 0; padding: 0; color: var(--pink-strong); text-align: left; font: inherit; cursor: pointer; text-decoration: underline; text-decoration-color: var(--edge-strong); text-underline-offset: 3px; }
+.etf-link:hover { text-decoration-color: var(--pink-strong); }
+.etf-link b { color: var(--fg); }
+
+.table-wrap.tall { max-height: 420px; overflow: auto; }
+.table td { vertical-align: middle; }
+.table tr.total td { font-weight: 800; background: var(--card-cream); }
+.list-table td, .list-table th { white-space: nowrap; }
+.sort-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 800; color: inherit; cursor: pointer; }
+th[aria-sort="ascending"] .sort-btn::after { content: ' ▲'; color: var(--pink-strong); }
+th[aria-sort="descending"] .sort-btn::after { content: ' ▼'; color: var(--pink-strong); }
+.star { background: none; border: 0; font-size: 1.25rem; color: var(--muted); cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+.star.on { color: var(--orange-strong); }
+.star:hover { background: var(--well); }
+
+/* 篩選列 */
+.filters { display: flex; flex-wrap: wrap; gap: var(--gap-sm) var(--gap-md); align-items: flex-end; margin-bottom: var(--gap-sm); }
+.filters .field { min-width: 150px; margin: 0; }
+.field.inline { display: flex; align-items: center; gap: 8px; margin: 0; }
+.check { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; padding-bottom: 8px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { cursor: pointer; }
+
+/* 排行 */
+.rank { margin: 0; padding-left: 1.6em; }
+.rank li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px dashed var(--edge); }
+.rank li::marker { color: var(--muted); }
+.rank li .num { white-space: nowrap; color: var(--fg-soft); }
+
+/* 圖表 */
+.chart { position: relative; width: 100%; min-width: 0; }
+.chart svg { display: block; overflow: visible; }
+.chart .grid { stroke: var(--chart-grid); stroke-width: 1; }
+.chart .zero { stroke: var(--chart-axis); stroke-width: 1; }
+.chart .axis { fill: var(--chart-axis); font-size: 11px; font-family: var(--font-num); }
+.chart .crosshair { stroke: var(--chart-axis); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart .hover-dot { stroke: var(--chart-surface); stroke-width: 2; }
+.chart .marker-line { stroke: var(--edge-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+.chart .marker-dot { fill: var(--chart-surface); stroke: var(--cat-3); stroke-width: 2.5; }
+.chart .bar { stroke: var(--chart-surface); stroke-width: 1; }
+.chart .bar.dim { opacity: 0.35; }
+.chart .donut-seg { stroke: var(--chart-surface); stroke-width: 2; }
+.chart .donut-big { fill: var(--fg); font-size: 22px; font-weight: 800; font-family: var(--font-num); }
+.donut-wrap { display: flex; flex-wrap: wrap; gap: var(--gap-md); align-items: center; justify-content: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; font-size: var(--fs-sm); color: var(--fg-soft); }
+.donut-wrap .legend { flex-direction: column; }
+.sw { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.chart-tip { position: fixed; z-index: 100; pointer-events: none; background: var(--card); color: var(--fg); border: 2px solid var(--edge-strong); border-radius: 12px; padding: 8px 12px; font-size: var(--fs-sm); box-shadow: 0 6px 18px var(--shadow); max-width: 280px; }
+.chart-tip .tip-note { color: var(--muted); margin-top: 2px; }
+.spark { vertical-align: middle; }
+
+/* 詳情抽屜 */
+#detail { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(960px, 100vw); overflow: auto; background: var(--bg); border-left: var(--border-w) solid var(--edge-strong); box-shadow: -10px 0 30px var(--shadow-strong); padding: 20px max(16px, env(safe-area-inset-right, 0px)) 40px 20px; }
+#detail-scrim { position: fixed; inset: 0; z-index: 55; background: var(--scrim); }
+.detail-head { display: flex; justify-content: space-between; gap: var(--gap-md); align-items: flex-start; margin-bottom: var(--gap-sm); }
+.detail-head h2 { font-size: var(--fs-xl); margin: 2px 0 6px; }
+.detail-actions { display: flex; gap: 8px; flex-shrink: 0; }
+#detail .card { margin-bottom: var(--gap-md); }
+#detail .grid-2 { margin-bottom: 0; }
+ul.notes, ol.notes { margin: 0; padding-left: 1.3em; }
+ul.notes li, ol.notes li { margin-bottom: 6px; }
+@media (max-width: 600px) { .detail-head { flex-direction: column; } }
+
+.month-cal { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: var(--gap-sm); }
+.month-cal span { text-align: center; padding: 8px 0; border-radius: 10px; background: var(--well); border: 2px solid var(--edge); color: var(--muted); font-weight: 700; font-size: var(--fs-sm); }
+.month-cal span.on { background: var(--card-mint); border-color: var(--down); color: var(--down); }
+.month-cal span.on::before { content: '💰'; display: block; font-size: 0.9rem; }
+
+/* 配息解析 */
+.freq-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--gap-md); }
+.freq-card .pc { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-sm); }
+.freq-card h4 { margin: 4px 0; font-size: var(--fs-sm); }
+.freq-card ul { margin: 0; padding-left: 1.1em; font-size: var(--fs-sm); }
+.freq-card li { margin-bottom: 4px; }
+@media (max-width: 480px) { .freq-card .pc { grid-template-columns: 1fr; } }
+.example-box { display: flex; align-items: flex-end; justify-content: center; gap: var(--gap-md); padding: var(--gap-sm); }
+.ex-col { width: 120px; text-align: center; }
+.ex-col p { font-size: var(--fs-sm); margin-top: 6px; }
+.ex-col > .ex-bar, .ex-stack { height: 150px; }
+.ex-stack { display: flex; flex-direction: column; }
+.ex-bar { background: var(--pink); border: 2px solid var(--pink-strong); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--on-accent); font-weight: 800; }
+.ex-stack .ex-bar { height: auto; }
+.ex-stack .ex-bar.cash { background: var(--ok); border-color: var(--ok); min-height: 14px; margin-bottom: 4px; }
+.ex-arrow { font-size: 2rem; color: var(--muted); padding-bottom: 60px; }
+
+/* 月月配挑選 */
+.pick-col { margin: 0; }
+.pick-col legend { font-weight: 800; padding: 0 6px; }
+.pick { display: flex; gap: 8px; align-items: flex-start; padding: 8px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; margin-bottom: 4px; }
+.pick:hover { background: var(--well); }
+.pick.on { border-color: var(--pink); background: var(--card-pink); }
+.pick input { margin-top: 5px; }
+.warn-box { background: var(--warn-bg); border: 2px solid var(--edge-cream); border-radius: 12px; padding: 10px 14px; }
+
+/* 配置精靈 */
+.plan-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--gap-sm) var(--gap-md); align-items: end; }
+.plan-form .wide { grid-column: 1 / -1; }
+.plan-form .field { margin: 0; }
+.seg { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.seg-item { position: relative; }
+.seg-item input { position: absolute; opacity: 0; }
+.seg-item span { display: block; padding: 10px 12px; border-radius: 14px; border: var(--border-w) solid var(--edge); background: var(--card); cursor: pointer; }
+.seg-item span small { display: block; color: var(--muted); }
+.seg-item input:checked + span { border-color: var(--pink-strong); background: var(--card-pink); }
+.seg-item input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+.plan-table select { max-width: 280px; }
+.assume { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; }
+.assume input { width: 72px; display: inline-block; }
+details summary { cursor: pointer; font-weight: 700; color: var(--pink-strong); }
+
+.cmp-table th[scope="row"] { white-space: nowrap; text-align: left; }
+.cmp-table thead th { white-space: nowrap; }
+.term-card { margin-bottom: var(--gap-sm); }
+.table .etf-link { white-space: nowrap; }
+.plan-table { min-width: 680px; }
+.cmp-table { min-width: 560px; }
+@media (max-width: 480px) { #app-header h1 { font-size: 1.25rem; } }
+
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- 吉祥物「小金」：原創的金幣小精靈（頭頂嫩芽＝讓錢慢慢長大）。顏色全部取自設計代碼。 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="mascot-art" viewBox="0 0 120 120">
+        <ellipse cx="60" cy="112" rx="30" ry="5" fill="var(--edge-strong)" opacity="0.55"/>
+        <!-- 嫩芽 -->
+        <path d="M60 30 Q60 18 60 12" stroke="var(--down)" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <path d="M60 18 Q46 4 36 14 Q46 24 60 18 Z" fill="var(--edge-mint)" stroke="var(--down)" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M60 14 Q74 0 86 9 Q74 21 60 14 Z" fill="var(--edge-mint)" stroke="var(--down)" stroke-width="2.5" stroke-linejoin="round"/>
+        <!-- 金幣身體 -->
+        <circle cx="60" cy="68" r="40" fill="var(--orange)" stroke="var(--orange-strong)" stroke-width="3.5"/>
+        <circle cx="60" cy="68" r="31" fill="none" stroke="var(--orange-strong)" stroke-width="2" stroke-dasharray="4 5" opacity="0.6"/>
+        <ellipse cx="44" cy="50" rx="12" ry="7" fill="var(--card-cream)" opacity="0.7" transform="rotate(-30 44 50)"/>
+        <!-- 小手（拿著小旗子：長條圖） -->
+        <ellipse cx="98" cy="74" rx="7" ry="6.5" fill="var(--orange)" stroke="var(--orange-strong)" stroke-width="3"/>
+        <ellipse cx="22" cy="78" rx="7" ry="6" fill="var(--orange)" stroke="var(--orange-strong)" stroke-width="3"/>
+        <rect x="102" y="52" width="5" height="12" rx="1.5" fill="var(--pink)"/>
+        <rect x="109" y="44" width="5" height="20" rx="1.5" fill="var(--pink-strong)"/>
+        <!-- 臉 -->
+        <ellipse cx="47" cy="70" rx="5" ry="6.5" fill="var(--on-accent)"/>
+        <ellipse cx="73" cy="70" rx="5" ry="6.5" fill="var(--on-accent)"/>
+        <circle cx="49" cy="67.5" r="2" fill="var(--card)"/>
+        <circle cx="75" cy="67.5" r="2" fill="var(--card)"/>
+        <ellipse cx="36" cy="81" rx="6" ry="3.8" fill="var(--pink-strong)" opacity="0.35"/>
+        <ellipse cx="84" cy="81" rx="6" ry="3.8" fill="var(--pink-strong)" opacity="0.35"/>
+        <path d="M53 80 Q60 87 67 80" fill="none" stroke="var(--on-accent)" stroke-width="3" stroke-linecap="round"/>
+        <!-- 亮晶晶 -->
+        <path d="M14 36 l2.2 5.8 5.8 2.2 -5.8 2.2 -2.2 5.8 -2.2 -5.8 -5.8 -2.2 5.8 -2.2 z" fill="var(--pink)" opacity="0.9"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header id="app-header">
+    <svg class="mascot" viewBox="0 0 120 120" role="img" aria-label="吉祥物小金：頭上長著嫩芽的金幣"><use href="#mascot-art"/></svg>
+    <div class="brand">
+      <h1>台股 ETF 投資精靈</h1>
+      <p class="tagline">看懂配息、算清報酬、配置適合自己的 ETF</p>
+    </div>
+    <div id="data-badge" data-asof="" role="status">資料載入中…</div>
+    <button id="btn-data" class="btn btn-soft btn-sm" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="data-panel">資料／更新</button>
+    <div id="etf-search-wrap" role="search">
+      <label class="sr-only" for="etf-search">找 ETF：輸入代號、名稱或指數</label>
+      <input id="etf-search" class="input" type="search" placeholder="找 ETF：代號、名稱或指數" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="etf-search-list" aria-autocomplete="list">
+      <ul id="etf-search-list" role="listbox" aria-label="符合的 ETF" hidden></ul>
+    </div>
+  </header>
+
+  <div id="stale-banner" class="card cream" role="status" hidden>資料已經超過一週沒更新了。雙擊 <b>start.bat</b> 後按「資料／更新」可以抓最新資料。</div>
+
+  <nav id="tabs" role="tablist" aria-label="主要功能">
+    <button id="tab-home" class="tab" role="tab" type="button" aria-selected="true" aria-controls="view-home">總覽</button>
+    <button id="tab-list" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-list">ETF 列表</button>
+    <button id="tab-freq" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-freq">配息解析</button>
+    <button id="tab-monthly" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-monthly">月月配</button>
+    <button id="tab-plan" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-plan">配置精靈</button>
+    <button id="tab-compare" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-compare">比較 <span id="watch-count"><span id="compare-count">0</span></span></button>
+    <button id="tab-tax" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-tax">稅費試算</button>
+    <button id="tab-learn" class="tab" role="tab" type="button" aria-selected="false" aria-controls="view-learn">小辭典</button>
+  </nav>
+
+  <div id="loading" role="status" aria-live="polite">
+    <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-art"/></svg>
+    <p class="loading-title">小金正在整理資料…</p>
+    <span class="loading-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+  </div>
+
+  <div id="empty-state" hidden>
+    <svg class="mascot" viewBox="0 0 120 120" aria-hidden="true"><use href="#mascot-art"/></svg>
+    <p class="loading-title">還沒有 ETF 資料</p>
+    <p>請關掉這個分頁，雙擊資料夾裡的 start.bat，再按「資料／更新」。第一次會下載最近一年的資料（約 20～30 分鐘）。</p>
+  </div>
+
+  <main>
+    <section id="view-home" role="tabpanel" aria-labelledby="tab-home"></section>
+    <section id="view-list" role="tabpanel" aria-labelledby="tab-list" hidden></section>
+    <section id="view-freq" role="tabpanel" aria-labelledby="tab-freq" hidden></section>
+    <section id="view-monthly" role="tabpanel" aria-labelledby="tab-monthly" hidden></section>
+    <section id="view-plan" role="tabpanel" aria-labelledby="tab-plan" hidden></section>
+    <section id="view-compare" role="tabpanel" aria-labelledby="tab-compare" hidden></section>
+    <section id="view-tax" role="tabpanel" aria-labelledby="tab-tax" hidden></section>
+    <section id="view-learn" role="tabpanel" aria-labelledby="tab-learn" hidden></section>
+  </main>
+
+  <aside id="detail" role="dialog" aria-modal="true" aria-labelledby="detail-title" hidden></aside>
+  <div id="detail-scrim" hidden></div>
+  <div id="data-scrim" hidden></div>
+  <aside id="data-panel" role="dialog" aria-modal="true" aria-labelledby="data-title" hidden></aside>
+  <div id="toast" role="status" aria-live="polite" hidden></div>
+
+  <footer id="disclaimer">本工具只整理公開資訊並做計算，<b>不構成任何投資建議</b>；過去的配息與報酬不代表未來，投資有風險，決定前請自行查證。資料來源：臺灣證券交易所、證券櫃檯買賣中心、臺灣集中保管結算所公開資料。</footer>
+</div>
+
+<script src="data/etf_snapshot.js"></script>
+<script>
+/* 共用小工具。所有核心模組都掛在全域 ETF 物件上，瀏覽器與 Node 測試共用同一份程式。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+
+  const DAY = 86400000;
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); }
+  function daysBetween(a, b) { return Math.round((parseDate(b) - parseDate(a)) / DAY); }
+  function addDays(s, n) { return new Date(parseDate(s) + n * DAY).toISOString().slice(0, 10); }
+  function month(s) { return Number(s.slice(5, 7)); }
+
+  function sum(arr) { let t = 0; for (const x of arr) t += x; return t; }
+  function mean(arr) { return arr.length ? sum(arr) / arr.length : null; }
+  function median(arr) {
+    if (!arr.length) return null;
+    const a = arr.slice().sort((x, y) => x - y); const m = a.length >> 1;
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  }
+  function stdev(arr) {
+    if (arr.length < 2) return null;
+    const m = mean(arr); return Math.sqrt(sum(arr.map(x => (x - m) ** 2)) / (arr.length - 1));
+  }
+  function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+  function round(x, n = 2) { if (x == null || !isFinite(x)) return null; const p = 10 ** n; return Math.round(x * p) / p; }
+
+  /* 數字格式：千分位、百分比、億元 */
+  function fmt(x, n = 2) {
+    if (x == null || !isFinite(x)) return '—';
+    return x.toLocaleString('zh-TW', { minimumFractionDigits: n, maximumFractionDigits: n });
+  }
+  function fmtInt(x) { return x == null || !isFinite(x) ? '—' : Math.round(x).toLocaleString('zh-TW'); }
+  function fmtPct(x, n = 2, sign = false) {
+    if (x == null || !isFinite(x)) return '—';
+    const s = (x * 100).toFixed(n) + '%';
+    return sign && x > 0 ? '+' + s : s;
+  }
+  function fmtYi(x) { /* 元 -> 億元 */
+    if (x == null || !isFinite(x)) return '—';
+    const yi = x / 1e8;
+    return yi >= 100 ? fmtInt(yi) + ' 億' : fmt(yi, yi >= 10 ? 1 : 2) + ' 億';
+  }
+  function fmtMoney(x) { return x == null || !isFinite(x) ? '—' : fmtInt(x) + ' 元'; }
+  function fmtDate(s) { return s ? s.slice(0, 4) + '/' + s.slice(5, 7) + '/' + s.slice(8, 10) : '—'; }
+  function fmtMD(s) { return s ? Number(s.slice(5, 7)) + '/' + Number(s.slice(8, 10)) : '—'; }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  ETF.util = { DAY, parseDate, daysBetween, addDays, month, sum, mean, median, stdev, clamp, round,
+    fmt, fmtInt, fmtPct, fmtYi, fmtMoney, fmtDate, fmtMD, esc };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* ETF 分類：官方「基金類型」＋代號尾碼＋指數名稱／簡稱關鍵字。
+   代號尾碼（證交所命名規則）：L 槓桿、R 反向、U 期貨（商品）、B 債券、K／C 外幣加掛、A 主動式股票、D 主動式債券、T 平衡型。
+   櫃買中心沒有提供基金基本資料，上櫃 ETF 只能靠尾碼與簡稱判斷。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+
+  const CATS = {
+    market: { label: '台股市值型', short: '市值型', color: 'cat-1', desc: '買進台灣市值最大的一籃子公司，跟著台股大盤走，成分股多半是龍頭企業。' },
+    div: { label: '高股息', short: '高股息', color: 'cat-3', desc: '挑選殖利率較高（或預期股利較高）的股票，重視配息現金流。' },
+    theme: { label: '台股產業／主題', short: '台股主題', color: 'cat-4', desc: '集中在特定產業或主題（半導體、科技、ESG…），波動通常比市值型大。' },
+    active: { label: '主動式', short: '主動式', color: 'cat-4', desc: '由經理人主動選股、不追蹤指數；費用通常較高，績效取決於經理人。' },
+    world: { label: '海外市值型', short: '海外市值', color: 'cat-2', desc: '追蹤美國、日本、全球等市場的大盤指數，用台幣就能分散到海外。' },
+    worldtheme: { label: '海外產業／主題', short: '海外主題', color: 'cat-2', desc: '海外特定產業或主題（AI、半導體、電動車、生技…）。' },
+    bond: { label: '債券', short: '債券', color: 'cat-2', desc: '持有政府或公司債券，主要收入是利息；價格會隨利率變動。' },
+    balanced: { label: '股債平衡', short: '平衡型', color: 'cat-2', desc: '同一檔裡同時有股票和債券。' },
+    reit: { label: '不動產／REITs', short: 'REITs', color: 'cat-3', desc: '投資不動產投資信託（REITs），收入來自租金，對利率敏感。' },
+    commodity: { label: '商品期貨', short: '商品', color: 'cat-3', desc: '用期貨追蹤黃金、原油、黃豆等商品，有轉倉成本，不配息。' },
+    lev: { label: '槓桿型', short: '槓桿', color: 'cat-1', desc: '追求「單日」兩倍報酬，長期持有會因每日重設而偏離兩倍，適合短線。' },
+    inv: { label: '反向型', short: '反向', color: 'cat-1', desc: '追求「單日」反向報酬，用於短期避險，長期持有通常會耗損。' },
+  };
+  const CAT_ORDER = ['market', 'div', 'theme', 'active', 'world', 'worldtheme', 'bond', 'balanced', 'reit', 'commodity', 'lev', 'inv'];
+
+  const BOND_SUB = {
+    gov: '政府公債', ig: '投資級公司債', hy: '非投資等級債', em: '新興市場債', active: '主動式債券',
+  };
+
+  const ISSUERS = ['華南永昌', '第一金', '貝萊德', '元大', '富邦', '國泰', '群益', '復華', '永豐', '中信', '台新', '凱基',
+    '兆豐', '大華', '統一', '野村', '新光', '街口', '聯邦', '玉山', '安聯', '摩根', '聯博', '柏瑞', '富蘭克林', '保德信',
+    '宏利', '國票', '合庫', '瀚亞', '路博邁', '施羅德', '台中銀', '日盛', '永豐', 'FT', '康和', '鋒裕'];
+  const ISSUER_FULL = { FT: '第一信託' };
+
+  const RE = {
+    foreign: /美國|美股|標普|S&P|NASDAQ|那斯達克|納斯達克|道瓊|日本|日經|東證|中國|上証|上證|滬深|深証|恒生|全球|越南|印度|歐洲|韓國|KOSPI|MAG7|FANG|費城|亞太|新興市場|北美|洲際|世界/i,
+    div: /高股息|高息|股息|優息|息收|收益|入息|股利|存股|填息|鑫收|豐收|特別股|收息/,
+    reit: /不動產|REIT|地產/i,
+    domesticMarket: /臺灣50指數|台灣50|中型100|MSCI.{0,8}臺灣指數|MSCI台灣指數$|發行量加權股價指數$|公司治理100|臺灣永續指數|領袖50|富櫃50|上櫃ESG|TOP ?50|旗艦|市值|權重上限|藍籌30|台灣ESG$|Smart多因子|智慧50|ESG低碳50|淨零轉型ESG ?50|優選50|護城河概念/i,
+    domesticMarketName: /^(元大台灣50|富邦台50|元大MSCI台灣|永豐臺灣加權|富邦摩台|元大富櫃50|元大中型100|永豐台灣ESG|中信上櫃ESG ?30)$/,
+    worldMarket: /標普500指數$|S&P500$|美國500大|標普500$|NASDAQ-100 指數|納斯達克100指數|NASDAQ$|道瓊斯工業平均|日經平均|日經225|東證股價|東証|STOXX50|富時發展歐洲|全球藍籌|世界股票|標普全球100|美國50|KOSPI|富時越南|NIFTY|滬深300|上証180|上證50|中國A50|深証100|恒生中國企業|MSCI中國|新興市場|標普500卓越|中証|彭博全球菁英|全球品牌50/i,
+  };
+
+  function issuerOf(name) {
+    const n = String(name || '').replace(/^(主動|期|平衡)/, '');
+    for (const p of ISSUERS) if (n.startsWith(p)) return ISSUER_FULL[p] || p;
+    return '';
+  }
+
+  function suffixOf(code) { const m = /[A-Z]$/.exec(code); return m ? m[0] : ''; }
+
+  /* 回傳 { cat, sub, region, income, issuer, suffix, tags[] } */
+  function classify(e) {
+    const code = e.code, name = e.name || '', type = e.type || '', idx = e.index || '';
+    const sfx = suffixOf(code);
+    const text = name + ' ' + idx;
+    const foreign = e.foreign === true || (e.foreign == null && RE.foreign.test(text)) || /國外/.test(type);
+    const region = foreign ? 'global' : 'tw';
+    const income = RE.div.test(text);
+    const tags = [];
+    let cat, sub = null;
+
+    if (sfx === 'L' || /正2|正向2|兩倍|2倍/.test(name) && /槓桿/.test(type)) cat = 'lev';
+    else if (sfx === 'R' && /反/.test(name) || /反1/.test(name)) cat = 'inv';
+    else if (sfx === 'U' || /期貨信託/.test(type) || /^期/.test(name)) cat = 'commodity';
+    else if (sfx === 'B' || sfx === 'D' || (/債/.test(name) && !/股/.test(name))) {
+      cat = 'bond';
+      if (sfx === 'D') sub = 'active';
+      else if (/非投|高收益/.test(name)) sub = 'hy';
+      else if (/新興|EM/.test(name)) sub = 'em';
+      else if (/(美債|公債|國債|市政債|美國政府|美國公債)/.test(name) && !/公司債/.test(name)) sub = 'gov';
+      else sub = 'ig';
+      if (sfx === 'D' && /非投/.test(name)) tags.push('非投資等級');
+    }
+    else if (sfx === 'T' || /平衡/.test(type) || /^平衡/.test(name)) cat = 'balanced';
+    else if (sfx === 'A' || /主動式/.test(type) || /^主動/.test(name)) cat = 'active';
+    else if (RE.reit.test(text)) cat = 'reit';
+    else if (income && region === 'tw') cat = 'div';
+    else if (region === 'tw') cat = (RE.domesticMarket.test(idx) || RE.domesticMarketName.test(name)) ? 'market' : 'theme';
+    else if (income) cat = 'div';
+    else cat = RE.worldMarket.test(idx) || RE.worldMarket.test(name) ? 'world' : 'worldtheme';
+
+    if (sfx === 'K' || sfx === 'C') tags.push('外幣加掛');
+    if (cat === 'div' && region === 'global') tags.push('海外高股息');
+    if (cat === 'active' && income) tags.push('收益型');
+    if (/ESG|永續|低碳|淨零/.test(text)) tags.push('ESG');
+    if (/低波/.test(text)) tags.push('低波動');
+    if (/等權/.test(text)) tags.push('等權重');
+    if (/半導體|晶圓|IC設計/.test(text)) tags.push('半導體');
+    if (/AI|人工智慧|機器人|算力/.test(text)) tags.push('AI');
+    if (/科技|電子|資訊|5G|通訊|FANG|MAG7/.test(text) && !tags.includes('半導體')) tags.push('科技');
+    if (/金融/.test(text) && cat !== 'bond') tags.push('金融');
+    return { cat, sub, region, income, issuer: issuerOf(name), suffix: sfx, tags };
+  }
+
+  function catLabel(c) { return (CATS[c.cat] || {}).label + (c.sub ? '・' + BOND_SUB[c.sub] : ''); }
+
+  ETF.classify = { CATS, CAT_ORDER, BOND_SUB, classify, catLabel, issuerOf };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 每檔 ETF 的分析：配息頻率、殖利率、填息、含息報酬、波動、規模、流動性、優點與注意事項。
+   只描述「從公開資料算得出來的事實」與「這類 ETF 的一般特性」；不預測股價。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+  const U = ETF.util;
+
+  const FREQ = {
+    12: { label: '月配', short: '月', desc: '每個月配息一次' },
+    6: { label: '雙月配', short: '雙月', desc: '每兩個月配息一次' },
+    4: { label: '季配', short: '季', desc: '每三個月配息一次' },
+    2: { label: '半年配', short: '半年', desc: '每半年配息一次' },
+    1: { label: '年配', short: '年', desc: '每年配息一次' },
+    0: { label: '不配息', short: '不配', desc: '收益留在基金裡滾入淨值' },
+    new: { label: '紀錄不足', short: '新', desc: '上市不久，配息紀錄還不夠判斷頻率' },
+  };
+  const FREQ_ORDER = [12, 6, 4, 2, 1, 0, 'new'];
+
+  /* 配息頻率：用最近兩年「相鄰兩次除息的間隔天數」中位數判斷，不受上市未滿一年影響。 */
+  function freqOf(divs, asOf, firstDate) {
+    const since = U.addDays(asOf, -730);
+    const recent = divs.filter(d => d.d > since && d.d <= asOf);
+    const ageDays = firstDate ? U.daysBetween(firstDate, asOf) : 9999;
+    let code;
+    if (recent.length >= 2) {
+      const gaps = [];
+      for (let i = Math.max(1, recent.length - 6); i < recent.length; i++) gaps.push(U.daysBetween(recent[i - 1].d, recent[i].d));
+      const g = U.median(gaps);
+      code = g <= 45 ? 12 : g <= 75 ? 6 : g <= 135 ? 4 : g <= 250 ? 2 : 1;
+    } else if (recent.length === 1) {
+      code = ageDays >= 500 ? 1 : 'new';
+    } else {
+      code = ageDays >= 400 ? 0 : 'new';
+    }
+    // 最近一年的除息月份（季配 ETF 依月份分成三組，可組「月月配」）
+    const year = divs.filter(d => d.d > U.addDays(asOf, -380) && d.d <= asOf);
+    const months = [...new Set(year.map(d => U.month(d.d)))].sort((a, b) => a - b);
+    let group = null;
+    if (code === 4 && months.length) {
+      const mods = new Set(months.map(m => m % 3));
+      if (mods.size === 1) group = { 1: 'A', 2: 'B', 0: 'C' }[[...mods][0]];
+    }
+    // 頻率是否改變：前一年與最近一年的次數差很多
+    const prevYear = divs.filter(d => d.d > U.addDays(asOf, -745) && d.d <= U.addDays(asOf, -380));
+    const changed = prevYear.length > 0 && year.length > 0 && Math.abs(prevYear.length - year.length) >= 2;
+    const last = divs.length ? divs[divs.length - 1] : null;
+    let stale = false;
+    if (last && typeof code === 'number' && code > 0) {
+      stale = U.daysBetween(last.d, asOf) > (365 / code) * 1.6 + 30;
+    }
+    return { code, months, group, changed, stale, countYear: year.length, countPrevYear: prevYear.length };
+  }
+
+  /* 在交易日陣列中找第一個 >= d 的位置 */
+  function idxOnOrAfter(dates, d) {
+    let lo = 0, hi = dates.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (dates[m] < d) lo = m + 1; else hi = m; }
+    return lo;
+  }
+
+  /* 每次配息：當次殖利率、填息天數（交易日；0＝除息當天就填息） */
+  function divDetails(e, dates) {
+    const c = e.c;
+    return e.divs.map(dv => {
+      const out = { d: dv.d, cash: dv.cash, pre: dv.pre, ref: dv.ref, yieldPer: dv.pre ? dv.cash / dv.pre : null,
+        fill: null, fillState: 'outside' };
+      if (!dv.pre || !dates.length || dv.d < dates[0]) return out;
+      const i0 = idxOnOrAfter(dates, dv.d);
+      if (i0 >= dates.length) return out;
+      out.fillState = 'pending';
+      for (let j = i0; j < dates.length; j++) {
+        if (c[j] != null && c[j] >= dv.pre - 1e-9) { out.fill = j - i0; out.fillState = 'filled'; out.fillDate = dates[j]; break; }
+      }
+      if (out.fillState === 'pending') out.waited = dates.length - 1 - i0;
+      return out;
+    });
+  }
+
+  function lastValid(arr) { for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return i; return -1; }
+
+  /* 價格與含息報酬、波動、最大回落。window 以「最近 365 天」為主，資料不足就用全部。 */
+  function perf(e, dates, asOf) {
+    const c = e.c;
+    const iEnd = lastValid(c);
+    if (iEnd < 0) return null;
+    const cashOn = {};
+    for (const dv of e.divs) cashOn[dv.d] = (cashOn[dv.d] || 0) + dv.cash;
+    const res = {};
+    function window(daysBack) {
+      const from = U.addDays(asOf, -daysBack);
+      let i0 = idxOnOrAfter(dates, from);
+      while (i0 < iEnd && c[i0] == null) i0++;
+      if (i0 >= iEnd) return null;
+      const full = dates[i0] <= U.addDays(from, 7);
+      let divSum = 0;
+      for (const dv of e.divs) if (dv.d > dates[i0] && dv.d <= dates[iEnd]) divSum += dv.cash;
+      // 股息再投入的含息報酬
+      let tr = 1, prev = c[i0];
+      for (let i = i0 + 1; i <= iEnd; i++) {
+        if (c[i] == null) continue;
+        tr *= (c[i] + (cashOn[dates[i]] || 0)) / prev;
+        prev = c[i];
+      }
+      return { from: dates[i0], full, price: c[iEnd] / c[i0] - 1, total: tr - 1, divSum, start: c[i0] };
+    }
+    res.r1y = window(365);
+    res.r6m = window(182);
+    res.r3m = window(91);
+    res.r1m = window(30);
+    // 日報酬（除息日把配息加回）→ 年化波動、最大回落
+    const rets = [];
+    let peak = 1, idx = 1, mdd = 0, prev = null;
+    const i0 = idxOnOrAfter(dates, U.addDays(asOf, -365));
+    for (let i = i0; i <= iEnd; i++) {
+      if (c[i] == null) continue;
+      if (prev != null) {
+        const r = (c[i] + (cashOn[dates[i]] || 0)) / prev - 1;
+        rets.push(r);
+        idx *= 1 + r;
+        if (idx > peak) peak = idx;
+        mdd = Math.min(mdd, idx / peak - 1);
+      }
+      prev = c[i];
+    }
+    res.vol = rets.length >= 20 ? U.stdev(rets) * Math.sqrt(252) : null;
+    res.mdd = rets.length >= 20 ? mdd : null;
+    res.tradingDays = rets.length;
+    // 流動性：近 20 個交易日平均成交張數與金額
+    const vs = [];
+    for (let i = Math.max(0, iEnd - 19); i <= iEnd; i++) if (c[i] != null) vs.push(e.v[i] || 0);
+    res.avgVol = U.mean(vs);
+    res.avgValue = res.avgVol != null ? res.avgVol * 1000 * c[iEnd] : null;
+    res.price = c[iEnd];
+    res.priceDate = dates[iEnd];
+    return res;
+  }
+
+  /* 一檔 ETF 的完整分析結果 */
+  function analyze(e, snap) {
+    const dates = snap.dates, asOf = snap.asOf;
+    const cls = ETF.classify.classify(e);
+    const firstPrice = e.c.findIndex(x => x != null);
+    const firstDate = e.listed || (e.divs[0] && e.divs[0].d < (dates[firstPrice] || asOf) ? e.divs[0].d : dates[firstPrice]) || null;
+    // 上市日期未知（上櫃）且一年前就有報價 → 至少一年
+    const fq = freqOf(e.divs, asOf, firstPrice === 0 && !e.listed ? U.addDays(asOf, -800) : firstDate);
+    const p = perf(e, dates, asOf) || {};
+    const price = p.price != null ? p.price : null;
+    const ttmDivs = e.divs.filter(d => d.d > U.addDays(asOf, -365) && d.d <= asOf);
+    const prevDivs = e.divs.filter(d => d.d > U.addDays(asOf, -730) && d.d <= U.addDays(asOf, -365));
+    const ttmCash = U.sum(ttmDivs.map(d => d.cash));
+    const prevCash = U.sum(prevDivs.map(d => d.cash));
+    const last = e.divs.length ? e.divs[e.divs.length - 1] : null;
+    const details = divDetails(e, dates);
+    const inWin = details.filter(d => d.fillState !== 'outside');
+    const filled = inWin.filter(d => d.fillState === 'filled');
+    const fillWithin = n => inWin.length ? inWin.filter(d => d.fill != null && d.fill <= n).length / inWin.length : null;
+    const lastAmts = e.divs.slice(-Math.max(4, typeof fq.code === 'number' ? fq.code : 4)).map(d => d.cash);
+    const cv = lastAmts.length >= 3 ? U.stdev(lastAmts) / U.mean(lastAmts) : null;
+    const size = e.units != null && e.nav != null ? e.units * e.nav : null;
+    const hh = (e.holdersHist || []).filter(x => x != null);
+    const annualized = last && price && typeof fq.code === 'number' && fq.code > 0 ? last.cash * fq.code / price : null;
+    const a = {
+      code: e.code, name: e.name, e, cls, cat: cls.cat,
+      freq: fq.code, freqInfo: fq,
+      price, priceDate: p.priceDate,
+      ttmCash, ttmYield: price && ttmCash ? ttmCash / price : (ttmCash === 0 ? 0 : null),
+      ttmCount: ttmDivs.length, prevCash, divGrowth: prevCash > 0 && ttmCash > 0 && fq.countPrevYear >= 1 ? ttmCash / prevCash - 1 : null,
+      annualized, lastDiv: last, details, fillRate: inWin.length ? filled.length / inWin.length : null,
+      fill30: fillWithin(30), fillMedian: filled.length ? U.median(filled.map(d => d.fill)) : null,
+      unfilled: inWin.filter(d => d.fillState === 'pending'),
+      cv, r1y: p.r1y, r6m: p.r6m, r3m: p.r3m, r1m: p.r1m, vol: p.vol, mdd: p.mdd, avgVol: p.avgVol, avgValue: p.avgValue,
+      size, units: e.units, unitsChg: e.unitsChg, nav: e.nav, premium: e.premium,
+      holders: e.holders, holdersPrev: hh.length >= 2 ? hh[hh.length - 2] : null, holdersFirst: hh.length >= 2 ? hh[0] : null,
+      firstDate, ageDays: firstDate ? U.daysBetween(firstDate, asOf) : null,
+      upcoming: (snap.upcoming || []).filter(u => u.code === e.code),
+    };
+    a.notes = notes(a);
+    return a;
+  }
+
+  /* 優點（pros）與注意事項（cons）：每條都附上依據 */
+  function notes(a) {
+    const pros = [], cons = [];
+    const F = U.fmtPct, cat = a.cat, sub = a.cls.sub;
+    const fl = FREQ[a.freq] || FREQ.new;
+    // 規模與人氣
+    if (a.size != null) {
+      if (a.size >= 1e10) pros.push(`規模大（約 ${U.fmtYi(a.size)}元），清算下市的風險低，市場參與者多。`);
+      else if (a.size < 5e8) cons.push(`規模偏小（約 ${U.fmtYi(a.size)}元）；規模長期過小的 ETF 可能被清算下市，請留意公開說明書的門檻。`);
+    }
+    if (a.holders >= 100000) pros.push(`受益人數 ${U.fmtInt(a.holders)} 人，是熱門的 ETF。`);
+    if (a.avgValue != null) {
+      if (a.avgValue >= 1e8) pros.push(`近 20 日平均每天成交約 ${U.fmtYi(a.avgValue)}元，買賣容易成交。`);
+      else if (a.avgValue < 5e6) cons.push(`近 20 日平均每天成交不到 500 萬元，成交量小，買賣價差可能較大，建議用限價單。`);
+    }
+    if (a.premium != null) {
+      if (a.premium >= 1) cons.push(`目前市價比淨值高 ${a.premium.toFixed(2)}%（溢價），現在買等於多付錢；溢價通常會收斂。`);
+      else if (a.premium <= -1) cons.push(`目前市價比淨值低 ${Math.abs(a.premium).toFixed(2)}%（折價），可能是流動性不足或市場悲觀。`);
+      else if (Math.abs(a.premium) <= 0.3) pros.push(`折溢價只有 ${a.premium.toFixed(2)}%，市價貼近淨值。`);
+    }
+    if (a.ageDays != null && a.ageDays < 365) cons.push('上市未滿一年，配息與績效的歷史紀錄短，判斷要更保守。');
+    // 配息
+    if (a.freq === 12) pros.push('月配息：每月都有現金流，適合想用配息支付生活開銷的人。');
+    if (a.freq === 4 && a.freqInfo.group) pros.push(`季配息，除息月份固定在 ${a.freqInfo.months.join('、')} 月，可以和其他月份的季配 ETF 組成「月月配」。`);
+    if (a.freqInfo.changed) cons.push(`配息頻率在這兩年有改變（前一年 ${a.freqInfo.countPrevYear} 次、最近一年 ${a.freqInfo.countYear} 次）。`);
+    if (a.freqInfo.stale) cons.push(`距離上次除息（${U.fmtDate(a.lastDiv.d)}）已經比平常的配息間隔久很多，可能暫停或改變配息。`);
+    if (a.divGrowth != null) {
+      if (a.divGrowth <= -0.15) cons.push(`最近一年每單位配息 ${U.fmt(a.ttmCash, 3)} 元，比前一年少了 ${F(-a.divGrowth, 0)}，配息不保證固定。`);
+      else if (a.divGrowth >= 0.1 && a.ttmCount >= 2) pros.push(`最近一年每單位配息 ${U.fmt(a.ttmCash, 3)} 元，比前一年多 ${F(a.divGrowth, 0)}。`);
+    }
+    if (a.cv != null && a.cv <= 0.05 && a.ttmCount >= 3) pros.push('最近幾次配息金額幾乎相同，現金流穩定、好規劃。');
+    else if (a.cv != null && a.cv >= 0.35) cons.push('每次配息金額差異大，現金流較不穩定。');
+    if (a.fillRate != null && a.details.filter(d => d.fillState !== 'outside').length >= 2) {
+      if (a.fill30 >= 0.8) pros.push(`近一年 ${a.details.filter(d => d.fillState !== 'outside').length} 次除息中，${F(a.fill30, 0)} 在 30 個交易日內填息。`);
+    }
+    if (a.unfilled.length) {
+      const u = a.unfilled[a.unfilled.length - 1];
+      cons.push(`${U.fmtDate(u.d)} 除息（${U.fmt(u.cash, 3)} 元）到資料日為止還沒填息（已過 ${u.waited} 個交易日）。`);
+    }
+    // 報酬與風險
+    const r = a.r1y;
+    if (r && r.full && a.ttmCash > 0) {
+      if (r.total < 0) cons.push(`近一年含息報酬 ${F(r.total, 1, true)}：領到的配息還不夠彌補價格下跌（「賺了股息、賠了價差」）。`);
+      else if (r.price < 0) cons.push(`近一年股價 ${F(r.price, 1, true)}，含息報酬 ${F(r.total, 1, true)}；部分配息被價格下跌抵銷。`);
+    }
+    if (a.ttmYield != null && a.ttmYield >= 0.1 && cat !== 'bond') cons.push(`近一年殖利率 ${F(a.ttmYield, 1)} 偏高；高配息可能來自收益平準金或資本利得，不一定能持續。`);
+    // 類型的一般特性
+    const T = {
+      market: [['成分股分散、汰弱留強，長期跟著台股整體成長，是很多人的「核心持股」。'], ['跟大盤一起漲跌，空頭時無法避開；台積電等權值股比重高。']],
+      div: [['成分股挑選高殖利率公司，配息現金流對退休族或想領息的人有心理支撐。'], ['成分股常每半年或每季大幅調整（周轉率高、交易成本高）；高股息不等於高報酬，空頭時一樣會跌。']],
+      theme: [['集中投資看好的產業，產業走強時漲幅可能大於大盤。'], ['持股集中在單一產業，波動與風險比市值型大。']],
+      active: [['經理人可依市場狀況調整持股，不受指數規則綁住。'], ['主動式的經理費通常比指數型高；績效取決於經理人，持股揭露較不即時。']],
+      world: [['用台幣就能分散到海外市場，降低只押台股的集中風險。'], ['有匯率風險；海外股利在基金內可能被預扣稅，交易時間與海外市場不同步（折溢價較常見）。']],
+      worldtheme: [['可以參與台股較少的海外產業或主題。'], ['主題型波動大、熱潮退去時可能長期落後；另有匯率風險。']],
+      bond: [['債券價格波動通常比股票小，可以平衡股票下跌時的資產波動；配息來源以債息為主。'], [sub === 'gov' ? '長天期公債對利率非常敏感：利率上升時價格會明顯下跌；美元計價資產有匯率風險。' : sub === 'hy' ? '非投資等級債（垃圾債）違約風險較高，景氣差時會和股票一起跌。' : sub === 'em' ? '新興市場債有政治、違約與匯率風險。' : '有利率風險與信用風險；美元計價有匯率風險。']],
+      balanced: [['一檔就同時持有股票和債券。'], ['股債比例由規則或經理人決定，不一定符合你自己的配置。']],
+      reit: [['收入來自租金，配息相對穩定。'], ['對利率敏感，利率上升時 REITs 價格常承壓；有匯率風險。']],
+      commodity: [['可以參與黃金、原油等商品的價格變化，與股票的相關性低。'], ['用期貨追蹤，每月轉倉會有成本（正價差時長期耗損）；不配息，不適合長期存。']],
+      lev: [['短線看對方向時，報酬放大約兩倍。'], ['每天重新平衡，盤整震盪時會耗損，長期報酬不等於指數的兩倍；費用較高，不配息，不適合長期持有。']],
+      inv: [['可在短期看空或避險時使用。'], ['長期持有幾乎一定耗損；台股長期向上，反向型不適合長期存。']],
+    }[cat];
+    if (T) { pros.push(...T[0]); cons.push(...T[1]); }
+    if (/20|25|超長/.test(a.name) && cat === 'bond') cons.push('20 年以上的長天期債券，利率每變動 1 個百分點，價格大約反向變動 15～18%。');
+    return { pros, cons, freqLabel: fl.label };
+  }
+
+  function analyzeAll(snap) {
+    const list = snap.etfs.map(e => analyze(e, snap));
+    const byCode = {};
+    for (const a of list) byCode[a.code] = a;
+    return { list, byCode };
+  }
+
+  ETF.analyze = { FREQ, FREQ_ORDER, freqOf, divDetails, perf, analyze, analyzeAll, notes, idxOnOrAfter };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 配置精靈、月月配組合、稅與二代健保試算、定期定額模擬。
+   配置比例是教科書式的通用原則（年齡、期間、風險承受度、目標），不是個人化投資建議。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+  const U = ETF.util;
+
+  /* 籃子：配置精靈的資產類別，對應到 ETF 分類 */
+  const BUCKETS = {
+    core: { label: '台股市值型（核心）', match: a => a.cat === 'market', why: '分散持有台灣大型公司，長期跟著台股成長，當作資產的核心。' },
+    div: { label: '台股高股息', match: a => a.cat === 'div' && a.cls.region === 'tw', why: '提供定期現金流；和市值型重疊度高，比重不宜過大。' },
+    world: { label: '海外市值型', match: a => a.cat === 'world' && /美國|標普|S&P|NASDAQ|全球|世界|500/i.test(a.name + a.e.index), why: '分散到美國或全球市場，降低只押台股、只押台積電的集中風險。' },
+    bondGov: { label: '美國公債', match: a => a.cat === 'bond' && a.cls.sub === 'gov', why: '股市大跌時常能緩衝（但利率上升時也會跌）；越短天期波動越小。' },
+    bondIG: { label: '投資級公司債', match: a => a.cat === 'bond' && a.cls.sub === 'ig', why: '債息比公債高一點，信用風險比非投資等級債低，提供穩定配息。' },
+  };
+
+  /* 依問卷算出各籃子的權重（加總 = 1） */
+  function allocate(q) {
+    const age = U.clamp(Number(q.age) || 35, 18, 90);
+    const risk = U.clamp(Number(q.risk) || 3, 1, 5);
+    const horizon = Number(q.horizon) || 10;
+    let equity = 100 - age + (risk - 3) * 10;
+    const reasons = [];
+    reasons.push(`起點：股票比重 ≈ 100 − 年齡（${age}）＝ ${100 - age}%。`);
+    if (risk !== 3) reasons.push(`風險承受度 ${risk}／5，股票比重 ${risk > 3 ? '加' : '減'} ${Math.abs(risk - 3) * 10}%。`);
+    if (q.goal === 'grow') { equity += 10; reasons.push('目標是累積資產，股票比重再加 10%。'); }
+    if (q.goal === 'preserve') { equity = Math.min(equity, 30); reasons.push('目標是保守保本，股票比重最多 30%。'); }
+    if (horizon < 3) { equity = Math.min(equity, 20); reasons.push('3 年內就要用到的錢，股票最多 20%（短期股市可能跌 30% 以上）。'); }
+    else if (horizon < 5) { equity = Math.min(equity, 50); reasons.push('5 年內要用的錢，股票最多 50%。'); }
+    equity = U.clamp(Math.round(equity / 5) * 5, 10, 90);
+    const bond = 100 - equity;
+    // 股票內部分配
+    const split = {
+      grow: { core: 60, div: 0, world: 40 },
+      balance: { core: 50, div: 20, world: 30 },
+      income: { core: 30, div: 50, world: 20 },
+      preserve: { core: 50, div: 40, world: 10 },
+    }[q.goal] || { core: 50, div: 20, world: 30 };
+    if (!q.overseas) { split.core += split.world; split.world = 0; }
+    const bsplit = q.goal === 'income' ? { bondGov: 40, bondIG: 60 } : { bondGov: 60, bondIG: 40 };
+    const w = {
+      core: equity * split.core / 100, div: equity * split.div / 100, world: equity * split.world / 100,
+      bondGov: bond * bsplit.bondGov / 100, bondIG: bond * bsplit.bondIG / 100,
+    };
+    const weights = {};
+    for (const k in w) if (w[k] > 0.5) weights[k] = Math.round(w[k]) / 100;
+    const tot = U.sum(Object.values(weights));
+    const kmax = Object.keys(weights).sort((x, y) => weights[y] - weights[x])[0];
+    weights[kmax] = Math.round((weights[kmax] + 1 - tot) * 100) / 100;
+    reasons.push(`股票 ${equity}%、債券 ${bond}%。`);
+    return { equity, bond, weights, reasons };
+  }
+
+  /* 候選 ETF：用客觀條件篩（上市滿一年、規模、成交量、折溢價），依規模排序。不是「推薦買哪一檔」。 */
+  function candidates(analyzed, bucketKey, opts = {}) {
+    const B = BUCKETS[bucketKey];
+    const minSize = opts.minSize != null ? opts.minSize : 3e9;
+    let pool = analyzed.filter(a => B.match(a) && a.price && !['K', 'C'].includes(a.cls.suffix));
+    const strict = pool.filter(a => (a.ageDays == null || a.ageDays >= 365) && (a.size || 0) >= minSize &&
+      (a.avgValue || 0) >= 1e7 && (a.premium == null || Math.abs(a.premium) <= 1));
+    if (strict.length >= 2) pool = strict;
+    if (opts.preferMonthly && bucketKey !== 'core') {
+      const m = pool.filter(a => a.freq === 12);
+      if (m.length) pool = m.concat(pool.filter(a => a.freq !== 12));
+    }
+    if (bucketKey === 'bondGov' && opts.short) {
+      const s = pool.filter(a => /0-1|1-3|短期|0-5/.test(a.name));
+      if (s.length) pool = s.concat(pool.filter(a => !s.includes(a)));
+    }
+    return pool.sort((x, y) => (opts.preferMonthly && bucketKey !== 'core' ? (y.freq === 12) - (x.freq === 12) : 0) || (y.size || 0) - (x.size || 0)).slice(0, opts.limit || 5);
+  }
+
+  /* 依最近一年實際配息，估算持有 units 單位時每個月（以除息月份計）收到的現金 */
+  function monthlyCash(a, units, asOf) {
+    const m = new Array(12).fill(0);
+    for (const d of a.e.divs) if (d.d > U.addDays(asOf, -365) && d.d <= asOf) m[U.month(d.d) - 1] += d.cash * units;
+    return m;
+  }
+
+  /* 月月配：從季配 ETF 中，A 組（1/4/7/10 月）、B 組（2/5/8/11）、C 組（3/6/9/12）各挑一檔 */
+  function monthlyCombos(analyzed, opts = {}) {
+    const kind = opts.kind || 'div';
+    const sortKey = opts.sort || 'size';
+    const okKind = a => kind === 'all' ? ['div', 'market', 'bond', 'active'].includes(a.cat)
+      : kind === 'bond' ? a.cat === 'bond' : kind === 'div' ? a.cat === 'div' || (a.cat === 'active' && a.cls.income) : a.cat === kind;
+    const pool = analyzed.filter(a => okKind(a) && a.freq === 4 && a.freqInfo.group && a.ttmCount >= 3 && a.price &&
+      (a.size || 0) >= (opts.minSize != null ? opts.minSize : 1e9) && (a.avgValue || 0) >= 3e6 && !['K', 'C'].includes(a.cls.suffix));
+    const key = {
+      size: a => a.size || 0, yield: a => a.ttmYield || 0, fill: a => (a.fill30 || 0) * 10 + (a.ttmYield || 0),
+      holders: a => a.holders || 0, total: a => (a.r1y && a.r1y.total) || -9,
+    }[sortKey] || (a => a.size || 0);
+    const groups = { A: [], B: [], C: [] };
+    for (const a of pool) groups[a.freqInfo.group].push(a);
+    for (const g in groups) groups[g].sort((x, y) => key(y) - key(x));
+    const monthlyPayers = analyzed.filter(a => okKind(a) && a.freq === 12 && a.ttmCount >= 6 && a.price && (a.size || 0) >= (opts.minSize != null ? opts.minSize : 1e9))
+      .sort((x, y) => key(y) - key(x));
+    return { groups, monthlyPayers };
+  }
+
+  /* 金額分配到多檔 ETF 後的每月現金流 */
+  function cashflow(picks, asOf) {
+    const months = new Array(12).fill(0);
+    const rows = picks.map(p => {
+      const units = Math.floor(p.amount / p.a.price);
+      const m = monthlyCash(p.a, units, asOf);
+      m.forEach((x, i) => { months[i] += x; });
+      return { a: p.a, amount: p.amount, units, lots: units / 1000, cash: m, annual: U.sum(m) };
+    });
+    const annual = U.sum(months);
+    return { rows, months, annual, invested: U.sum(rows.map(r => r.units * r.a.price)) };
+  }
+
+  /* 稅與二代健保：股利所得「合併計稅（8.5% 可抵減稅額，上限 8 萬）」或「分開計稅 28%」擇一；
+     單筆股利 ≥ 2 萬元扣 2.11% 補充保費。費率與門檻為 2026 年現行規定，請依主管機關公告為準。 */
+  const TAX = { creditRate: 0.085, creditCap: 80000, separateRate: 0.28, nhiRate: 0.0211, nhiThreshold: 20000, nhiCap: 10000000 };
+
+  function dividendTax(div, marginalRate) {
+    const combined = div * marginalRate - Math.min(div * TAX.creditRate, TAX.creditCap);
+    const separate = div * TAX.separateRate;
+    return { combined, separate, best: combined <= separate ? 'combined' : 'separate', saving: Math.abs(combined - separate) };
+  }
+  function nhi(payment) {
+    return payment >= TAX.nhiThreshold ? Math.round(Math.min(payment, TAX.nhiCap) * TAX.nhiRate) : 0;
+  }
+  /* 單次配息低於 2 萬元（不扣補充保費）最多能持有幾張 */
+  function nhiMaxLots(cashPerUnit) {
+    if (!cashPerUnit) return null;
+    return Math.floor((TAX.nhiThreshold - 1) / cashPerUnit / 1000 * 100) / 100;
+  }
+
+  /* 定期定額試算：假設年報酬率 r（股息再投入），每月投入 m、期初 lump，n 年 */
+  function projectDCA(lump, monthly, rate, years) {
+    const mr = Math.pow(1 + rate, 1 / 12) - 1;
+    let v = lump, inv = lump;
+    const path = [{ y: 0, v, inv }];
+    for (let i = 1; i <= years * 12; i++) {
+      v = v * (1 + mr) + monthly; inv += monthly;
+      if (i % 12 === 0) path.push({ y: i / 12, v, inv });
+    }
+    return { value: v, invested: inv, path };
+  }
+
+  /* 用真實歷史價格回放定期定額（每月第一個交易日買進，股息再投入或領出） */
+  function backtestDCA(a, dates, monthly, reinvest) {
+    const c = a.e.c;
+    const cashOn = {};
+    for (const d of a.e.divs) cashOn[d.d] = (cashOn[d.d] || 0) + d.cash;
+    let units = 0, invested = 0, received = 0, lastMonth = '';
+    const path = [];
+    for (let i = 0; i < dates.length; i++) {
+      if (c[i] == null) continue;
+      if (cashOn[dates[i]] && units > 0) {
+        const cash = units * cashOn[dates[i]];
+        if (reinvest) units += cash / c[i]; else received += cash;
+      }
+      const mk = dates[i].slice(0, 7);
+      if (mk !== lastMonth) { lastMonth = mk; units += monthly / c[i]; invested += monthly; }
+      path.push({ d: dates[i], value: units * c[i] + received, invested });
+    }
+    const last = path[path.length - 1];
+    return { units, invested, received, value: last ? last.value : 0, ret: invested ? last.value / invested - 1 : null, path };
+  }
+
+  ETF.plan = { BUCKETS, allocate, candidates, monthlyCash, monthlyCombos, cashflow, TAX, dividendTax, nhi, nhiMaxLots, projectDCA, backtestDCA };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 教學內容：配息頻率解析、ETF 小辭典。內容是一般性知識；稅率與規定以主管機關最新公告為準。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+
+  const FREQ_GUIDE = [
+    { code: 12, title: '月配息', who: '退休族、想用配息支付每月固定開銷的人',
+      pros: ['每個月都有現金流，最容易做生活預算', '配息再投入的頻率高，資金閒置時間短', '單次金額小，持有部位不大時比較不容易超過二代健保 2 萬元門檻'],
+      cons: ['為了維持每月配息，配息有時會動用收益平準金或資本利得，不完全是賺來的', '每次金額小，部分基金每次配息會扣匯費', '除息次數多，股價每個月都會「扣掉」一次配息', '月配不代表報酬比較好，要看含息總報酬'] },
+    { code: 4, title: '季配息', who: '大多數人；想自己組「月月配」的人',
+      pros: ['台灣高股息與債券 ETF 最主流的方式，選擇最多', '除息月份固定，挑 1/4/7/10、2/5/8/11、3/6/9/12 三組各一檔就能每月領息', '一年 4 次，現金流與管理成本取得平衡'],
+      cons: ['單檔只有一季一次現金流，要組合才平均', '同一組月份的 ETF 互相替代，組合時要避免挑到同組'] },
+    { code: 2, title: '半年配息', who: '以累積資產為主、配息只是附帶的人（例如 0050）',
+      pros: ['股息留在基金裡的時間較長，持續參與市場', '扣匯費、處理配息的次數少'],
+      cons: ['現金流不規律，不適合用來支付生活費', '單次金額較大，持有多時較容易超過二代健保門檻'] },
+    { code: 1, title: '年配息', who: '長期存股、不需要定期現金流的人',
+      pros: ['基金內部資金運用最完整', '一年只處理一次配息'],
+      cons: ['單次金額最大，持有多時幾乎一定會被扣 2.11% 二代健保補充保費', '現金流集中在一個月，其他月份沒有收入'] },
+    { code: 0, title: '不配息', who: '只想讓資產長大、還在工作累積期的人',
+      pros: ['收益直接滾入淨值，自動複利', '沒有配息就沒有股利所得稅與二代健保補充保費', '不需要自己把配息再投入'],
+      cons: ['需要用錢時得自己賣掉部分持股', '在台灣上市的不配息 ETF 選擇較少（多為海外、槓桿、商品型）'] },
+  ];
+
+  const GLOSSARY = [
+    { id: 'exdiv', g: '配息', t: '除息', b: '配息時，基金把一部分淨值以現金發給投資人，所以除息當天的參考價會直接扣掉配息金額。<b>配息不是額外賺到的錢</b>，而是把你的資產從「股票」移一部分到「現金」。要在「除息交易日的前一個交易日（含）」以前買進並持有，才能領到這次配息；除息當天才買就領不到。' },
+    { id: 'paydate', g: '配息', t: '發放日', b: '除息後，投信要先計算收益分配，現金通常在除息後約 3～5 週才匯入你的銀行帳戶。本工具的「每月現金流」以除息月份計算，實際入帳常會晚一個月。' },
+    { id: 'fill', g: '配息', t: '填息', b: '除息後股價漲回「除息前一天的收盤價」，就叫填息；花了幾個交易日叫「填息天數」。沒填息代表帳面上「賺了股息、賠了價差」。填息與否取決於之後的市場，過去填息快不代表未來也會。' },
+    { id: 'yield', g: '配息', t: '殖利率', b: '一年配息總額 ÷ 股價。本工具的「近一年殖利率」＝ 最近 365 天的配息加總 ÷ 最新收盤價。另一個常見的「年化配息率」是「最近一次配息 × 一年配息次數 ÷ 股價」，會受單次配息高低影響。殖利率高不代表報酬高，還要看價格漲跌。' },
+    { id: 'total', g: '配息', t: '含息總報酬', b: '把價格漲跌和領到的配息一起算的報酬，才是投資 ETF 真正賺到的錢。本工具假設配息在除息日再投入同一檔 ETF。比較配息型與不配息型 ETF 時，一定要看含息總報酬，不能只看殖利率。' },
+    { id: 'equal', g: '配息', t: '收益平準金', b: '新投資人申購 ETF 時，買價裡包含「已累積但還沒分配的收益」，這部分會被放進收益平準金，避免舊投資人的配息被稀釋。有些 ETF 會用收益平準金來維持配息穩定。配息組成（股利、利息、資本利得、收益平準金）可以在投信網站的「配息組成」公告查到。' },
+    { id: 'source', g: '配息', t: '配息來源', b: '股票型 ETF 的配息來自成分股的股利、已實現資本利得與收益平準金；債券 ETF 主要來自債券利息。各種來源的稅務處理不同，請以投信每次公告的配息組成為準。' },
+    { id: 'premium', g: '交易', t: '折溢價', b: '市價和淨值（基金實際每單位價值）的差距。市價 ＞ 淨值叫溢價（買貴了）、市價 ＜ 淨值叫折價。熱門 ETF、海外 ETF 在台股開盤而海外休市時，比較容易出現明顯折溢價。一般溢價超過 1% 時建議先等一等。本工具的淨值為各投信提供的「預估淨值」。' },
+    { id: 'liquidity', g: '交易', t: '成交量與造市', b: 'ETF 有造市商在買賣兩邊掛單，但成交量小的 ETF 買賣價差仍可能較大。建議用「限價單」而不是市價單，並避開開盤、收盤前幾分鐘。' },
+    { id: 'odd', g: '交易', t: '零股與定期定額', b: '台股可以盤中買零股（不足 1 張＝1,000 股），很多券商也提供 ETF 定期定額（最低每月 1,000～3,000 元）。小資族不需要一次買一整張。' },
+    { id: 'stt', g: '成本', t: '證券交易稅', b: '賣出股票型 ETF 的證交稅是成交金額的 0.1%（個股是 0.3%）；債券 ETF 的證交稅目前停徵（依現行規定至 2026 年 12 月 31 日，延長與否以財政部公告為準）。買進時沒有證交稅，但要付券商手續費（法定上限 0.1425%，常有折扣）。' },
+    { id: 'fee', g: '成本', t: '內扣費用（總費用率）', b: '經理費、保管費、指數授權費等每天從淨值裡扣除，你看不到帳單，但會降低報酬。市值型 ETF 通常較低、主動式與主題型較高。各檔的實際總費用率請查投信投顧公會「基金資訊觀測站」或基金年報。' },
+    { id: 'turnover', g: '成本', t: '成分股調整與周轉率', b: 'ETF 依指數規則定期更換成分股。高股息 ETF 常每季或每半年大換血，周轉率高會增加隱形交易成本，也可能追高殺低。' },
+    { id: 'tracking', g: '成本', t: '追蹤誤差', b: 'ETF 報酬和它追蹤的指數之間的差距，來自費用、現金部位、換股時點等。差距越小，代表基金管理得越好。' },
+    { id: 'nhi', g: '稅務', t: '二代健保補充保費', b: '單次領到的股利所得 ≥ 2 萬元時，會被扣 2.11% 補充保費（單次上限 1,000 萬元）。月配、季配把配息分散成多次，單次金額較小，比較不容易達到門檻。國內債券 ETF 的配息若主要來自海外債券利息，屬海外所得，通常不扣補充保費，實際以扣繳憑單為準。' },
+    { id: 'divtax', g: '稅務', t: '股利所得稅', b: '國內股票型 ETF 配息中的股利所得，報稅時可二選一：<b>合併計稅</b>（併入綜合所得，股利的 8.5% 可抵減稅額，每戶上限 8 萬元）或<b>分開計稅</b>（單一稅率 28%）。邊際稅率 30% 以下的人，多半選合併計稅比較划算。' },
+    { id: 'overseas', g: '稅務', t: '海外所得與最低稅負', b: '國內投信發行、投資海外債券的 ETF，利息配息多屬海外所得，不計入綜合所得稅，但一戶全年海外所得達 100 萬元以上要計入「基本所得額」，超過免稅額才可能要繳最低稅負。' },
+    { id: 'capgain', g: '稅務', t: '證券交易所得', b: '在台灣買賣 ETF 賺到的價差，目前證券交易所得稅停徵，只要繳賣出時的證交稅。這也是「不配息、靠價差」在稅務上的優勢。' },
+    { id: 'core', g: '配置', t: '核心＋衛星', b: '用 60～80% 的資金買分散、低成本的市值型 ETF 當「核心」，再用 20～40% 配置高股息、主題或海外 ETF 當「衛星」。核心負責長期成長，衛星用來調整現金流或參與特定主題。' },
+    { id: 'rebalance', g: '配置', t: '再平衡', b: '定期（例如每年一次）或比例偏離超過 5 個百分點時，把漲多的賣一點、跌多的補一點，讓股債比例回到原本設定。可以自動做到「買低賣高」，並控制風險。' },
+    { id: 'overlap', g: '配置', t: '持股重疊', b: '很多台股 ETF 都重壓台積電與大型電子股，買了 0050 再買科技型或部分高股息 ETF，實際上可能重複買到同一批公司，分散效果比想像中小。' },
+    { id: 'emergency', g: '配置', t: '緊急預備金', b: '投資前先留 3～6 個月的生活費在銀行。股市大跌時不必被迫賣在低點，這比挑哪一檔 ETF 更重要。' },
+    { id: 'duration', g: '債券', t: '存續期間與利率風險', b: '債券價格與利率反向變動。存續期間（年）大約等於「利率變動 1 個百分點，價格反向變動的百分比」。20 年以上美債的存續期間約 15～18 年，0～1 年、1～3 年短債只有約 0.5～2 年，波動小很多。' },
+    { id: 'credit', g: '債券', t: '信用評等', b: '投資等級（BBB－以上）違約風險低；非投資等級（高收益、垃圾債）利息較高但違約風險高，景氣差時跌幅接近股票。' },
+    { id: 'fx', g: '債券', t: '匯率風險', b: '投資美元資產的 ETF（美債、美股），台幣升值時以台幣計算的淨值會下跌，反之上漲。外幣加掛（代號尾碼 K、C）的版本可以用外幣直接交易。' },
+    { id: 'lev', g: '特殊', t: '槓桿與反向的每日重設', b: '槓桿 ETF 追求「單日」兩倍報酬。例如指數先漲 10% 再跌 10%，指數剩 99%，兩倍槓桿剩 96%。盤整越久耗損越多，只適合短線。' },
+    { id: 'futures', g: '特殊', t: '期貨轉倉成本', b: '商品 ETF 持有期貨，到期前要換到下個月的合約。遠月價格比近月高（正價差）時，每次換倉都會吃掉一點報酬，長期持有可能和商品現貨價格差很多。' },
+    { id: 'active', g: '特殊', t: '主動式 ETF', b: '代號尾碼 A（股票）、D（債券），不追蹤指數，由經理人選股並每日揭露持股。可能打敗大盤也可能落後，費用通常比被動式高。' },
+    { id: 'delist', g: '特殊', t: '規模與下市', b: 'ETF 規模（淨資產）長期過小，或淨值跌到一定程度，可能依信託契約終止並清算，把剩餘資產還給投資人。清算不會讓錢歸零，但會被迫在不理想的時點出場。' },
+    { id: 'suffix', g: '特殊', t: '代號尾碼', b: 'L 槓桿、R 反向、U 期貨型、B 債券、A 主動式股票、D 主動式債券、T 平衡型、K／C 外幣加掛；沒有字母的多為股票型。' },
+  ];
+
+  ETF.learn = { FREQ_GUIDE, GLOSSARY };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 圖表：全部自己用 SVG 畫，不依賴外部函式庫。顏色只用 tokens.css 的變數。
+   規則：細線 2px、單一 y 軸、格線淡、文字用文字色；每張圖都有滑鼠／觸控提示。 */
+(function (root) {
+  const ETF = root.ETF = root.ETF || {};
+  const NS = 'http://www.w3.org/2000/svg';
+  const esc = s => ETF.util.esc(s);
+
+  function el(tag, attrs, parent) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs || {}) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  let tipEl = null;
+  function tip() {
+    if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'chart-tip'; tipEl.setAttribute('role', 'status'); document.body.appendChild(tipEl); }
+    return tipEl;
+  }
+  function showTip(html, x, y) {
+    const t = tip(); t.innerHTML = html; t.hidden = false;
+    const w = t.offsetWidth, h = t.offsetHeight;
+    let left = x + 14, top = y - h - 10;
+    if (left + w > window.innerWidth - 8) left = x - w - 14;
+    if (top < 8) top = y + 16;
+    t.style.left = Math.max(8, left) + 'px'; t.style.top = top + 'px';
+  }
+  function hideTip() { if (tipEl) tipEl.hidden = true; }
+
+  function niceTicks(min, max, n = 4) {
+    if (min === max) { min -= 1; max += 1; }
+    const span = max - min, step0 = span / n, mag = Math.pow(10, Math.floor(Math.log10(step0)));
+    const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= step0) || step0;
+    const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step;
+    const ticks = []; for (let v = lo; v <= hi + step / 2; v += step) ticks.push(+v.toFixed(10));
+    return { lo, hi, ticks };
+  }
+
+  function frame(host, height) {
+    host.innerHTML = '';
+    host.classList.add('chart');
+    const W = Math.max(280, host.clientWidth || 600), H = height || 240;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%', height: H, role: 'img' }, host);
+    return { svg, W, H };
+  }
+
+  /* 折線圖：dates[]、series[{name, values[], color}]、markers[{i, label}]（例如除息日） */
+  function line(host, o) {
+    const { svg, W, H } = frame(host, o.height || 260);
+    svg.setAttribute('aria-label', o.label || '折線圖');
+    const P = { l: 52, r: 14, t: 14, b: 26 };
+    const n = o.dates.length;
+    let min = Infinity, max = -Infinity;
+    for (const s of o.series) for (const v of s.values) if (v != null) { min = Math.min(min, v); max = Math.max(max, v); }
+    if (!isFinite(min)) { host.innerHTML = '<p class="muted">沒有資料</p>'; return; }
+    const { lo, hi, ticks } = niceTicks(min, max);
+    const X = i => P.l + (W - P.l - P.r) * (n <= 1 ? 0.5 : i / (n - 1));
+    const Y = v => P.t + (H - P.t - P.b) * (1 - (v - lo) / (hi - lo || 1));
+    const fmt = o.yFmt || (v => ETF.util.fmt(v, 2));
+    for (const t of ticks) {
+      el('line', { x1: P.l, x2: W - P.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: P.l - 6, y: Y(t) + 4, class: 'axis', 'text-anchor': 'end' }, svg).textContent = fmt(t);
+    }
+    if (o.zero && lo < 0 && hi > 0) el('line', { x1: P.l, x2: W - P.r, y1: Y(0), y2: Y(0), class: 'zero' }, svg);
+    // x 軸：每季一個標籤
+    let lastLbl = '';
+    o.dates.forEach((d, i) => {
+      const m = d.slice(0, 7);
+      if (m !== lastLbl && ['01', '04', '07', '10'].includes(d.slice(5, 7))) {
+        lastLbl = m;
+        el('text', { x: X(i), y: H - 8, class: 'axis', 'text-anchor': 'middle' }, svg).textContent = d.slice(2, 4) + '/' + Number(d.slice(5, 7));
+      } else if (m !== lastLbl) lastLbl = m;
+    });
+    for (const mk of o.markers || []) {
+      el('line', { x1: X(mk.i), x2: X(mk.i), y1: P.t, y2: H - P.b, class: 'marker-line' }, svg);
+    }
+    for (const s of o.series) {
+      let d = '', pen = false;
+      s.values.forEach((v, i) => { if (v == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); pen = true; });
+      el('path', { d, fill: 'none', stroke: s.color, 'stroke-width': 2, 'stroke-linejoin': 'round', class: s.dash ? 'dash' : '' }, svg);
+    }
+    for (const mk of o.markers || []) {
+      const v = o.series[0].values[mk.i];
+      if (v != null) el('circle', { cx: X(mk.i), cy: Y(v), r: 4.5, class: 'marker-dot' }, svg);
+    }
+    // 十字線與提示
+    const cross = el('line', { y1: P.t, y2: H - P.b, class: 'crosshair', visibility: 'hidden' }, svg);
+    const dots = o.series.map(s => el('circle', { r: 4.5, fill: s.color, class: 'hover-dot', visibility: 'hidden' }, svg));
+    const hit = el('rect', { x: P.l, y: 0, width: W - P.l - P.r, height: H, fill: 'transparent' }, svg);
+    const mkBy = {}; for (const mk of o.markers || []) mkBy[mk.i] = mk.label;
+    function move(ev) {
+      const r = svg.getBoundingClientRect();
+      const px = (ev.clientX - r.left) * W / r.width;
+      const i = Math.max(0, Math.min(n - 1, Math.round((px - P.l) / (W - P.l - P.r) * (n - 1))));
+      cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.setAttribute('visibility', 'visible');
+      let html = `<b>${ETF.util.fmtDate(o.dates[i])}</b>`;
+      o.series.forEach((s, k) => {
+        const v = s.values[i];
+        if (v == null) { dots[k].setAttribute('visibility', 'hidden'); return; }
+        dots[k].setAttribute('cx', X(i)); dots[k].setAttribute('cy', Y(v)); dots[k].setAttribute('visibility', 'visible');
+        html += `<div><i class="sw" style="background:${s.color}"></i>${esc(s.name)}　<span class="num">${fmt(v)}</span></div>`;
+      });
+      if (mkBy[i]) html += `<div class="tip-note">${esc(mkBy[i])}</div>`;
+      showTip(html, ev.clientX, ev.clientY);
+    }
+    function leave() { cross.setAttribute('visibility', 'hidden'); dots.forEach(d => d.setAttribute('visibility', 'hidden')); hideTip(); }
+    hit.addEventListener('pointermove', move); hit.addEventListener('pointerleave', leave);
+    if (o.series.length > 1) legend(host, o.series.map(s => ({ label: s.name, color: s.color })));
+  }
+
+  /* 長條圖（可堆疊）：labels[]、series[{name, values[], color}] */
+  function bars(host, o) {
+    const { svg, W, H } = frame(host, o.height || 220);
+    svg.setAttribute('aria-label', o.label || '長條圖');
+    const P = { l: o.left || 52, r: 10, t: 16, b: 28 };
+    const n = o.labels.length;
+    const totals = o.labels.map((_, i) => o.series.reduce((t, s) => t + (s.values[i] || 0), 0));
+    const maxV = o.grouped ? Math.max(0, ...o.series.map(s => Math.max(0, ...s.values.map(v => v || 0)))) : Math.max(...totals, 0);
+    if (maxV <= 0) { host.innerHTML = '<p class="muted">沒有資料</p>'; return; }
+    const { hi, ticks } = niceTicks(0, maxV);
+    const fmt = o.yFmt || (v => ETF.util.fmt(v, 2));
+    const bw = (W - P.l - P.r) / n;
+    const Y = v => P.t + (H - P.t - P.b) * (1 - v / hi);
+    for (const t of ticks) {
+      el('line', { x1: P.l, x2: W - P.r, y1: Y(t), y2: Y(t), class: 'grid' }, svg);
+      el('text', { x: P.l - 6, y: Y(t) + 4, class: 'axis', 'text-anchor': 'end' }, svg).textContent = fmt(t);
+    }
+    const every = Math.ceil(n / Math.max(1, Math.floor((W - P.l) / 46)));
+    o.labels.forEach((lb, i) => {
+      if (i % every === 0) el('text', { x: P.l + bw * (i + 0.5), y: H - 9, class: 'axis', 'text-anchor': 'middle' }, svg).textContent = lb;
+      let base = 0;
+      const w = Math.max(2, Math.min(42, bw - 4));
+      if (o.grouped) {
+        const gw = Math.max(2, Math.min(18, (bw - 6) / o.series.length - 2));
+        const x0 = P.l + bw * i + (bw - (gw + 2) * o.series.length + 2) / 2;
+        o.series.forEach((s, k) => {
+          const v = s.values[i] || 0; if (v <= 0) return;
+          el('path', { d: barPath(x0 + k * (gw + 2), Y(v), gw, Math.max(1, Y(0) - Y(v)), 3), fill: s.color, class: 'bar' }, svg);
+        });
+      } else o.series.forEach((s, k) => {
+        const v = s.values[i] || 0; if (v <= 0) return;
+        const y1 = Y(base + v), y0 = Y(base);
+        const top = k === o.series.length - 1 || o.series.slice(k + 1).every(z => !(z.values[i] > 0));
+        const h = Math.max(1, y0 - y1 - (base > 0 ? 2 : 0));
+        el('path', { d: barPath(P.l + bw * i + (bw - w) / 2, y1, w, h, top ? 4 : 0), fill: s.color, class: 'bar' + (o.dim && o.dim(i) ? ' dim' : '') }, svg);
+        base += v;
+      });
+      const hit = el('rect', { x: P.l + bw * i, y: P.t, width: bw, height: H - P.t - P.b, fill: 'transparent', class: 'bar-hit' }, svg);
+      hit.addEventListener('pointermove', ev => {
+        let html = `<b>${esc(o.tipTitle ? o.tipTitle(i) : lb)}</b>`;
+        o.series.forEach(s => { if (s.values[i]) html += `<div><i class="sw" style="background:${s.color}"></i>${esc(s.name)}　<span class="num">${fmt(s.values[i])}</span></div>`; });
+        if (o.series.length > 1 && !o.grouped) html += `<div class="tip-note">合計 <span class="num">${fmt(totals[i])}</span></div>`;
+        if (o.tipExtra) html += o.tipExtra(i);
+        showTip(html, ev.clientX, ev.clientY);
+      });
+      hit.addEventListener('pointerleave', hideTip);
+    });
+    if (o.series.length > 1) legend(host, o.series.map(s => ({ label: s.name, color: s.color })));
+  }
+  function barPath(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    return `M${x} ${y + h}V${y + r}Q${x} ${y} ${x + r} ${y}H${x + w - r}Q${x + w} ${y} ${x + w} ${y + r}V${y + h}Z`;
+  }
+
+  /* 甜甜圈圖：items[{label, value, color}] */
+  function donut(host, o) {
+    host.innerHTML = ''; host.classList.add('chart', 'donut-wrap');
+    const S = 200, R = 88, r = 56, cx = S / 2, cy = S / 2;
+    const svg = el('svg', { viewBox: `0 0 ${S} ${S}`, width: S, height: S, role: 'img', 'aria-label': o.label || '比例圖' }, host);
+    const total = o.items.reduce((t, x) => t + x.value, 0) || 1;
+    let a0 = -Math.PI / 2;
+    for (const it of o.items) {
+      const a1 = a0 + 2 * Math.PI * it.value / total;
+      const large = a1 - a0 > Math.PI ? 1 : 0;
+      const p = (rad, a) => `${cx + rad * Math.cos(a)} ${cy + rad * Math.sin(a)}`;
+      const d = it.value / total >= 0.9999
+        ? `M${cx} ${cy - R}A${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R}L${cx - 0.01} ${cy - r}A${r} ${r} 0 1 0 ${cx} ${cy - r}Z`
+        : `M${p(R, a0)}A${R} ${R} 0 ${large} 1 ${p(R, a1)}L${p(r, a1)}A${r} ${r} 0 ${large} 0 ${p(r, a0)}Z`;
+      const seg = el('path', { d, fill: it.color, class: 'donut-seg' }, svg);
+      seg.addEventListener('pointermove', ev => showTip(`<b>${esc(it.label)}</b><div class="num">${ETF.util.fmtPct(it.value / total, 0)}</div>`, ev.clientX, ev.clientY));
+      seg.addEventListener('pointerleave', hideTip);
+      a0 = a1;
+    }
+    if (o.center) {
+      el('text', { x: cx, y: cy - 2, 'text-anchor': 'middle', class: 'donut-big' }, svg).textContent = o.center[0];
+      el('text', { x: cx, y: cy + 18, 'text-anchor': 'middle', class: 'axis' }, svg).textContent = o.center[1];
+    }
+    legend(host, o.items.map(it => ({ label: `${it.label} ${ETF.util.fmtPct(it.value / total, 0)}`, color: it.color })));
+  }
+
+  function legend(host, items) {
+    const lg = document.createElement('div'); lg.className = 'legend';
+    lg.innerHTML = items.map(it => `<span><i class="sw" style="background:${it.color}"></i>${esc(it.label)}</span>`).join('');
+    host.appendChild(lg);
+  }
+
+  /* 迷你走勢線（表格內用，不需要提示） */
+  function spark(values, w = 90, h = 26) {
+    const v = values.filter(x => x != null);
+    if (v.length < 2) return '';
+    const min = Math.min(...v), max = Math.max(...v);
+    let d = '', k = 0;
+    values.forEach((x, i) => { if (x == null) return; const X = i / (values.length - 1) * w, Y = h - 2 - (h - 4) * (x - min) / (max - min || 1); d += (k++ ? 'L' : 'M') + X.toFixed(1) + ' ' + Y.toFixed(1); });
+    const up = v[v.length - 1] >= v[0];
+    return `<svg class="spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--${up ? 'up' : 'down'})" stroke-width="1.6"/></svg>`;
+  }
+
+  ETF.charts = { line, bars, donut, legend, spark, hideTip };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 主程式：載入快照、分頁切換、找 ETF、資料面板（更新資料）、共用的小元件。 */
+(function (root) {
+  const ETF = root.ETF;
+  const U = ETF.util, C = ETF.classify, A = ETF.analyze;
+  const $ = (s, r = document) => r.querySelector(s);
+  const TABS = ['home', 'list', 'freq', 'monthly', 'plan', 'compare', 'tax', 'learn'];
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('etfw.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem('etfw.' + k, JSON.stringify(v)); } catch (e) { /* 私密模式 */ } },
+  };
+
+  const app = {
+    snap: null, list: [], byCode: {}, rendered: {}, compare: store.get('compare', []), store,
+    views: {},
+  };
+  ETF.app = app;
+
+  /* ---------- 共用的小元件（各檢視都會用） ---------- */
+  const H = app.h = {
+    catBadge(a) { return `<span class="badge cat cat-${a.cat}">${U.esc(C.catLabel(a.cls))}</span>`; },
+    freqBadge(a) {
+      const f = A.FREQ[a.freq] || A.FREQ.new;
+      const m = a.freqInfo.months.length && a.freq !== 0 ? `<small>${a.freqInfo.months.join('/')}月</small>` : '';
+      return `<span class="badge freq freq-${a.freq}">${f.label}${m}</span>`;
+    },
+    pct(x, n = 1, sign = true) {
+      if (x == null || !isFinite(x)) return '<span class="muted">—</span>';
+      const cls = x > 0.00005 ? 'up' : x < -0.00005 ? 'down' : 'flat';
+      const arrow = x > 0.00005 ? '▲' : x < -0.00005 ? '▼' : '';
+      return `<span class="${cls} num">${arrow}${U.fmtPct(Math.abs(x), n)}</span>`;
+    },
+    plainPct(x, n = 2) { return x == null || !isFinite(x) ? '<span class="muted">—</span>' : `<span class="num">${U.fmtPct(x, n)}</span>`; },
+    prem(p) {
+      if (p == null) return '<span class="muted">—</span>';
+      const cls = p >= 1 ? 'warn' : p <= -1 ? 'warn' : '';
+      return `<span class="num ${cls}">${p > 0 ? '+' : ''}${p.toFixed(2)}%</span>`;
+    },
+    link(a, withName = true) {
+      return `<button type="button" class="etf-link" data-open="${U.esc(a.code)}"><b class="num">${U.esc(a.code)}</b>${withName ? ' ' + U.esc(a.name) : ''}</button>`;
+    },
+    tile(label, value, sub, cls = '') {
+      return `<div class="tile ${cls}"><div class="tile-label">${label}</div><div class="tile-value">${value}</div>${sub ? `<div class="tile-sub">${sub}</div>` : ''}</div>`;
+    },
+    term(id, text) { return `<button type="button" class="term" data-term="${id}">${text}</button>`; },
+    yi(x) { return x == null ? '<span class="muted">—</span>' : `<span class="num">${U.fmtYi(x)}</span>`; },
+  };
+
+  /* ---------- 分頁 ---------- */
+  function show(tab) {
+    if (!TABS.includes(tab)) tab = 'home';
+    for (const t of TABS) {
+      const btn = $('#tab-' + t), sec = $('#view-' + t);
+      const on = t === tab;
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.tabIndex = on ? 0 : -1;
+      sec.hidden = !on;
+    }
+    if (!app.rendered[tab] && app.views[tab]) { app.views[tab]($('#view-' + tab), app); app.rendered[tab] = true; }
+    else if (app.views[tab] && app.views[tab].refresh) app.views[tab].refresh();
+    if (location.hash.slice(1).split('/')[0] !== tab) history.replaceState(null, '', '#' + tab);
+    ETF.charts.hideTip();
+  }
+  app.show = show;
+  app.rerender = function (tab) { app.rendered[tab] = false; if (!$('#view-' + tab).hidden) show(tab); };
+
+  /* ---------- 比較清單 ---------- */
+  app.toggleCompare = function (code) {
+    const i = app.compare.indexOf(code);
+    if (i >= 0) app.compare.splice(i, 1);
+    else { if (app.compare.length >= 4) { toast('比較清單最多 4 檔，請先移除一檔'); return false; } app.compare.push(code); }
+    store.set('compare', app.compare);
+    $('#compare-count').textContent = app.compare.length;
+    app.rendered.compare = false;
+    toast(i >= 0 ? `已從比較清單移除 ${code}` : `已加入比較清單（${app.compare.length}/4）`);
+    return i < 0;
+  };
+
+  function toast(msg) {
+    const t = $('#toast'); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 2600);
+  }
+  app.toast = toast;
+
+  /* ---------- 找 ETF ---------- */
+  function setupSearch() {
+    const inp = $('#etf-search'), list = $('#etf-search-list');
+    let items = [], active = -1;
+    function render() {
+      const q = inp.value.trim().toLowerCase();
+      if (!q) { list.hidden = true; inp.setAttribute('aria-expanded', 'false'); return; }
+      items = app.list.filter(a => a.code.toLowerCase().startsWith(q) || a.name.toLowerCase().includes(q) || (a.e.index || '').toLowerCase().includes(q))
+        .sort((x, y) => (y.code.toLowerCase().startsWith(q) - x.code.toLowerCase().startsWith(q)) || (y.size || 0) - (x.size || 0)).slice(0, 10);
+      active = items.length ? 0 : -1;
+      list.innerHTML = items.length ? items.map((a, i) => `<li role="option" id="si-${i}" class="search-item${i === active ? ' is-active' : ''}" data-code="${a.code}" aria-selected="${i === active}"><span class="si-code num">${a.code}</span><span class="si-name">${U.esc(a.name)}</span><span class="si-market">${U.esc(C.CATS[a.cat].short)}</span></li>`).join('')
+        : '<li class="search-empty">找不到符合的 ETF</li>';
+      list.hidden = false; inp.setAttribute('aria-expanded', 'true');
+    }
+    function pick(code) { inp.value = ''; list.hidden = true; inp.setAttribute('aria-expanded', 'false'); app.open(code); }
+    inp.addEventListener('input', render);
+    inp.addEventListener('keydown', ev => {
+      if (list.hidden) return;
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        active = (active + (ev.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        list.querySelectorAll('.search-item').forEach((li, i) => { li.classList.toggle('is-active', i === active); li.setAttribute('aria-selected', i === active); });
+        inp.setAttribute('aria-activedescendant', 'si-' + active);
+      } else if (ev.key === 'Enter' && items[active]) { ev.preventDefault(); pick(items[active].code); }
+      else if (ev.key === 'Escape') { list.hidden = true; }
+    });
+    list.addEventListener('mousedown', ev => { const li = ev.target.closest('[data-code]'); if (li) { ev.preventDefault(); pick(li.dataset.code); } });
+    inp.addEventListener('blur', () => setTimeout(() => { list.hidden = true; }, 150));
+  }
+
+  /* ---------- 資料面板與更新 ---------- */
+  function dataPanel() {
+    const s = app.snap, panel = $('#data-panel');
+    const served = location.protocol.startsWith('http');
+    panel.innerHTML = `
+      <div class="panel-head"><h2 id="data-title">資料來源與更新</h2><button type="button" class="btn btn-ghost btn-sm" id="data-close">關閉</button></div>
+      <dl class="data-facts">
+        <dt>行情資料日</dt><dd class="num">${U.fmtDate(s.asOf)}</dd>
+        <dt>ETF 檔數</dt><dd class="num">${s.etfs.length} 檔</dd>
+        <dt>每日行情</dt><dd class="num">${U.fmtDate(s.dates[0])} ～ ${U.fmtDate(s.asOf)}（${s.dates.length} 個交易日）</dd>
+        <dt>配息紀錄</dt><dd class="num">${s.divYears[0]} 年起，共 ${U.fmtInt(U.sum(s.etfs.map(e => e.divs.length)))} 筆</dd>
+        <dt>淨值與折溢價</dt><dd class="num">${s.navStamp ? U.fmtDate(s.navStamp.slice(0, 4) + '-' + s.navStamp.slice(4, 6) + '-' + s.navStamp.slice(6)) : '—'}</dd>
+        <dt>受益人數</dt><dd class="num">${U.fmtDate(s.holdersDate)}（集保每週更新）</dd>
+        <dt>產生時間</dt><dd class="num">${U.esc(s.generatedAt.replace('T', ' ').slice(0, 16))}</dd>
+      </dl>
+      <div id="update-box" class="card mint">
+        <h3>更新到最新資料</h3>
+        ${served ? `<p>會向證交所、櫃買中心、集保結算所抓最新資料。第一次要下載一年的每日行情（約 20～30 分鐘），之後只抓新的日子（約 1 分鐘）。</p>
+          <div class="row"><button type="button" class="btn btn-primary" id="btn-update">更新資料</button><span id="update-message" role="status"></span></div>
+          <progress id="update-progress" max="100" value="0" hidden></progress>`
+          : `<p>目前是直接打開檔案（唯讀）。要更新資料，請關掉這個分頁，雙擊資料夾裡的 <b>start.bat</b>，它會開啟本機伺服器並自動打開網頁，再按這裡的「更新資料」。</p>
+          <p class="muted">也可以在命令列執行 <code>python etf_update.py</code> 後重新整理頁面。</p>`}
+      </div>
+      <div id="data-sources"><h3>資料來源（官方公開資料）</h3><ul>${s.sources.map(x => `<li>${U.esc(x)}</li>`).join('')}</ul>
+      <p class="muted">本工具只整理公開資訊並做計算，不構成任何投資建議。配息紀錄以「除權除息計算結果表」為準；淨值為各投信提供的預估淨值。</p></div>`;
+    $('#data-close').onclick = closePanel;
+    const btn = $('#btn-update');
+    if (btn) btn.onclick = startUpdate;
+  }
+  function openPanel() { dataPanel(); $('#data-panel').hidden = false; $('#data-scrim').hidden = false; document.body.classList.add('has-modal'); $('#btn-data').setAttribute('aria-expanded', 'true'); $('#data-close').focus(); }
+  function closePanel() { $('#data-panel').hidden = true; $('#data-scrim').hidden = true; document.body.classList.remove('has-modal'); $('#btn-data').setAttribute('aria-expanded', 'false'); }
+
+  async function startUpdate() {
+    const btn = $('#btn-update'), msg = $('#update-message'), bar = $('#update-progress');
+    btn.disabled = true; msg.className = ''; msg.textContent = '開始更新…'; bar.hidden = false;
+    try {
+      const r = await fetch('/api/update', { method: 'POST' });
+      if (!r.ok) throw new Error('伺服器回應 ' + r.status);
+    } catch (e) { msg.textContent = '無法啟動更新：' + e.message; msg.className = 'is-error'; btn.disabled = false; return; }
+    const poll = async () => {
+      try {
+        const st = await (await fetch('/api/status', { cache: 'no-store' })).json();
+        if (st.total) bar.value = Math.round(st.done / st.total * 100);
+        msg.textContent = st.running ? `更新中 ${st.done}/${st.total}：${st.message || ''}` : (st.error ? '更新失敗：' + st.error : '完成！重新載入中…');
+        if (st.error) { msg.className = 'is-error'; btn.disabled = false; return; }
+        if (!st.running) { setTimeout(() => location.reload(), 600); return; }
+      } catch (e) { msg.textContent = '讀取進度失敗，稍後重試…'; }
+      setTimeout(poll, 1500);
+    };
+    poll();
+  }
+
+  /* ---------- 詳情（每一檔 ETF） ---------- */
+  app.open = function (code) {
+    const a = app.byCode[code]; if (!a) return;
+    app.lastFocus = document.activeElement;
+    const d = $('#detail');
+    app.views.detail(d, app, a);
+    d.hidden = false; $('#detail-scrim').hidden = false; document.body.classList.add('has-modal');
+    d.scrollTop = 0;
+    const c = $('#detail-close'); if (c) c.focus();
+  };
+  app.closeDetail = function () {
+    $('#detail').hidden = true; $('#detail-scrim').hidden = true; document.body.classList.remove('has-modal');
+    ETF.charts.hideTip();
+    if (app.lastFocus && app.lastFocus.focus) app.lastFocus.focus();
+  };
+
+  /* ---------- 啟動 ---------- */
+  function init() {
+    const snap = root.ETF_SNAPSHOT;
+    $('#loading').hidden = true;
+    if (!snap || !snap.etfs || !snap.etfs.length) { $('#empty-state').hidden = false; return; }
+    app.snap = snap;
+    const t0 = performance.now();
+    const r = A.analyzeAll(snap);
+    app.list = r.list; app.byCode = r.byCode;
+    app.compare = app.compare.filter(c => app.byCode[c]);
+    app.analyzeMs = Math.round(performance.now() - t0);
+    const badge = $('#data-badge');
+    badge.textContent = `資料日 ${U.fmtDate(snap.asOf)}・${snap.etfs.length} 檔`;
+    badge.dataset.asof = snap.asOf;
+    $('#compare-count').textContent = app.compare.length;
+    $('#btn-data').onclick = openPanel;
+    $('#data-scrim').onclick = closePanel;
+    $('#detail-scrim').onclick = app.closeDetail;
+    setupSearch();
+    // 分頁鍵盤操作（左右鍵）
+    const tabs = $('#tabs');
+    tabs.addEventListener('click', ev => { const b = ev.target.closest('[role=tab]'); if (b) show(b.id.slice(4)); });
+    tabs.addEventListener('keydown', ev => {
+      if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+      const i = TABS.indexOf(document.activeElement.id.slice(4)); if (i < 0) return;
+      const n = TABS[(i + (ev.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length];
+      show(n); $('#tab-' + n).focus();
+    });
+    // 全域：點 ETF 連結開詳情、點名詞跳小辭典
+    document.addEventListener('click', ev => {
+      const o = ev.target.closest('[data-open]');
+      if (o) { ev.preventDefault(); app.open(o.dataset.open); return; }
+      const t = ev.target.closest('[data-term]');
+      if (t) { ev.preventDefault(); if (!$('#detail').hidden) app.closeDetail(); show('learn'); app.views.learn.focus && app.views.learn.focus(t.dataset.term); return; }
+      const g = ev.target.closest('[data-goto]');
+      if (g) { ev.preventDefault(); if (!$('#detail').hidden) app.closeDetail(); show(g.dataset.goto); if (g.dataset.filter && app.views.list.apply) app.views.list.apply(JSON.parse(g.dataset.filter)); }
+    });
+    document.addEventListener('keydown', ev => {
+      if (ev.key !== 'Escape') return;
+      if (!$('#detail').hidden) app.closeDetail(); else if (!$('#data-panel').hidden) closePanel();
+    });
+    window.addEventListener('hashchange', () => { const h = location.hash.slice(1).split('/'); show(h[0]); if (h[1]) app.open(h[1]); });
+    const h = location.hash.slice(1).split('/');
+    show(h[0] || 'home');
+    if (h[1]) app.open(h[1]);
+    if (U.daysBetween(snap.asOf, new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10)) > 7) {
+      $('#stale-banner').hidden = false;
+    }
+  }
+  app.init = init;
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0));
+    else setTimeout(init, 0);
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 總覽：即將除息、依去年推估的除息、人氣排行、折溢價提醒、各類型概況 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, C = ETF.classify;
+
+  ETF.app.views.home = function (sec, app) {
+    const H = app.h, s = app.snap, L = app.list;
+    const asOf = s.asOf;
+    const mon = U.month(asOf);
+    // 已公告的除息
+    const up = (s.upcoming || []).map(u => ({ u, a: app.byCode[u.code] })).filter(x => x.a);
+    const upCodes = new Set(up.map(x => x.a.code));
+    // 依去年同期推估：去年下個月附近有除息、而且還沒公告的（月配除外，因為每月都有）
+    const nextMonths = [mon, mon % 12 + 1];
+    const expect = L.filter(a => typeof a.freq === 'number' && a.freq > 0 && a.freq < 12 && !upCodes.has(a.code) &&
+      a.freqInfo.months.some(m => nextMonths.includes(m)) && (a.size || 0) >= 5e9)
+      .sort((x, y) => (y.size || 0) - (x.size || 0)).slice(0, 12);
+    const monthlyN = L.filter(a => a.freq === 12).length;
+
+    const byCat = C.CAT_ORDER.map(c => {
+      const g = L.filter(a => a.cat === c);
+      const ys = g.map(a => a.ttmYield).filter(x => x != null && x > 0);
+      const tr = g.map(a => a.r1y && a.r1y.full ? a.r1y.total : null).filter(x => x != null);
+      return { c, n: g.length, size: U.sum(g.map(a => a.size || 0)), y: U.median(ys), tr: U.median(tr), payers: ys.length };
+    }).filter(x => x.n);
+
+    const top = (key, n = 10) => L.filter(a => a[key] != null).sort((x, y) => y[key] - x[key]).slice(0, n);
+    const premWarn = L.filter(a => a.premium != null && a.premium >= 1 && (a.size || 0) >= 1e9).sort((x, y) => y.premium - x.premium).slice(0, 10);
+
+    sec.innerHTML = `
+      <div class="hero card pink">
+        <div>
+          <h2>歡迎來到 ETF 投資精靈</h2>
+          <p>整理證交所、櫃買中心、集保結算所的官方公開資料，幫你看懂每一檔台股 ETF 的<b>配息方式</b>、<b>真正的報酬</b>與<b>適合怎麼配置</b>。</p>
+          <div class="row wrap">
+            <button class="btn btn-primary" data-goto="plan" type="button">開始配置精靈</button>
+            <button class="btn btn-soft" data-goto="monthly" type="button">組一套月月配</button>
+            <button class="btn btn-soft" data-goto="freq" type="button">月配、季配差在哪？</button>
+          </div>
+        </div>
+        <div class="hero-tiles">
+          ${H.tile('ETF 檔數', `<span class="num">${L.length}</span>`, `上市 ${L.filter(a => a.e.market === 'TWSE').length}・上櫃 ${L.filter(a => a.e.market === 'TPEx').length}`)}
+          ${H.tile('已公告即將除息', `<span class="num">${up.length}</span> 檔`, `資料日 ${U.fmtDate(asOf)}`)}
+          ${H.tile('月配息 ETF', `<span class="num">${monthlyN}</span> 檔`, '每月都配息')}
+          ${H.tile('ETF 總規模', `<span class="num">${U.fmtYi(U.sum(L.map(a => a.size || 0)))}</span>`, '受益單位 × 淨值')}
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>📅 已公告的除息（${up.length} 檔）</h2>
+          <p class="muted">要在<b>除息日的前一個交易日（含）以前</b>買進並持有，才領得到這次配息。${H.term('exdiv', '什麼是除息？')}</p>
+          <div class="table-wrap tall"><table class="table">
+            <thead><tr><th>除息日</th><th>ETF</th><th class="num">每單位配息</th><th class="num">當次殖利率</th><th>頻率</th></tr></thead>
+            <tbody>${up.map(({ u, a }) => `<tr><td class="num">${U.fmtMD(u.d)}${u.d === asOf ? ' <span class="badge warn">今天</span>' : ''}</td><td>${H.link(a)}</td>
+              <td class="num">${u.cash ? U.fmt(u.cash, 3) + ' 元' : '<span class="muted">待公告</span>'}</td>
+              <td class="num">${u.cash && a.price ? U.fmtPct(u.cash / a.price, 2) : '—'}</td><td>${H.freqBadge(a)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">目前沒有已公告的 ETF 除息</td></tr>'}</tbody>
+          </table></div>
+          <p class="muted small">當次殖利率 ＝ 每單位配息 ÷ 最新收盤價；「待公告」表示已排定除息日、金額尚未公布。</p>
+        </div>
+        <div class="card">
+          <h2>🔮 依去年同期，${mon}～${nextMonths[1]} 月可能除息</h2>
+          <p class="muted">規模 50 億以上、去年在這兩個月有除息、但還沒公告的 ETF（僅依歷史推估，實際以公告為準）。</p>
+          <div class="table-wrap tall"><table class="table">
+            <thead><tr><th>ETF</th><th>頻率</th><th class="num">上次配息</th><th class="num">近一年殖利率</th></tr></thead>
+            <tbody>${expect.map(a => `<tr><td>${H.link(a)}</td><td>${H.freqBadge(a)}</td><td class="num">${U.fmt(a.lastDiv.cash, 3)}<small class="muted">（${U.fmtMD(a.lastDiv.d)}）</small></td><td class="num">${H.plainPct(a.ttmYield)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">沒有</td></tr>'}</tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 各類型 ETF 概況</h2>
+        <p class="muted">中位數＝把同類 ETF 排好後正中間那一檔的數字，不受極端值影響。點類型可以看清單。</p>
+        <div class="table-wrap"><table class="table">
+          <thead><tr><th>類型</th><th class="num">檔數</th><th class="num">總規模</th><th class="num">有配息</th><th class="num">殖利率中位數</th><th class="num">近一年含息報酬中位數</th><th>說明</th></tr></thead>
+          <tbody>${byCat.map(x => `<tr><td><button type="button" class="etf-link" data-goto="list" data-filter='${JSON.stringify({ cat: x.c })}'><b>${C.CATS[x.c].label}</b></button></td>
+            <td class="num">${x.n}</td><td class="num">${U.fmtYi(x.size)}</td><td class="num">${x.payers}</td><td class="num">${H.plainPct(x.y, 1)}</td><td class="num">${H.pct(x.tr)}</td><td class="small">${C.CATS[x.c].desc}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+
+      <div class="grid-3">
+        ${rankCard('👥 受益人數最多', top('holders'), a => U.fmtInt(a.holders) + ' 人', `集保 ${U.fmtDate(s.holdersDate)}`)}
+        ${rankCard('🏦 規模最大', top('size'), a => U.fmtYi(a.size), '受益單位數 × 預估淨值')}
+        ${dcaCard()}
+      </div>
+
+      ${premWarn.length ? `<div class="card cream"><h2>⚠️ 溢價超過 1% 的 ETF</h2>
+        <p>市價比淨值貴 1% 以上，現在買等於多付錢。${H.term('premium', '什麼是折溢價？')}</p>
+        <div class="chip-row">${premWarn.map(a => `<button type="button" class="chip warn" data-open="${a.code}">${a.code} ${U.esc(a.name)} <b class="num">+${a.premium.toFixed(2)}%</b></button>`).join('')}</div></div>` : ''}
+    `;
+
+    function rankCard(title, arr, val, note) {
+      return `<div class="card"><h2>${title}</h2><ol class="rank">${arr.map(a => `<li>${H.link(a)}<span class="num">${val(a)}</span></li>`).join('')}</ol><p class="muted small">${note}</p></div>`;
+    }
+    function dcaCard() {
+      const r = (s.dcaRank || []).slice(0, 10);
+      return `<div class="card"><h2>💰 定期定額人數最多</h2><ol class="rank">${r.map(x => { const a = app.byCode[x.code]; return `<li>${a ? H.link(a) : U.esc(x.code + ' ' + x.name)}<span class="num">${U.fmtInt(x.accounts)} 戶</span></li>`; }).join('') || '<li class="muted">沒有資料</li>'}</ol><p class="muted small">證交所定期定額交易戶數月報（上市 ETF）</p></div>`;
+    }
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* ETF 列表：篩選、排序、加入比較 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, C = ETF.classify, AN = ETF.analyze;
+
+  const COLS = [
+    { k: 'code', t: 'ETF', v: a => a.code, str: true },
+    { k: 'cat', t: '類型', v: a => C.CAT_ORDER.indexOf(a.cat), nosort: false },
+    { k: 'freq', t: '配息', v: a => typeof a.freq === 'number' ? a.freq : -1 },
+    { k: 'price', t: '收盤', v: a => a.price, num: true },
+    { k: 'ttmYield', t: '近一年殖利率', v: a => a.ttmYield, num: true },
+    { k: 'total', t: '近一年含息報酬', v: a => a.r1y && a.r1y.full ? a.r1y.total : null, num: true },
+    { k: 'pr', t: '價格報酬', v: a => a.r1y && a.r1y.full ? a.r1y.price : null, num: true },
+    { k: 'fill30', t: '30日內填息', v: a => a.fill30, num: true },
+    { k: 'size', t: '規模', v: a => a.size, num: true },
+    { k: 'holders', t: '受益人數', v: a => a.holders, num: true },
+    { k: 'premium', t: '折溢價', v: a => a.premium, num: true },
+    { k: 'avgValue', t: '日均成交', v: a => a.avgValue, num: true },
+  ];
+
+  ETF.app.views.list = function (sec, app) {
+    const H = app.h;
+    const st = Object.assign({ q: '', cat: '', freq: '', market: '', minSize: 0, aged: false, sort: 'size', dir: -1, limit: 80 }, app.store.get('listState', {}), app.pendingFilter || {});
+    app.pendingFilter = null;
+    sec.innerHTML = `
+      <div class="card">
+        <h2>ETF 列表</h2>
+        <div class="filters">
+          <div class="field"><label for="f-q">搜尋</label><input id="f-q" class="input" type="search" placeholder="代號、名稱或指數" value="${U.esc(st.q)}"></div>
+          <div class="field"><label for="f-cat">類型</label><select id="f-cat" class="select"><option value="">全部類型</option>${C.CAT_ORDER.map(c => `<option value="${c}">${C.CATS[c].label}</option>`).join('')}<option value="bond:gov">債券・政府公債</option><option value="bond:ig">債券・投資級公司債</option><option value="bond:hy">債券・非投資等級</option><option value="bond:em">債券・新興市場</option></select></div>
+          <div class="field"><label for="f-freq">配息頻率</label><select id="f-freq" class="select"><option value="">全部</option>${AN.FREQ_ORDER.map(f => `<option value="${f}">${AN.FREQ[f].label}</option>`).join('')}</select></div>
+          <div class="field"><label for="f-market">市場</label><select id="f-market" class="select"><option value="">上市＋上櫃</option><option value="TWSE">上市</option><option value="TPEx">上櫃</option></select></div>
+          <div class="field"><label for="f-size">規模至少</label><select id="f-size" class="select"><option value="0">不限</option><option value="1e9">10 億</option><option value="1e10">100 億</option><option value="5e10">500 億</option></select></div>
+          <label class="check"><input id="f-aged" type="checkbox"${st.aged ? ' checked' : ''}> 只看上市滿一年</label>
+        </div>
+        <p id="list-count" class="muted" role="status"></p>
+        <div class="table-wrap"><table class="table list-table">
+          <thead><tr>${COLS.map(c => `<th class="${c.num ? 'num' : ''}" data-k="${c.k}" aria-sort="none"><button type="button" class="sort-btn">${c.t}</button></th>`).join('')}<th><span class="sr-only">比較</span></th></tr></thead>
+          <tbody id="list-body"></tbody>
+        </table></div>
+        <div class="row"><button id="list-more" class="btn btn-soft" type="button" hidden>顯示更多</button></div>
+        <p class="muted small">殖利率、報酬為「近 365 天」；上市未滿一年者報酬顯示「—」。含息報酬假設配息再投入。規模＝受益單位數 × 預估淨值。點標題可排序，點 ETF 看詳細分析。</p>
+      </div>`;
+    const $ = s => sec.querySelector(s);
+    $('#f-cat').value = st.cat; $('#f-freq').value = st.freq; $('#f-market').value = st.market; $('#f-size').value = String(st.minSize);
+
+    function rows() {
+      const q = st.q.trim().toLowerCase();
+      const [cat, sub] = st.cat.split(':');
+      let r = app.list.filter(a => (!q || a.code.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) || (a.e.index || '').toLowerCase().includes(q)) &&
+        (!cat || a.cat === cat) && (!sub || a.cls.sub === sub) && (st.freq === '' || String(a.freq) === st.freq) &&
+        (!st.market || a.e.market === st.market) && (a.size || 0) >= Number(st.minSize) && (!st.aged || (a.ageDays != null && a.ageDays >= 365) || (a.ageDays == null && a.r1y && a.r1y.full)));
+      const col = COLS.find(c => c.k === st.sort) || COLS[0];
+      r.sort((x, y) => {
+        const a = col.v(x), b = col.v(y);
+        if (a == null && b == null) return 0; if (a == null) return 1; if (b == null) return -1;
+        return (col.str ? String(a).localeCompare(String(b)) : a - b) * st.dir;
+      });
+      return r;
+    }
+    function render() {
+      app.store.set('listState', Object.assign({}, st, { limit: 80 }));
+      const r = rows();
+      $('#list-count').textContent = `符合 ${r.length} 檔`;
+      sec.querySelectorAll('th[data-k]').forEach(th => th.setAttribute('aria-sort', th.dataset.k === st.sort ? (st.dir > 0 ? 'ascending' : 'descending') : 'none'));
+      $('#list-body').innerHTML = r.slice(0, st.limit).map(a => {
+        const r1 = a.r1y && a.r1y.full ? a.r1y : null;
+        const inCmp = app.compare.includes(a.code);
+        return `<tr><td>${H.link(a)}${a.ageDays != null && a.ageDays < 365 ? ' <span class="badge">新</span>' : ''}</td><td>${H.catBadge(a)}</td><td>${H.freqBadge(a)}</td>
+          <td class="num">${U.fmt(a.price, 2)}</td><td class="num">${a.freq === 0 ? '<span class="muted">不配息</span>' : H.plainPct(a.ttmYield)}</td>
+          <td class="num">${r1 ? H.pct(r1.total) : '<span class="muted">—</span>'}</td><td class="num">${r1 ? H.pct(r1.price) : '<span class="muted">—</span>'}</td>
+          <td class="num">${a.fill30 != null ? U.fmtPct(a.fill30, 0) : '<span class="muted">—</span>'}</td>
+          <td class="num">${H.yi(a.size)}</td><td class="num">${a.holders != null ? U.fmtInt(a.holders) : '—'}</td><td class="num">${H.prem(a.premium)}</td>
+          <td class="num">${a.avgValue != null ? U.fmtYi(a.avgValue) : '—'}</td>
+          <td><button type="button" class="star${inCmp ? ' on' : ''}" data-cmp="${a.code}" aria-pressed="${inCmp}" aria-label="${inCmp ? '從比較移除' : '加入比較'} ${a.code}">${inCmp ? '★' : '☆'}</button></td></tr>`;
+      }).join('') || `<tr><td colspan="${COLS.length + 1}" class="muted">沒有符合條件的 ETF</td></tr>`;
+      $('#list-more').hidden = r.length <= st.limit;
+    }
+    $('#f-q').addEventListener('input', e => { st.q = e.target.value; st.limit = 80; render(); });
+    for (const [id, key] of [['#f-cat', 'cat'], ['#f-freq', 'freq'], ['#f-market', 'market'], ['#f-size', 'minSize']])
+      $(id).addEventListener('change', e => { st[key] = e.target.value; st.limit = 80; render(); });
+    $('#f-aged').addEventListener('change', e => { st.aged = e.target.checked; render(); });
+    $('#list-more').onclick = () => { st.limit += 120; render(); };
+    sec.querySelector('thead').addEventListener('click', e => {
+      const th = e.target.closest('th[data-k]'); if (!th) return;
+      if (st.sort === th.dataset.k) st.dir = -st.dir; else { st.sort = th.dataset.k; st.dir = th.dataset.k === 'code' ? 1 : -1; }
+      render();
+    });
+    $('#list-body').addEventListener('click', e => {
+      const b = e.target.closest('[data-cmp]'); if (!b) return;
+      const on = app.toggleCompare(b.dataset.cmp);
+      if (on === false) return;
+      render();
+    });
+    ETF.app.views.list.apply = f => {
+      Object.assign(st, { q: '', cat: '', freq: '', market: '', minSize: 0 }, f);
+      $('#f-q').value = st.q; $('#f-cat').value = st.cat; $('#f-freq').value = st.freq; $('#f-market').value = st.market; $('#f-size').value = String(st.minSize);
+      render();
+    };
+    ETF.app.views.list.refresh = render;
+    render();
+  };
+  // 尚未開啟過列表就被要求套用篩選：先記下來
+  ETF.app.views.list.apply = f => { ETF.app.pendingFilter = f; };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 單一 ETF 詳情：重點數字、優點與注意事項、走勢、配息紀錄與填息、配息月曆 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, C = ETF.classify, AN = ETF.analyze, P = ETF.plan;
+
+  ETF.app.views.detail = function (box, app, a) {
+    const H = app.h, s = app.snap, e = a.e;
+    const r1 = a.r1y;
+    const inCmp = app.compare.includes(a.code);
+    const hdelta = a.holders != null && a.holdersPrev != null ? a.holders - a.holdersPrev : null;
+    const nhiLots = a.lastDiv ? P.nhiMaxLots(a.lastDiv.cash) : null;
+    const det = a.details.slice().reverse();
+    const fm = a.freqInfo.months;
+    box.innerHTML = `
+      <div class="detail-head">
+        <div>
+          <p class="muted small">${e.market === 'TWSE' ? '上市' : '上櫃'}・${U.esc(a.cls.issuer || '')}${e.listed ? '・' + U.fmtDate(e.listed) + ' 上市' : ''}</p>
+          <h2 id="detail-title"><span class="num">${a.code}</span> ${U.esc(a.name)}</h2>
+          <div class="row wrap">${H.catBadge(a)}${H.freqBadge(a)}${a.cls.tags.map(t => `<span class="badge">${U.esc(t)}</span>`).join('')}</div>
+          ${e.fullName ? `<p class="muted small">${U.esc(e.fullName)}</p>` : ''}
+          ${e.index ? `<p class="small">追蹤指數：${U.esc(e.index)}</p>` : ''}
+          ${(e.splits || []).map(sp => `<p class="small warn-box">✂️ ${U.fmtDate(sp.d)} ${sp.ratio >= 1 ? `1 拆 ${U.fmt(sp.ratio, 0)}（分割）` : `${U.fmt(1 / sp.ratio, 0)} 合 1（反分割）`}：之前的價格與每單位配息已換算成現在的單位，和當時新聞上的數字會不同。</p>`).join('')}
+        </div>
+        <div class="detail-actions">
+          <button type="button" class="btn btn-soft btn-sm" id="detail-cmp" aria-pressed="${inCmp}">${inCmp ? '★ 已在比較' : '☆ 加入比較'}</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="detail-close">關閉 ✕</button>
+        </div>
+      </div>
+
+      <div class="tiles">
+        ${H.tile('收盤價', `<span class="num">${U.fmt(a.price, 2)}</span>`, U.fmtDate(a.priceDate))}
+        ${H.tile('近一年殖利率', a.freq === 0 ? '<span class="muted">不配息</span>' : H.plainPct(a.ttmYield), `近一年配 ${a.ttmCount} 次、共 ${U.fmt(a.ttmCash, 3)} 元`)}
+        ${H.tile('年化配息率', H.plainPct(a.annualized), a.lastDiv ? `最近一次 ${U.fmt(a.lastDiv.cash, 3)} 元 × ${typeof a.freq === 'number' ? a.freq : '?'}` : '')}
+        ${H.tile('近一年含息報酬', r1 && r1.full ? H.pct(r1.total) : '<span class="muted">未滿一年</span>', r1 && r1.full ? `價格 ${U.fmtPct(r1.price, 1, true)}＋配息 ${U.fmt(r1.divSum, 2)} 元` : (r1 ? `自 ${U.fmtDate(r1.from)}：${U.fmtPct(r1.total, 1, true)}` : ''))}
+        ${H.tile('規模', H.yi(a.size), a.unitsChg ? `受益單位今日 ${a.unitsChg > 0 ? '+' : ''}${U.fmtInt(a.unitsChg / 1000)} 張` : '受益單位 × 淨值')}
+        ${H.tile('受益人數', a.holders != null ? `<span class="num">${U.fmtInt(a.holders)}</span>` : '—', hdelta != null ? `比上週 ${hdelta >= 0 ? '+' : ''}${U.fmtInt(hdelta)} 人` : `集保 ${U.fmtDate(s.holdersDate)}`)}
+        ${H.tile('折溢價', H.prem(a.premium), a.nav != null ? `預估淨值 ${U.fmt(a.nav, 2)}` : '')}
+        ${H.tile('年化波動', a.vol != null ? `<span class="num">${U.fmtPct(a.vol, 1)}</span>` : '—', a.mdd != null ? `近一年最大回落 ${U.fmtPct(a.mdd, 1)}` : '')}
+        ${H.tile('日均成交', a.avgValue != null ? `<span class="num">${U.fmtYi(a.avgValue)}</span>` : '—', a.avgVol != null ? `約 ${U.fmtInt(a.avgVol)} 張／日` : '')}
+      </div>
+
+      <div class="grid-2">
+        <div class="card mint"><h3>👍 優點</h3><ul class="notes">${a.notes.pros.map(x => `<li>${U.esc(x)}</li>`).join('') || '<li class="muted">—</li>'}</ul></div>
+        <div class="card cream"><h3>⚠️ 注意事項</h3><ul class="notes">${a.notes.cons.map(x => `<li>${U.esc(x)}</li>`).join('') || '<li class="muted">—</li>'}</ul></div>
+      </div>
+
+      ${a.upcoming.length ? `<div class="card sky"><h3>📅 已公告除息</h3>${a.upcoming.map(u => `<p><b class="num">${U.fmtDate(u.d)}</b> 除息，每單位 ${u.cash ? `<b class="num">${U.fmt(u.cash, 3)}</b> 元（以收盤價計約 ${U.fmtPct(u.cash / a.price, 2)}）` : '金額待公告'}。要在前一個交易日（含）以前持有才領得到。</p>`).join('')}</div>` : ''}
+
+      <div class="card">
+        <h3>走勢：價格 vs 含息（近一年，起點＝100）</h3>
+        <p class="muted small">紅線是只看價格，藍線是把配息再投入的含息報酬；兩條線的差距就是配息的貢獻。直線標記是除息日。</p>
+        <div id="d-line"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3>配息月曆（最近一年）</h3>
+          <div class="month-cal">${Array.from({ length: 12 }, (_, i) => `<span class="${fm.includes(i + 1) ? 'on' : ''}">${i + 1}月</span>`).join('')}</div>
+          <p class="small">${freqText(a)}</p>
+          ${nhiLots != null ? `<p class="small">💡 以最近一次配息 ${U.fmt(a.lastDiv.cash, 3)} 元計算，持有 <b class="num">${U.fmt(nhiLots, 2)}</b> 張以下時，單次配息低於 2 萬元，不會被扣二代健保補充保費。${H.term('nhi', '說明')}</p>` : ''}
+        </div>
+        <div class="card"><h3>每次配息金額</h3><div id="d-bars"></div></div>
+      </div>
+
+      <div class="card">
+        <h3>配息與填息紀錄</h3>
+        <p class="muted small">填息天數＝除息後收盤價回到除息前一天收盤價所花的交易日（0＝當天就填息）。每日行情只有最近約一年，更早的除息無法計算填息。${H.term('fill', '什麼是填息？')}</p>
+        <div class="table-wrap tall"><table class="table">
+          <thead><tr><th>除息日</th><th class="num">每單位配息</th><th class="num">除息前收盤</th><th class="num">當次殖利率</th><th class="num">填息</th></tr></thead>
+          <tbody>${det.map(d => `<tr><td class="num">${U.fmtDate(d.d)}</td><td class="num">${U.fmt(d.cash, 3)}</td><td class="num">${U.fmt(d.pre, 2)}</td><td class="num">${d.yieldPer != null ? U.fmtPct(d.yieldPer, 2) : '—'}</td>
+            <td class="num">${d.fillState === 'filled' ? `${d.fill} 天` : d.fillState === 'pending' ? `<span class="warn">尚未填息（${d.waited} 天）</span>` : '<span class="muted">—</span>'}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">沒有配息紀錄</td></tr>'}</tbody>
+        </table></div>
+      </div>
+      <p class="muted small">資料：證交所、櫃買中心除權除息計算結果表與每日行情；淨值為投信提供的預估值；受益人數為集保戶股權分散表。以上為公開資料的整理，不構成投資建議。</p>`;
+
+    box.querySelector('#detail-close').onclick = app.closeDetail;
+    box.querySelector('#detail-cmp').onclick = ev => {
+      const on = app.toggleCompare(a.code);
+      if (on === false) return;
+      ev.target.textContent = on ? '★ 已在比較' : '☆ 加入比較'; ev.target.setAttribute('aria-pressed', on);
+      if (app.views.list.refresh && app.rendered.list) app.views.list.refresh();
+    };
+    // 走勢：近一年價格與含息，起點 100
+    const dates = s.dates, c = e.c;
+    let i0 = AN.idxOnOrAfter(dates, U.addDays(s.asOf, -365));
+    while (i0 < dates.length && c[i0] == null) i0++;
+    if (i0 < dates.length - 1) {
+      const cashOn = {}; for (const d of e.divs) cashOn[d.d] = (cashOn[d.d] || 0) + d.cash;
+      const ds = dates.slice(i0), pr = [], tr = [];
+      let t = 100, prev = c[i0];
+      for (let i = i0; i < dates.length; i++) {
+        if (c[i] == null) { pr.push(null); tr.push(null); continue; }
+        if (i > i0) t *= (c[i] + (cashOn[dates[i]] || 0)) / prev;
+        prev = c[i];
+        pr.push(c[i] / c[i0] * 100); tr.push(t);
+      }
+      const markers = e.divs.filter(d => d.d >= ds[0]).map(d => ({ i: AN.idxOnOrAfter(ds, d.d), label: `除息 ${U.fmt(d.cash, 3)} 元` })).filter(m => m.i < ds.length);
+      ETF.charts.line(box.querySelector('#d-line'), { dates: ds, label: `${a.code} 近一年價格與含息走勢`, height: 260,
+        series: [{ name: '價格', values: pr, color: 'var(--cat-1)' }, { name: '含息（配息再投入）', values: tr, color: 'var(--cat-2)' }],
+        markers, yFmt: v => U.fmt(v, 0) });
+    } else box.querySelector('#d-line').innerHTML = '<p class="muted">行情資料不足</p>';
+    const last = e.divs.slice(-16);
+    if (last.length) {
+      ETF.charts.bars(box.querySelector('#d-bars'), { label: `${a.code} 每次配息金額`, height: 200,
+        labels: last.map(d => d.d.slice(2, 4) + '/' + Number(d.d.slice(5, 7))), series: [{ name: '每單位配息', values: last.map(d => d.cash), color: 'var(--cat-3)' }],
+        yFmt: v => U.fmt(v, v < 0.1 ? 3 : 2), tipTitle: i => U.fmtDate(last[i].d),
+        tipExtra: i => last[i].pre ? `<div class="tip-note">當次殖利率 ${U.fmtPct(last[i].cash / last[i].pre, 2)}</div>` : '' });
+    } else box.querySelector('#d-bars').innerHTML = '<p class="muted">沒有配息紀錄</p>';
+  };
+
+  function freqText(a) {
+    const f = AN.FREQ[a.freq] || AN.FREQ.new;
+    if (a.freq === 0) return '近兩年沒有配息紀錄：收益留在基金裡，反映在淨值上。';
+    if (a.freq === 'new') return `上市不久，目前 ${a.e.divs.length} 次配息紀錄，還無法判斷固定的配息頻率。`;
+    let t = `${f.label}（${f.desc}）`;
+    if (a.freqInfo.group) t += `，屬於「${{ A: '1/4/7/10 月', B: '2/5/8/11 月', C: '3/6/9/12 月' }[a.freqInfo.group]}」這一組`;
+    if (a.lastDiv) t += `。上次除息 ${U.fmtDate(a.lastDiv.d)}。`;
+    return t;
+  }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 配息頻率解析：配息的本質、各頻率實際統計、優缺點、除息月份分布、高殖利率陷阱 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, AN = ETF.analyze, LE = ETF.learn;
+
+  ETF.app.views.freq = function (sec, app) {
+    const H = app.h, L = app.list, asOf = app.snap.asOf;
+    const kindSel = app.store.get('freqKind', 'stock');
+    const kinds = { stock: ['股票型（不含槓桿、反向、商品）', a => !['bond', 'lev', 'inv', 'commodity'].includes(a.cat)], bond: ['債券型', a => a.cat === 'bond'], all: ['全部', () => true] };
+
+    function stats(pred) {
+      return AN.FREQ_ORDER.map(f => {
+        const g = L.filter(a => a.freq === f && pred(a));
+        const full = g.filter(a => a.r1y && a.r1y.full);
+        return { f, n: g.length, y: U.median(g.map(a => a.ttmYield).filter(x => x > 0)),
+          tr: U.median(full.map(a => a.r1y.total)), pr: U.median(full.map(a => a.r1y.price)),
+          fill: U.median(g.map(a => a.fill30).filter(x => x != null)),
+          ex: g.slice().sort((x, y) => (y.size || 0) - (x.size || 0)).slice(0, 5) };
+      }).filter(x => x.n);
+    }
+    // 每個月有多少檔除息（最近一年）
+    const perMonth = new Array(12).fill(0);
+    const perMonthCash = new Array(12).fill(0);
+    for (const a of L) for (const d of a.e.divs) if (d.d > U.addDays(asOf, -365) && d.d <= asOf) { perMonth[U.month(d.d) - 1]++; }
+    const groups = { A: 0, B: 0, C: 0 };
+    for (const a of L) if (a.freqInfo.group) groups[a.freqInfo.group]++;
+    // 高殖利率 vs 含息報酬
+    const hy = L.filter(a => a.ttmYield > 0 && a.r1y && a.r1y.full && (a.size || 0) >= 1e9 && !['lev', 'inv'].includes(a.cat))
+      .sort((x, y) => y.ttmYield - x.ttmYield).slice(0, 12);
+    const p0050 = app.byCode['0050'];
+
+    sec.innerHTML = `
+      <div class="card pink">
+        <h2>先搞懂：配息不是多賺的錢</h2>
+        <div class="grid-2">
+          <div>
+            <p>除息那天，ETF 的參考價會<b>直接扣掉配息金額</b>。例如 1 單位 50 元的 ETF 配 1 元，除息後變成 49 元＋1 元現金——你的總資產還是 50 元，只是有 1 元從「ETF」移到了「現金」。</p>
+            <p>真正賺錢是之後股價漲回去（${H.term('fill', '填息')}），所以比較 ETF 一定要看${H.term('total', '含息總報酬')}，不能只看殖利率。配息還可能被扣${H.term('nhi', '二代健保')}與${H.term('divtax', '股利所得稅')}，不配息反而省稅。</p>
+          </div>
+          <div class="example-box" aria-label="除息前後的資產變化示意">
+            <div class="ex-col"><div class="ex-bar" style="height:100%"><span>ETF<br>50 元</span></div><p>除息前</p></div>
+            <div class="ex-arrow">→</div>
+            <div class="ex-col"><div class="ex-stack"><div class="ex-bar cash" style="height:2%"></div><div class="ex-bar" style="height:98%"><span>ETF<br>49 元</span></div></div><p>除息後：49＋現金 1</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row wrap between"><h2>各配息頻率的實際表現</h2>
+          <div class="field inline"><label for="fq-kind">範圍</label><select id="fq-kind" class="select">${Object.keys(kinds).map(k => `<option value="${k}"${k === kindSel ? ' selected' : ''}>${kinds[k][0]}</option>`).join('')}</select></div></div>
+        <p class="muted small">以近 365 天計算的中位數。頻率由近兩年除息間隔判斷（例如 0050 現在是半年配）。</p>
+        <div class="table-wrap"><table class="table" id="fq-table"></table></div>
+        <p class="muted small">不同頻率的報酬差異主要來自「持有什麼資產」，不是配息頻率本身——同樣的資產，配息頻率不會改變總報酬。</p>
+      </div>
+
+      <div class="freq-cards">${LE.FREQ_GUIDE.map(g => `
+        <div class="card freq-card">
+          <h3><span class="badge freq freq-${g.code}">${AN.FREQ[g.code].label}</span></h3>
+          <p class="small"><b>適合：</b>${g.who}</p>
+          <div class="pc"><div><h4>優點</h4><ul>${g.pros.map(x => `<li>${x}</li>`).join('')}</ul></div>
+          <div><h4>缺點</h4><ul>${g.cons.map(x => `<li>${x}</li>`).join('')}</ul></div></div>
+          <p class="small examples" data-freq="${g.code}"></p>
+        </div>`).join('')}
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h2>除息月份分布（最近一年）</h2>
+          <p class="muted small">每個月有幾筆 ETF 除息。季配 ETF 依月份分三組：1/4/7/10 月 <b class="num">${groups.A}</b> 檔、2/5/8/11 月 <b class="num">${groups.B}</b> 檔、3/6/9/12 月 <b class="num">${groups.C}</b> 檔——各挑一檔就是${'「'}<button type="button" class="etf-link" data-goto="monthly">月月配</button>」。</p>
+          <div id="fq-months"></div>
+        </div>
+        <div class="card cream">
+          <h2>殖利率高，報酬就高嗎？</h2>
+          <p class="small">規模 10 億以上、近一年殖利率最高的 ETF，和它們實際的價格與含息報酬。殖利率只是報酬的一部分；如果價格同時下跌，配息其實是「拿自己的錢配給自己」。${p0050 && p0050.r1y && p0050.r1y.full ? `對照：0050 近一年殖利率 ${U.fmtPct(p0050.ttmYield, 1)}、含息報酬 ${U.fmtPct(p0050.r1y.total, 1, true)}。` : ''}</p>
+          <div class="table-wrap"><table class="table">
+            <thead><tr><th>ETF</th><th class="num">殖利率</th><th class="num">價格</th><th class="num">含息</th></tr></thead>
+            <tbody>${hy.map(a => `<tr><td>${H.link(a)}</td><td class="num">${U.fmtPct(a.ttmYield, 1)}</td><td class="num">${H.pct(a.r1y.price)}</td><td class="num">${H.pct(a.r1y.total)}</td></tr>`).join('')}</tbody>
+          </table></div>
+        </div>
+      </div>`;
+
+    function renderStats() {
+      const st = stats(kinds[sec.querySelector('#fq-kind').value][1]);
+      sec.querySelector('#fq-table').innerHTML = `<thead><tr><th>頻率</th><th class="num">檔數</th><th class="num">殖利率中位數</th><th class="num">價格報酬中位數</th><th class="num">含息報酬中位數</th><th class="num">30 日內填息比例</th><th>規模最大的幾檔</th></tr></thead>
+        <tbody>${st.map(x => `<tr><td><span class="badge freq freq-${x.f}">${AN.FREQ[x.f].label}</span></td><td class="num">${x.n}</td><td class="num">${H.plainPct(x.y, 1)}</td><td class="num">${H.pct(x.pr)}</td><td class="num">${H.pct(x.tr)}</td><td class="num">${x.fill != null ? U.fmtPct(x.fill, 0) : '—'}</td>
+          <td class="small">${x.ex.map(a => H.link(a)).join('、')}</td></tr>`).join('')}</tbody>`;
+      sec.querySelectorAll('.examples').forEach(p => {
+        const x = st.find(z => String(z.f) === p.dataset.freq);
+        p.innerHTML = x ? `<b>例如：</b>${x.ex.slice(0, 4).map(a => H.link(a)).join('、')}` : '';
+      });
+    }
+    sec.querySelector('#fq-kind').onchange = e => { app.store.set('freqKind', e.target.value); renderStats(); };
+    renderStats();
+    ETF.charts.bars(sec.querySelector('#fq-months'), { label: '最近一年每月除息筆數', height: 200, labels: perMonth.map((_, i) => (i + 1) + '月'),
+      series: [{ name: '除息筆數', values: perMonth, color: 'var(--cat-2)' }], yFmt: v => U.fmtInt(v), left: 36, tipTitle: i => `${i + 1} 月` });
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 月月配：三組季配 ETF 各挑一檔（或直接用月配 ETF），依最近一年實際配息估算每月現金流 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, P = ETF.plan;
+  const GROUP_LABEL = { A: '1・4・7・10 月除息', B: '2・5・8・11 月除息', C: '3・6・9・12 月除息' };
+  const COLORS = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)'];
+
+  ETF.app.views.monthly = function (sec, app) {
+    const H = app.h, asOf = app.snap.asOf;
+    const st = Object.assign({ kind: 'div', sort: 'size', amount: 900000, mode: 'combo', pick: {} }, app.store.get('monthly', {}));
+    sec.innerHTML = `
+      <div class="card">
+        <h2>組一套「月月配」</h2>
+        <p>季配 ETF 的除息月份分成三組，從每組各挑一檔，就能每個月都有配息。也可以直接選月配 ETF 比較。金額會平均分給選中的 ETF，用<b>最近一年實際配息</b>估算現金流（不是保證，未來配息會變）。</p>
+        <div class="filters">
+          <div class="field"><label for="m-kind">ETF 種類</label><select id="m-kind" class="select"><option value="div">高股息（含收益型主動式）</option><option value="bond">債券</option><option value="all">全部（股票＋債券）</option></select></div>
+          <div class="field"><label for="m-sort">候選排序</label><select id="m-sort" class="select"><option value="size">規模大</option><option value="yield">近一年殖利率高</option><option value="fill">填息快</option><option value="total">近一年含息報酬高</option><option value="holders">受益人數多</option></select></div>
+          <div class="field"><label for="m-amount">投入總金額（元）</label><input id="m-amount" class="input num" type="number" min="10000" step="10000" value="${st.amount}"></div>
+          <div class="field"><label for="m-mode">方式</label><select id="m-mode" class="select"><option value="combo">三檔季配組合</option><option value="monthly">單一月配 ETF</option></select></div>
+        </div>
+        <p class="muted small">候選條件：近一年至少配息 3 次、規模 10 億以上、日均成交 300 萬元以上、不含外幣加掛版本。</p>
+      </div>
+      <div id="m-pick"></div>
+      <div id="m-result"></div>`;
+    const $ = s => sec.querySelector(s);
+    $('#m-kind').value = st.kind; $('#m-sort').value = st.sort; $('#m-mode').value = st.mode;
+
+    function save() { app.store.set('monthly', st); }
+    function render() {
+      const res = P.monthlyCombos(app.list, { kind: st.kind, sort: st.sort });
+      let picks = [];
+      if (st.mode === 'combo') {
+        $('#m-pick').innerHTML = `<div class="grid-3">${['A', 'B', 'C'].map(g => {
+          const arr = res.groups[g].slice(0, 6);
+          if (!st.pick[g] || !arr.some(a => a.code === st.pick[g])) st.pick[g] = arr[0] && arr[0].code;
+          return `<fieldset class="card pick-col"><legend>${GROUP_LABEL[g]}</legend>${arr.map(a => `
+            <label class="pick${st.pick[g] === a.code ? ' on' : ''}"><input type="radio" name="g${g}" value="${a.code}"${st.pick[g] === a.code ? ' checked' : ''}>
+            <span><b class="num">${a.code}</b> ${U.esc(a.name)}<br><small class="muted">殖利率 ${U.fmtPct(a.ttmYield, 1)}・規模 ${U.fmtYi(a.size)}・含息 ${a.r1y && a.r1y.full ? U.fmtPct(a.r1y.total, 1, true) : '—'}・30日填息 ${a.fill30 != null ? U.fmtPct(a.fill30, 0) : '—'}</small></span></label>`).join('') || '<p class="muted">這組沒有符合條件的 ETF</p>'}</fieldset>`;
+        }).join('')}</div>`;
+        picks = ['A', 'B', 'C'].map(g => app.byCode[st.pick[g]]).filter(Boolean);
+      } else {
+        const arr = res.monthlyPayers.slice(0, 10);
+        if (!st.pick.M || !arr.some(a => a.code === st.pick.M)) st.pick.M = arr[0] && arr[0].code;
+        $('#m-pick').innerHTML = `<fieldset class="card pick-col"><legend>月配 ETF</legend><div class="grid-2">${arr.map(a => `
+          <label class="pick${st.pick.M === a.code ? ' on' : ''}"><input type="radio" name="gM" value="${a.code}"${st.pick.M === a.code ? ' checked' : ''}>
+          <span><b class="num">${a.code}</b> ${U.esc(a.name)}<br><small class="muted">殖利率 ${U.fmtPct(a.ttmYield, 1)}・規模 ${U.fmtYi(a.size)}・含息 ${a.r1y && a.r1y.full ? U.fmtPct(a.r1y.total, 1, true) : '—'}</small></span></label>`).join('') || '<p class="muted">沒有符合條件的月配 ETF</p>'}</div></fieldset>`;
+        picks = [app.byCode[st.pick.M]].filter(Boolean);
+      }
+      save();
+      sec.querySelectorAll('.pick input').forEach(inp => inp.onchange = () => { st.pick[inp.name.slice(1)] = inp.value; render(); });
+      if (!picks.length) { $('#m-result').innerHTML = ''; return; }
+      const amt = Math.max(0, Number(st.amount) || 0);
+      const cf = P.cashflow(picks.map(a => ({ a, amount: amt / picks.length })), asOf);
+      const emptyMonths = cf.months.map((v, i) => v <= 0 ? i + 1 : null).filter(Boolean);
+      const nhiHits = [];
+      cf.rows.forEach(r => r.cash.forEach((v, i) => { if (v >= P.TAX.nhiThreshold) nhiHits.push(`${r.a.code} ${i + 1} 月 ${U.fmtMoney(v)}`); }));
+      const minM = Math.min(...cf.months), maxM = Math.max(...cf.months);
+      $('#m-result').innerHTML = `
+        <div class="card">
+          <h2>估算結果</h2>
+          <div class="tiles">
+            ${H.tile('實際買進金額', `<span class="num">${U.fmtInt(cf.invested)}</span> 元`, `${cf.rows.map(r => `${r.a.code} ${U.fmt(r.lots, 2)} 張`).join('、')}`)}
+            ${H.tile('一年配息（估）', `<span class="num">${U.fmtInt(cf.annual)}</span> 元`, `約 ${U.fmtPct(cf.invested ? cf.annual / cf.invested : null, 2)}`)}
+            ${H.tile('平均每月', `<span class="num">${U.fmtInt(cf.annual / 12)}</span> 元`, `最少 ${U.fmtInt(minM)}・最多 ${U.fmtInt(maxM)} 元`)}
+            ${H.tile('沒有配息的月份', emptyMonths.length ? `<span class="num">${emptyMonths.length}</span> 個月` : '<span class="ok">每月都有</span>', emptyMonths.length ? emptyMonths.join('、') + ' 月' : '')}
+          </div>
+          <div id="m-chart"></div>
+          <p class="muted small">以「除息月份」計算；實際入帳通常在除息後 3～5 週。配息金額沿用最近一年的實際紀錄，未來可能增加或減少。</p>
+          ${nhiHits.length ? `<p class="warn-box">⚠️ 這些單次配息 ≥ 2 萬元，會被扣 2.11% 二代健保補充保費：${nhiHits.join('、')}。${H.term('nhi', '說明')}</p>` : ''}
+          <div class="table-wrap"><table class="table"><thead><tr><th>ETF</th>${Array.from({ length: 12 }, (_, i) => `<th class="num">${i + 1}月</th>`).join('')}<th class="num">全年</th></tr></thead>
+          <tbody>${cf.rows.map(r => `<tr><td>${H.link(r.a)}</td>${r.cash.map(v => `<td class="num">${v ? U.fmtInt(v) : '<span class="muted">·</span>'}</td>`).join('')}<td class="num"><b>${U.fmtInt(r.annual)}</b></td></tr>`).join('')}
+          <tr class="total"><td>合計</td>${cf.months.map(v => `<td class="num">${U.fmtInt(v)}</td>`).join('')}<td class="num"><b>${U.fmtInt(cf.annual)}</b></td></tr></tbody></table></div>
+        </div>
+        <div class="card cream"><h3>組月月配前想一想</h3><ul class="notes">
+          <li>月月配只是讓現金流平均，<b>不會提高報酬</b>；三檔高股息 ETF 的持股可能高度重疊。${H.term('overlap', '持股重疊')}</li>
+          <li>還在累積資產階段、不需要每月現金的人，配息再投入或選市值型 ETF，通常更有效率（也少繳稅與補充保費）。</li>
+          <li>看含息報酬與填息紀錄，不要只挑殖利率最高的；殖利率很高的 ETF，價格可能正在下跌。</li>
+        </ul></div>`;
+      ETF.charts.bars($('#m-chart'), { label: '每月配息現金流', height: 240, labels: cf.months.map((_, i) => (i + 1) + '月'),
+        series: cf.rows.map((r, k) => ({ name: r.a.code + ' ' + r.a.name, values: r.cash, color: COLORS[k % 4] })), yFmt: v => U.fmtInt(v), left: 60, tipTitle: i => `${i + 1} 月` });
+    }
+    $('#m-kind').onchange = e => { st.kind = e.target.value; st.pick = {}; render(); };
+    $('#m-sort').onchange = e => { st.sort = e.target.value; st.pick = {}; render(); };
+    $('#m-mode').onchange = e => { st.mode = e.target.value; render(); };
+    $('#m-amount').oninput = e => { st.amount = Number(e.target.value) || 0; render(); };
+    render();
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 配置精靈：問卷 → 股債比例與各類 ETF 比重 → 候選 ETF（客觀條件篩選）→ 現金流與長期試算 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, P = ETF.plan;
+  const COLORS = { core: 'var(--cat-1)', div: 'var(--cat-3)', world: 'var(--cat-2)', bondGov: 'var(--cat-4)', bondIG: 'var(--flat)' };
+  const ASSUME = { core: 6, div: 5, world: 6, bondGov: 3, bondIG: 4 };
+
+  const RISK_Q = [
+    { q: '如果你的投資一年內跌了 20%，你會？', o: ['全部賣掉，不想再碰', '賣掉一部分', '不動，等它回來', '再加碼一點', '大幅加碼'] },
+    { q: '你的投資經驗？', o: ['完全沒有', '只有定存或儲蓄險', '買過基金或 ETF', '投資股票幾年了', '經歷過多次股災仍持續投資'] },
+  ];
+
+  ETF.app.views.plan = function (sec, app) {
+    const H = app.h;
+    const st = Object.assign({ age: 35, horizon: 15, goal: 'balance', r1: 2, r2: 2, overseas: true, lump: 300000, monthly: 10000, chosen: {}, assume: ASSUME }, app.store.get('plan', {}));
+    st.assume = Object.assign({}, ASSUME, st.assume);
+    if (![2, 4, 8, 15].includes(Number(st.horizon))) st.horizon = 15;
+    sec.innerHTML = `
+      <div class="card pink">
+        <h2>🧭 配置精靈</h2>
+        <p>回答幾個問題，精靈用常見的資產配置原則（年齡、投資期間、風險承受度、目標）算出股債比例，再從各類 ETF 中用<b>客觀條件</b>（上市滿一年、規模、成交量、折溢價）篩出候選。這是教學用的參考框架，<b>不是個人化投資建議</b>。</p>
+        <form id="plan-form" class="plan-form" onsubmit="return false">
+          <div class="field"><label for="p-age">年齡</label><input id="p-age" class="input num" type="number" min="18" max="90" value="${st.age}"></div>
+          <div class="field"><label for="p-horizon">這筆錢多久後要用？</label><select id="p-horizon" class="select"><option value="2">3 年內</option><option value="4">3～5 年</option><option value="8">5～10 年</option><option value="15">10 年以上</option></select></div>
+          <div class="field wide"><span class="field-label">投資目標</span><div class="seg" role="radiogroup" aria-label="投資目標">
+            ${[['grow', '累積資產', '退休還很久，想讓錢長大'], ['balance', '成長＋現金流', '兩者兼顧'], ['income', '穩定現金流', '想定期領配息'], ['preserve', '保守', '不想承受大波動']].map(([v, t, d]) => `<label class="seg-item"><input type="radio" name="goal" value="${v}"${st.goal === v ? ' checked' : ''}><span><b>${t}</b><small>${d}</small></span></label>`).join('')}
+          </div></div>
+          ${RISK_Q.map((r, i) => `<div class="field wide"><label for="p-r${i + 1}">${r.q}</label><select id="p-r${i + 1}" class="select">${r.o.map((o, k) => `<option value="${k + 1}">${o}</option>`).join('')}</select></div>`).join('')}
+          <label class="check"><input id="p-overseas" type="checkbox"${st.overseas ? ' checked' : ''}> 願意配置海外市場（美國／全球）</label>
+          <div class="field"><label for="p-lump">現在可投入（元）</label><input id="p-lump" class="input num" type="number" min="0" step="10000" value="${st.lump}"></div>
+          <div class="field"><label for="p-monthly">每月定期定額（元）</label><input id="p-monthly" class="input num" type="number" min="0" step="1000" value="${st.monthly}"></div>
+        </form>
+        <p class="muted small">投資前請先留 3～6 個月生活費當${H.term('emergency', '緊急預備金')}，這部分不要拿來投資。</p>
+      </div>
+      <div id="plan-out"></div>`;
+    const $ = s => sec.querySelector(s);
+    $('#p-horizon').value = String(st.horizon); $('#p-r1').value = String(st.r1); $('#p-r2').value = String(st.r2);
+
+    function read() {
+      st.age = Number($('#p-age').value) || 35; st.horizon = Number($('#p-horizon').value) || 15;
+      st.goal = (sec.querySelector('input[name=goal]:checked') || {}).value || 'balance';
+      st.r1 = Number($('#p-r1').value); st.r2 = Number($('#p-r2').value); st.overseas = $('#p-overseas').checked;
+      st.lump = Math.max(0, Number($('#p-lump').value) || 0); st.monthly = Math.max(0, Number($('#p-monthly').value) || 0);
+    }
+    function render() {
+      read();
+      app.store.set('plan', st);
+      const risk = Math.round((st.r1 * 2 + st.r2) / 3);
+      const al = P.allocate({ age: st.age, horizon: st.horizon, goal: st.goal, risk, overseas: st.overseas });
+      const keys = Object.keys(al.weights);
+      const wantMonthly = st.goal === 'income';
+      const cands = {};
+      for (const k of keys) {
+        cands[k] = P.candidates(app.list, k, { preferMonthly: wantMonthly, short: st.goal === 'preserve' || st.horizon <= 4 });
+        if (!st.chosen[k] || !cands[k].some(a => a.code === st.chosen[k])) st.chosen[k] = cands[k][0] && cands[k][0].code;
+      }
+      const picks = keys.filter(k => app.byCode[st.chosen[k]]).map(k => ({ k, a: app.byCode[st.chosen[k]], amount: st.lump * al.weights[k] }));
+      const cf = P.cashflow(picks, app.snap.asOf);
+      const expRet = U.sum(keys.map(k => al.weights[k] * st.assume[k] / 100));
+      const years = st.horizon;
+      const proj = P.projectDCA(st.lump, st.monthly, expRet, years);
+      const projLow = P.projectDCA(st.lump, st.monthly, expRet - 0.03, years);
+      const projHigh = P.projectDCA(st.lump, st.monthly, expRet + 0.02, years);
+      const core = picks.find(p => p.k === 'core');
+      const bt = core && st.monthly > 0 ? P.backtestDCA(core.a, app.snap.dates, st.monthly, true) : null;
+      $('#plan-out').innerHTML = `
+        <div class="grid-2">
+          <div class="card">
+            <h2>建議比例：股票 ${al.equity}%・債券 ${al.bond}%</h2>
+            <div id="plan-donut"></div>
+          </div>
+          <div class="card">
+            <h3>怎麼算出來的</h3>
+            <ol class="notes">${al.reasons.map(r => `<li>${r}</li>`).join('')}</ol>
+            <p class="small">風險承受度（由兩題換算）：<b class="num">${risk}</b>／5。</p>
+            <h3>使用原則</h3>
+            <ul class="notes small">
+              <li><b>每年${H.term('rebalance', '再平衡')}一次</b>，或任一類偏離超過 5 個百分點時調回來。</li>
+              <li>每一類挑<b>一檔</b>就夠，同類買很多檔通常只是重複持有。</li>
+              <li>年紀增加、目標改變時，回來重新填一次。</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <h2>各類別與候選 ETF</h2>
+          <p class="muted small">候選＝該類別中「上市滿一年、規模 30 億以上、日均成交 1,000 萬元以上、折溢價 1% 以內」的 ETF，依規模排序${wantMonthly ? '（目標是現金流，月配 ETF 排前面）' : ''}。這只是用公開資料篩出的範例，請自行比較費用、持股與配息政策後決定。</p>
+          <div class="table-wrap"><table class="table plan-table">
+            <thead><tr><th>類別</th><th class="num">比重</th><th class="num">金額</th><th>選用的 ETF</th><th class="num">殖利率</th><th class="num">近一年含息</th><th>配息</th></tr></thead>
+            <tbody>${keys.map(k => {
+              const a = app.byCode[st.chosen[k]];
+              return `<tr><td><i class="sw" style="background:${COLORS[k]}"></i><b>${P.BUCKETS[k].label}</b><br><small class="muted">${P.BUCKETS[k].why}</small></td>
+                <td class="num">${U.fmtPct(al.weights[k], 0)}</td><td class="num">${U.fmtInt(st.lump * al.weights[k])}<br><small class="muted">每月 ${U.fmtInt(st.monthly * al.weights[k])}</small></td>
+                <td>${cands[k].length ? `<select class="select" data-bucket="${k}" aria-label="${P.BUCKETS[k].label}選用的 ETF">${cands[k].map(c => `<option value="${c.code}"${c.code === st.chosen[k] ? ' selected' : ''}>${c.code} ${U.esc(c.name)}（${U.fmtYi(c.size)}）</option>`).join('')}</select>
+                  ${a ? `<button type="button" class="etf-link small" data-open="${a.code}">看 ${a.code} 分析 →</button>` : ''}` : '<span class="muted">沒有符合條件的 ETF</span>'}</td>
+                <td class="num">${a ? H.plainPct(a.ttmYield, 1) : '—'}</td><td class="num">${a && a.r1y && a.r1y.full ? H.pct(a.r1y.total) : '—'}</td><td>${a ? H.freqBadge(a) : ''}</td></tr>`;
+            }).join('')}</tbody></table></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3>一年配息現金流（依現在投入的 ${U.fmtInt(st.lump)} 元估算）</h3>
+            <div class="tiles">${H.tile('一年配息（估）', `<span class="num">${U.fmtInt(cf.annual)}</span> 元`, `約 ${U.fmtPct(cf.invested ? cf.annual / cf.invested : null, 2)}`)}${H.tile('平均每月', `<span class="num">${U.fmtInt(cf.annual / 12)}</span> 元`, '以除息月份計')}</div>
+            <div id="plan-cash"></div>
+          </div>
+          <div class="card">
+            <h3>${years} 年後的可能結果（假設值試算）</h3>
+            <p class="small">投入 ${U.fmtInt(proj.invested)} 元，若組合年報酬 <b class="num">${U.fmtPct(expRet, 1)}</b>（股息再投入）：約 <b class="num">${U.fmtInt(proj.value)}</b> 元；
+              報酬差一點（${U.fmtPct(expRet - 0.03, 1)}）約 ${U.fmtInt(projLow.value)} 元，好一點（${U.fmtPct(expRet + 0.02, 1)}）約 ${U.fmtInt(projHigh.value)} 元。</p>
+            <div id="plan-proj"></div>
+            <details class="small"><summary>修改各類別的假設年報酬</summary><div class="assume">${keys.map(k => `<label>${P.BUCKETS[k].label} <input class="input num" type="number" step="0.5" data-assume="${k}" value="${st.assume[k]}">%</label>`).join('')}</div>
+              <p class="muted">預設值是長期粗略假設（不是預測），實際報酬每年差異很大，可能為負。</p></details>
+            ${bt ? `<p class="small">📈 真實回放：過去一年每月第一個交易日定期定額 ${U.fmtInt(st.monthly)} 元買 ${core.a.code}（配息再投入），投入 ${U.fmtInt(bt.invested)} 元，到 ${U.fmtDate(app.snap.asOf)} 市值 ${U.fmtInt(bt.value)} 元（${U.fmtPct(bt.ret, 1, true)}）。過去不代表未來。</p>` : ''}
+          </div>
+        </div>`;
+      ETF.charts.donut($('#plan-donut'), { label: '建議配置比例', items: keys.map(k => ({ label: P.BUCKETS[k].label, value: al.weights[k], color: COLORS[k] })), center: [`${al.equity}/${al.bond}`, '股／債'] });
+      ETF.charts.bars($('#plan-cash'), { label: '每月配息現金流', height: 200, labels: cf.months.map((_, i) => (i + 1) + '月'),
+        series: cf.rows.map(r => ({ name: r.a.code + ' ' + r.a.name, values: r.cash, color: COLORS[picks.find(p => p.a === r.a).k] })), yFmt: v => U.fmtInt(v), left: 56, tipTitle: i => `${i + 1} 月` });
+      ETF.charts.bars($('#plan-proj'), { label: '長期試算：投入本金與預估市值', height: 200, labels: proj.path.map(p => p.y + '年'),
+        series: [{ name: '投入本金', values: proj.path.map(p => p.inv), color: 'var(--cat-2)' }, { name: '預估增值', values: proj.path.map(p => Math.max(0, p.v - p.inv)), color: 'var(--cat-1)' }],
+        yFmt: v => v >= 1e6 ? U.fmt(v / 1e4, 0) + '萬' : U.fmtInt(v), left: 60, tipTitle: i => `第 ${proj.path[i].y} 年` });
+      sec.querySelectorAll('[data-bucket]').forEach(s => s.onchange = () => { st.chosen[s.dataset.bucket] = s.value; render(); });
+      sec.querySelectorAll('[data-assume]').forEach(inp => inp.onchange = () => { st.assume[inp.dataset.assume] = Number(inp.value) || 0; const open = true; render(); const d = sec.querySelector('details'); if (d && open) d.open = true; });
+    }
+    $('#plan-form').addEventListener('change', render);
+    $('#plan-form').addEventListener('input', ev => { if (ev.target.type === 'number') { clearTimeout(render.t); render.t = setTimeout(render, 300); } });
+    render();
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+;
+/* 比較、稅費試算、小辭典 */
+(function (root) {
+  const ETF = root.ETF, U = ETF.util, AN = ETF.analyze, P = ETF.plan, LE = ETF.learn;
+  const COLORS = ['var(--cat-1)', 'var(--cat-2)', 'var(--cat-3)', 'var(--cat-4)'];
+
+  /* ---------- 比較 ---------- */
+  ETF.app.views.compare = function (sec, app) {
+    const H = app.h;
+    const list = app.compare.map(c => app.byCode[c]).filter(Boolean);
+    const quick = [['0050', '0056', '00878', '00919'], ['0050', '006208', '00646', '00679B'], ['00679B', '00720B', '00937B', '00687B']];
+    sec.innerHTML = `
+      <div class="card">
+        <h2>ETF 比較（最多 4 檔）</h2>
+        <div class="row wrap">
+          <label class="sr-only" for="cmp-add">加入 ETF 代號</label>
+          <input id="cmp-add" class="input" placeholder="輸入代號，例如 00878" list="cmp-codes" style="max-width:220px">
+          <datalist id="cmp-codes">${app.list.map(a => `<option value="${a.code}">${U.esc(a.name)}</option>`).join('')}</datalist>
+          <button type="button" class="btn btn-primary btn-sm" id="cmp-add-btn">加入</button>
+          <span class="muted small">或快速比較：</span>
+          ${quick.map((q, i) => `<button type="button" class="chip" data-quick="${i}">${q.join(' vs ')}</button>`).join('')}
+        </div>
+      </div>
+      ${list.length ? `
+      <div class="card">
+        <div class="table-wrap"><table class="table cmp-table">
+          <thead><tr><th>項目</th>${list.map((a, i) => `<th><i class="sw" style="background:${COLORS[i]}"></i>${H.link(a)}<button type="button" class="btn btn-ghost btn-sm" data-rm="${a.code}" aria-label="移除 ${a.code}">✕</button></th>`).join('')}</tr></thead>
+          <tbody>${[
+            ['類型', a => H.catBadge(a)], ['配息頻率', a => H.freqBadge(a)], ['收盤價', a => U.fmt(a.price, 2)],
+            ['近一年殖利率', a => H.plainPct(a.ttmYield)], ['年化配息率', a => H.plainPct(a.annualized)],
+            ['近一年含息報酬', a => a.r1y && a.r1y.full ? H.pct(a.r1y.total) : '—'], ['近一年價格報酬', a => a.r1y && a.r1y.full ? H.pct(a.r1y.price) : '—'],
+            ['近 6 個月含息', a => a.r6m && a.r6m.full ? H.pct(a.r6m.total) : '—'], ['年化波動', a => a.vol != null ? U.fmtPct(a.vol, 1) : '—'],
+            ['最大回落', a => a.mdd != null ? U.fmtPct(a.mdd, 1) : '—'], ['30 日內填息比例', a => a.fill30 != null ? U.fmtPct(a.fill30, 0) : '—'],
+            ['規模', a => H.yi(a.size)], ['受益人數', a => a.holders != null ? U.fmtInt(a.holders) : '—'], ['折溢價', a => H.prem(a.premium)],
+            ['日均成交', a => a.avgValue != null ? U.fmtYi(a.avgValue) : '—'], ['上市日期', a => a.e.listed ? U.fmtDate(a.e.listed) : '—'],
+            ['追蹤指數', a => `<span class="small">${U.esc(a.e.index || '—')}</span>`],
+          ].map(([t, f]) => `<tr><th scope="row">${t}</th>${list.map(a => `<td class="num">${f(a)}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+      <div class="card"><h3>近一年含息報酬走勢（起點＝100，配息再投入）</h3><div id="cmp-line"></div></div>
+      <div class="card"><h3>持有 100 萬元時，每月配息（依最近一年）</h3><div id="cmp-bars"></div></div>` :
+      '<div class="card empty"><p>還沒有要比較的 ETF。可以在上面輸入代號、按快速比較，或在列表與詳情頁按 ☆。</p></div>'}`;
+    const add = code => { code = String(code || '').trim().toUpperCase(); if (!app.byCode[code]) { app.toast('找不到 ' + code); return; } if (!app.compare.includes(code)) app.toggleCompare(code); app.rerender('compare'); };
+    sec.querySelector('#cmp-add-btn').onclick = () => add(sec.querySelector('#cmp-add').value);
+    sec.querySelector('#cmp-add').onkeydown = e => { if (e.key === 'Enter') add(e.target.value); };
+    sec.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => { app.compare.splice(0, app.compare.length, ...quick[b.dataset.quick].filter(c => app.byCode[c])); app.store.set('compare', app.compare); document.querySelector('#compare-count').textContent = app.compare.length; app.rerender('compare'); });
+    sec.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { app.toggleCompare(b.dataset.rm); app.rerender('compare'); });
+    if (!list.length) return;
+    const s = app.snap, dates = s.dates;
+    const i0 = AN.idxOnOrAfter(dates, U.addDays(s.asOf, -365));
+    const ds = dates.slice(i0);
+    const series = list.map((a, k) => {
+      const c = a.e.c, cashOn = {}; for (const d of a.e.divs) cashOn[d.d] = (cashOn[d.d] || 0) + d.cash;
+      let t = null, prev = null; const v = [];
+      for (let i = i0; i < dates.length; i++) {
+        if (c[i] == null) { v.push(null); continue; }
+        if (t == null) t = 100; else t *= (c[i] + (cashOn[dates[i]] || 0)) / prev;
+        prev = c[i]; v.push(t);
+      }
+      return { name: a.code + ' ' + a.name, values: v, color: COLORS[k] };
+    });
+    ETF.charts.line(sec.querySelector('#cmp-line'), { dates: ds, series, label: '含息報酬比較', yFmt: v => U.fmt(v, 0), height: 280 });
+    const rows = list.map((a, k) => ({ name: a.code + ' ' + a.name, values: P.monthlyCash(a, a.price ? 1e6 / a.price : 0, s.asOf), color: COLORS[k] }));
+    // 比較時各檔並排看，不堆疊：用每檔一組
+    ETF.charts.bars(sec.querySelector('#cmp-bars'), { label: '每月配息比較', height: 220, labels: Array.from({ length: 12 }, (_, i) => (i + 1) + '月'), series: rows, grouped: true, yFmt: v => U.fmtInt(v), left: 56, tipTitle: i => `${i + 1} 月` });
+  };
+
+  /* ---------- 稅費試算 ---------- */
+  ETF.app.views.tax = function (sec, app) {
+    const H = app.h;
+    const st = Object.assign({ code: '00878', lots: 20, rate: 0.12, other: 0 }, app.store.get('tax', {}));
+    sec.innerHTML = `
+      <div class="card">
+        <h2>🧾 配息的稅與二代健保試算</h2>
+        <p>選一檔 ETF 和持有張數，依<b>最近一年實際配息</b>估算每次入帳金額、二代健保補充保費，以及股利所得稅「合併計稅」與「分開計稅」哪個划算。</p>
+        <div class="filters">
+          <div class="field"><label for="t-code">ETF 代號</label><input id="t-code" class="input" list="t-codes" value="${U.esc(st.code)}"><datalist id="t-codes">${app.list.filter(a => a.ttmCash > 0).map(a => `<option value="${a.code}">${U.esc(a.name)}</option>`).join('')}</datalist></div>
+          <div class="field"><label for="t-lots">持有張數</label><input id="t-lots" class="input num" type="number" min="0" step="1" value="${st.lots}"></div>
+          <div class="field"><label for="t-rate">綜合所得稅邊際稅率</label><select id="t-rate" class="select">${[0.05, 0.12, 0.2, 0.3, 0.4].map(r => `<option value="${r}"${r === st.rate ? ' selected' : ''}>${r * 100}%</option>`).join('')}</select></div>
+          <div class="field"><label for="t-other">其他股利所得（元／年）</label><input id="t-other" class="input num" type="number" min="0" step="10000" value="${st.other}"></div>
+        </div>
+      </div>
+      <div id="tax-out"></div>
+      <div class="card cream"><h3>重要說明</h3><ul class="notes small">
+        <li>二代健保補充保費：單次股利 ≥ 2 萬元時扣 2.11%（單次上限 1,000 萬元）。</li>
+        <li>股利所得：合併計稅可抵減 8.5%（每戶上限 8 萬元），或分開計稅單一稅率 28%，兩者擇一。</li>
+        <li>ETF 配息組成（股利、利息、資本利得、收益平準金）稅務處理不同；本試算把配息全部當股利所得，是<b>保守估計</b>。國內債券 ETF 的海外利息屬海外所得，通常不扣補充保費、也不計入綜所稅，實際以投信公告與扣繳憑單為準。</li>
+        <li>稅率、門檻以財政部、健保署最新公告為準；本試算不構成稅務建議。</li>
+      </ul></div>`;
+    const $ = s => sec.querySelector(s);
+    function render() {
+      st.code = $('#t-code').value.trim().toUpperCase(); st.lots = Math.max(0, Number($('#t-lots').value) || 0);
+      st.rate = Number($('#t-rate').value); st.other = Math.max(0, Number($('#t-other').value) || 0);
+      app.store.set('tax', st);
+      const a = app.byCode[st.code];
+      if (!a) { $('#tax-out').innerHTML = '<div class="card"><p class="muted">請輸入有效的 ETF 代號</p></div>'; return; }
+      const units = st.lots * 1000;
+      const pays = a.e.divs.filter(d => d.d > U.addDays(app.snap.asOf, -365)).map(d => ({ d: d.d, cash: d.cash, amt: d.cash * units }));
+      const isBond = a.cat === 'bond';
+      pays.forEach(p => { p.nhi = isBond ? 0 : P.nhi(p.amt); });
+      const annual = U.sum(pays.map(p => p.amt)), nhiTot = U.sum(pays.map(p => p.nhi));
+      const t = P.dividendTax(annual + st.other, st.rate);
+      const tOther = P.dividendTax(st.other, st.rate);
+      const extraBest = Math.min(t.combined, t.separate) - Math.min(tOther.combined, tOther.separate);
+      const maxLots = a.lastDiv ? P.nhiMaxLots(a.lastDiv.cash) : null;
+      $('#tax-out').innerHTML = `
+        <div class="card">
+          <h2>${H.link(a)} 持有 ${U.fmtInt(st.lots)} 張（${U.fmtInt(units)} 單位）</h2>
+          <div class="tiles">
+            ${H.tile('一年配息（稅前）', `<span class="num">${U.fmtInt(annual)}</span> 元`, `${pays.length} 次・${H.freqBadge(a)}`)}
+            ${H.tile('二代健保補充保費', `<span class="num">${U.fmtInt(nhiTot)}</span> 元`, isBond ? '債券 ETF 海外利息通常不扣' : `${pays.filter(p => p.nhi).length} 次超過 2 萬元`)}
+            ${H.tile('合併計稅（這筆配息增加的稅）', `<span class="num">${U.fmtInt(t.combined - tOther.combined)}</span> 元`, `邊際稅率 ${st.rate * 100}%，可抵減 8.5%`)}
+            ${H.tile('分開計稅（28%）', `<span class="num">${U.fmtInt(t.separate - tOther.separate)}</span> 元`, '')}
+          </div>
+          <p>👉 以你的條件，<b>${t.best === 'combined' ? '合併計稅' : '分開計稅'}</b>比較划算（全部股利 ${U.fmtInt(annual + st.other)} 元，相差約 ${U.fmtInt(t.saving)} 元）。這筆 ETF 配息實際增加的稅約 <b class="num">${U.fmtInt(extraBest)}</b> 元${extraBest < 0 ? '（負數＝可退稅，因為 8.5% 抵減大於你的稅率）' : ''}。
+          ${isBond ? '<br><span class="muted small">債券 ETF：若配息為海外利息，實際上不計入綜所稅，上面的稅額會高估。</span>' : ''}</p>
+          ${maxLots != null && !isBond ? `<p>💡 以最近一次配息 ${U.fmt(a.lastDiv.cash, 3)} 元計，持有 <b class="num">${U.fmt(maxLots, 2)}</b> 張以下，單次配息就不會超過 2 萬元門檻。</p>` : ''}
+          <div class="table-wrap"><table class="table"><thead><tr><th>除息日</th><th class="num">每單位</th><th class="num">入帳（稅前）</th><th class="num">補充保費</th><th class="num">實拿</th></tr></thead>
+          <tbody>${pays.map(p => `<tr><td class="num">${U.fmtDate(p.d)}</td><td class="num">${U.fmt(p.cash, 3)}</td><td class="num">${U.fmtInt(p.amt)}</td><td class="num">${p.nhi ? `<span class="warn">${U.fmtInt(p.nhi)}</span>` : '0'}</td><td class="num">${U.fmtInt(p.amt - p.nhi)}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">近一年沒有配息</td></tr>'}</tbody></table></div>
+        </div>`;
+    }
+    sec.querySelectorAll('input,select').forEach(x => x.addEventListener('input', render));
+    render();
+  };
+
+  /* ---------- 小辭典 ---------- */
+  ETF.app.views.learn = function (sec, app) {
+    const groups = [...new Set(LE.GLOSSARY.map(g => g.g))];
+    sec.innerHTML = `
+      <div class="card"><h2>📖 ETF 小辭典</h2>
+        <div class="row wrap"><label class="sr-only" for="lg-q">搜尋名詞</label><input id="lg-q" class="input" type="search" placeholder="搜尋，例如：填息、二代健保" style="max-width:320px">
+        ${groups.map(g => `<button type="button" class="chip" data-g="${g}">${g}</button>`).join('')}</div></div>
+      <div id="glossary-list">${LE.GLOSSARY.map(t => `<article class="term-card card" id="term-${t.id}" data-g="${t.g}" tabindex="-1"><h3>${t.t} <small class="badge">${t.g}</small></h3><p>${t.b}</p></article>`).join('')}</div>`;
+    const q = sec.querySelector('#lg-q');
+    let g = '';
+    function filt() {
+      const s = q.value.trim();
+      sec.querySelectorAll('.term-card').forEach(c => { c.hidden = (g && c.dataset.g !== g) || (s && !c.textContent.includes(s)); });
+      sec.querySelectorAll('[data-g].chip').forEach(c => c.classList.toggle('on', c.dataset.g === g));
+    }
+    q.oninput = filt;
+    sec.querySelectorAll('.chip[data-g]').forEach(c => c.onclick = () => { g = g === c.dataset.g ? '' : c.dataset.g; filt(); });
+    ETF.app.views.learn.focus = id => {
+      q.value = ''; g = ''; filt();
+      const el = sec.querySelector('#term-' + id); if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('is-focus'); el.focus({ preventScroll: true });
+      setTimeout(() => el.classList.remove('is-focus'), 1800);
+    };
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+</body>
+</html>
