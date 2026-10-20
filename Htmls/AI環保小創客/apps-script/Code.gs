@@ -39,11 +39,11 @@ function doPost(e) {
 
     const s = body.student || {};
     const cls = String(s.cls || '').trim();
-    const seat = String(s.seat || '').trim();
+    const seat = String(s.seat || '').trim().replace(/^\d$/, '0$&'); // 座號一律兩位數
     const name = String(s.name || '').trim();
     if (!cls || !seat || !name) return json_({ ok: false, error: '缺少班級、座號或姓名' });
 
-    const id = cls + '-' + ('0' + seat).slice(-2);
+    const id = cls + '-' + seat;
     const data = body.data || {};
     const entries = Array.isArray(data.entries) ? data.entries : [];
     const plans = data.plans || {};

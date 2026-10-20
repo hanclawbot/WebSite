@@ -204,11 +204,11 @@ function doPost(e) {
 
     const s = body.student || {};
     const cls = String(s.cls || '').trim();
-    const seat = String(s.seat || '').trim();
+    const seat = String(s.seat || '').trim().replace(/^\d$/, '0$&'); // 座號一律兩位數
     const name = String(s.name || '').trim();
     if (!cls || !seat || !name) return json_({ ok: false, error: '缺少班級、座號或姓名' });
 
-    const id = cls + '-' + ('0' + seat).slice(-2);
+    const id = cls + '-' + seat;
     const data = body.data || {};
     const entries = Array.isArray(data.entries) ? data.entries : [];
     const plans = data.plans || {};
@@ -341,7 +341,7 @@ function json_(obj) {
     T.classKey = c.classKey;
   }
 
-  const sid = s => `${String(s.cls || '').trim()}-${String(s.seat || '').trim().padStart(2, '0')}`;
+  const sid = s => `${s.cls}-${s.seat}`;
 
   function normalize(obj) {
     if (obj && obj.student && obj.data) return { student: obj.student, data: obj.data, submittedAt: obj.submittedAt || '' };
@@ -356,6 +356,7 @@ function json_(obj) {
   }
   function addRecord(rec, source) {
     if (!rec || !rec.student || !rec.student.cls || !rec.student.seat) return 'skip';
+    E.normProfile(rec.student); // 舊資料的「2」「6年1班」統一成「02」「601」
     const id = sid(rec.student);
     const cur = T.students[id];
     if (cur && String(cur.submittedAt) > String(rec.submittedAt)) return 'older';
