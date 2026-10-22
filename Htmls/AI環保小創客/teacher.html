@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<!-- AI 環保小創客｜teacher.html｜版本 2026.10.22-1（2026-10-22 更新） -->
+<!-- AI 環保小創客｜teacher.html｜版本 2026.10.22-2（2026-10-22 更新） -->
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="eco-version" content="2026.10.22-1">
+  <meta name="eco-version" content="2026.10.22-2">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>教師檢視器｜AI 環保小創客</title>
-  <link rel="stylesheet" href="assets/style.css?v=2026.10.22-1">
+  <link rel="stylesheet" href="assets/style.css?v=2026.10.22-2">
   <style>
     .src-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
     .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
@@ -499,8 +499,8 @@ function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 </script>
-<script src="assets/config.js?v=2026.10.22-1"></script>
-<script src="assets/app.js?v=2026.10.22-1"></script>
+<script src="assets/config.js?v=2026.10.22-2"></script>
+<script src="assets/app.js?v=2026.10.22-2"></script>
 <script>
 (function () {
   const E = window.Eco;
@@ -520,6 +520,8 @@ function json_(obj) {
       throw new Error(`雲端回應的不是資料（HTTP ${res.status}）。請到 Apps Script「部署 → 管理部署作業」確認：執行身分是「我」、誰可以存取是「任何人」，而且網址和「雲端收件設定」裡的一樣。`);
     }
   }
+  // 最新的雲端程式版本：取自下方「Apps Script 程式碼」裡的 SCRIPT_VERSION（Code.gs 沒改時不必重新部署）
+  const LATEST_GS = (($('#gsSource').textContent.match(/SCRIPT_VERSION = '([^']+)'/) || [])[1]) || E.VERSION;
   function setCloudVersion(v) {
     T.cloudVersion = v || '舊版';
     tsave();
@@ -531,7 +533,7 @@ function json_(obj) {
     const parts = [`網頁 v${E.esc(pv || E.VERSION)}`];
     if (pv && pv !== E.VERSION) parts.push(`<b style="color:#b42318">⚠️ 共用程式 app.js 是 v${E.esc(E.VERSION)}，有檔案沒更新</b>`);
     if (!cv) parts.push('雲端程式：尚未連線');
-    else if (cv !== E.VERSION) parts.push(`<b style="color:#b42318">⚠️ 雲端程式 ${cv === '舊版' ? '是舊版' : 'v' + E.esc(cv)}，請重新部署 Apps Script</b>`);
+    else if (cv !== LATEST_GS) parts.push(`<b style="color:#b42318">⚠️ 雲端程式 ${cv === '舊版' ? '是舊版' : 'v' + E.esc(cv)}，請重新部署 Apps Script</b>`);
     else parts.push(`雲端程式 v${E.esc(cv)} ✅`);
     $('#verInfo').innerHTML = '🏷️ 版本：' + parts.join(' · ');
   }
@@ -1072,7 +1074,7 @@ function json_(obj) {
         const j2 = await gasJson(`${url}?action=ping&key=${encodeURIComponent(key)}`);
         msg += j2.ok ? `；教師密碼正確，目前收到 ${j2.count} 位學生的資料` : `；⚠️ ${j2.error}`;
       }
-      if (j.version !== E.VERSION) msg += `\n⚠️ 雲端程式和網頁版本不同（網頁 v${E.VERSION}）。請把右邊最新的程式碼貼到 Apps Script，再到「部署 → 管理部署作業 → 編輯 → 版本：新版本」重新部署。`;
+      if (j.version !== LATEST_GS) msg += `\n⚠️ 雲端程式不是最新版（最新是 v${LATEST_GS}）。請把右邊最新的程式碼貼到 Apps Script，再到「部署 → 管理部署作業 → 編輯 → 版本：新版本」重新部署。`;
       out.textContent = msg;
     } catch (err) {
       out.textContent = '❌ 連線失敗：' + (err.message === 'Failed to fetch' ? '請確認網址正確、部署時「誰可以存取」選了「任何人」，且修改程式後有重新部署新版本。' : err.message);
