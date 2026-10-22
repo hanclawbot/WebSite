@@ -1,6 +1,14 @@
-/* AI 環保小創客｜共用資料層與介面元件 */
+/* AI 環保小創客｜共用資料層與介面元件｜版本 2026.10.22-1（2026-10-22 更新） */
 (function () {
   'use strict';
+
+  // 版本號：每次修改都要和各 HTML 的 eco-version、Code.gs 的 SCRIPT_VERSION 一起更新
+  const VERSION = '2026.10.22-1';
+  // 頁面（HTML）的版本，和 app.js 不同代表只換了一部分檔案
+  function pageVersion() {
+    const m = document.querySelector('meta[name="eco-version"]');
+    return m ? m.content : '';
+  }
 
   const STORE_KEY = 'ecoai.v1';
   const CLOUD_KEY = 'ecoai.cloud';
@@ -489,6 +497,7 @@
     host.className = 'topnav';
     host.innerHTML = `<div class="nav-inner">
       <a class="brand" href="index.html"><span class="brand-mark">🌏</span><span>AI 環保小創客</span></a>
+      ${versionBadgeHTML()}
       <nav class="nav-links">${NAV.map(([href, label]) =>
         `<a href="${href}" class="${href === active ? 'active' : ''}">${label}</a>`).join('')}</nav>
       ${host.dataset.noProfile ? '' : '<button class="profile-chip" id="profileChip" type="button"></button>'}
@@ -496,6 +505,14 @@
     const chip = document.getElementById('profileChip');
     if (chip) chip.addEventListener('click', () => openProfile());
     renderProfileChip();
+  }
+
+  function versionBadgeHTML() {
+    const pv = pageVersion();
+    if (pv && pv !== VERSION) {
+      return `<span class="ver-badge bad" title="這一頁是 v${esc(pv)}，共用程式 app.js 是 v${VERSION}，請確認檔案都有更新">⚠️ 版本不一致</span>`;
+    }
+    return `<span class="ver-badge" title="網站版本">v${VERSION}</span>`;
   }
 
   function renderProfileChip() {
@@ -635,12 +652,13 @@
   function footer() {
     const f = document.createElement('footer');
     f.className = 'footer';
-    f.innerHTML = `AI 環保小創客 · 六年級 AI 創作課程 ·
+    f.innerHTML = `AI 環保小創客 v${VERSION} · 六年級 AI 創作課程 ·
       <a href="teacher.html">👩‍🏫 教師檢視器</a> · <a href="../../index.html">回網站首頁</a>`;
     document.body.appendChild(f);
   }
 
   window.Eco = {
+    VERSION, pageVersion,
     TASKS, PLATFORMS, STRATEGIES, WORKS, TOPICS, RUBRIC, LEVEL_NAMES,
     get state() { return state; },
     save, profileReady, setProfile, classList, normCls, normSeat, normProfile, nextVersion, addEntry, updateEntry, deleteEntry, isPending, sortEntries,
