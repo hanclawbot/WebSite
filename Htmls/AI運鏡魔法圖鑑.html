@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 運鏡魔法圖鑑</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#5D4037; --ink2:#8D6E63; --pink:#FF8FAB; --pink2:#FADADD; --pinkbg:#FFF0F5;
+  --mint:#F0FFF4; --cream:#FFFDE7; --sky:#E3F2FD; --orange:#FFB74D;
+  --shadow:0 8px 18px rgba(255,170,190,.35);
+  --c-push:#7CC8A4; --c-pan:#7FB2E8; --c-zoom:#F2A65A; --c-orbit:#B79CF0;
+  --c-aerial:#5FC4D8; --c-follow:#F48FB1; --c-special:#E8C14E;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'M PLUS Rounded 1c','Microsoft JhengHei',sans-serif;
+  color:var(--ink); line-height:1.7; min-height:100vh;
+  background:#FFF7FA radial-gradient(#FADADD 1.2px,transparent 1.3px) 0 0/22px 22px;
+  overflow-x:hidden;
+}
+button,input,select{font-family:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+
+/* ── 標頭 ── */
+header{
+  text-align:center;padding:26px 16px 18px;margin:0 0 14px;
+  background:linear-gradient(135deg,#FFE4EC,#E3F2FD 60%,#F0FFF4);
+  border:3px solid #fff;border-radius:30px;box-shadow:var(--shadow);position:relative;
+}
+header h1{font-size:clamp(1.5rem,5vw,2.3rem);font-weight:800;letter-spacing:.04em}
+header p{color:var(--ink2);font-size:.95rem;margin-top:4px}
+.home{position:absolute;left:14px;top:12px;font-size:.82rem;text-decoration:none;color:var(--ink2);
+  background:#fff;border-radius:50px;padding:3px 12px;border:2px solid var(--pink2)}
+.home:hover{color:var(--pink)}
+.bounce{display:inline-block;animation:bounce 2.4s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* ── 分頁 ── */
+.tabs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 16px}
+.tab{border:3px solid #fff;background:#fff;border-radius:50px;padding:8px 16px;font-weight:700;
+  font-size:.95rem;box-shadow:0 4px 10px rgba(255,170,190,.25);transition:transform .2s}
+.tab:hover{transform:scale(1.05)}
+.tab.on{background:var(--pink);color:#fff}
+.panel{display:none}
+.panel.on{display:block;animation:pop .35s ease}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.box{background:#fff;border:3px solid var(--pink2);border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+.box h2{font-size:1.2rem;margin-bottom:8px}
+.hint{font-size:.88rem;color:var(--ink2)}
+.key{background:var(--cream);border:2px dashed var(--orange);border-radius:18px;padding:10px 14px;margin:10px 0;font-size:.92rem}
+
+/* ── 工具列 ── */
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px}
+.search{flex:1 1 220px;min-width:0;border:3px solid var(--pink2);border-radius:50px;padding:9px 16px;font-size:1rem;background:#fff;outline:none}
+.search:focus{border-color:var(--pink)}
+.mini{border:2px solid var(--pink2);background:#fff;border-radius:50px;padding:6px 12px;font-size:.88rem;font-weight:700}
+.mini:hover{border-color:var(--pink)}
+select.mini{padding:6px 10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{border:2px solid #fff;background:#fff;border-radius:50px;padding:5px 12px;font-size:.88rem;font-weight:700;
+  box-shadow:0 3px 8px rgba(255,170,190,.22);transition:transform .15s}
+.chip:hover{transform:scale(1.05)}
+.chip.on{color:#fff;background:var(--cc,var(--pink))}
+.count{font-size:.85rem;color:var(--ink2);margin-bottom:8px}
+
+/* ── 卡片 ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.card{background:#fff;border:3px solid #fff;border-radius:24px;overflow:hidden;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;transition:transform .2s;outline:none}
+.card:hover,.card:focus-visible{transform:translateY(-4px) scale(1.01);border-color:var(--cc)}
+.card .pv{border-radius:0;border:0;border-bottom:3px solid var(--cc)}
+.cbody{padding:10px 14px 12px;display:flex;flex-direction:column;gap:4px;flex:1}
+.ctop{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.cname{font-weight:800;font-size:1.08rem}
+.cen{font-size:.8rem;color:var(--ink2);font-weight:700}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;color:#fff;background:var(--cc);border-radius:50px;padding:1px 9px;white-space:nowrap}
+.lv{font-size:.72rem;color:var(--orange);white-space:nowrap}
+.cdesc{font-size:.86rem;color:var(--ink2);flex:1}
+.cact{display:flex;gap:6px;margin-top:6px}
+.cact .mini{flex:1;white-space:nowrap}
+.star{border:0;background:none;font-size:1.25rem;line-height:1;padding:2px;filter:grayscale(1);opacity:.45;transition:transform .2s}
+.star.on{filter:none;opacity:1}
+.star:hover{transform:scale(1.2)}
+.empty{grid-column:1/-1;text-align:center;padding:30px;color:var(--ink2)}
+
+/* ── 動畫預覽 ── */
+.pv{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#CFEAFF;border-radius:18px;border:3px solid var(--pink2);isolation:isolate}
+.pv .fx,.pv .cam{position:absolute;inset:0}
+.pv .cam{transform-origin:50% 50%}
+.pv .L{position:absolute;inset:-25%;transform-origin:50% 50%;will-change:transform}
+.pv .L svg{width:100%;height:100%;display:block}
+.pv .L-occ{display:none}
+.pv .bun{transform-box:fill-box;transform-origin:50% 100%}
+.pv .shadow{transform-box:fill-box;transform-origin:50% 50%}
+.hud{position:absolute;inset:0;pointer-events:none;z-index:5}
+.hud i{position:absolute;width:14px;height:14px;border:3px solid rgba(255,255,255,.95)}
+.hud i:nth-child(1){left:8px;top:8px;border-right:0;border-bottom:0;border-radius:6px 0 0 0}
+.hud i:nth-child(2){right:8px;top:8px;border-left:0;border-bottom:0;border-radius:0 6px 0 0}
+.hud i:nth-child(3){left:8px;bottom:8px;border-right:0;border-top:0;border-radius:0 0 0 6px}
+.hud i:nth-child(4){right:8px;bottom:8px;border-left:0;border-top:0;border-radius:0 0 6px 0}
+.rec{position:absolute;right:28px;top:7px;font-size:.66rem;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(93,64,55,.45);letter-spacing:.05em}
+.rec::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#FF6B8B;margin-right:4px;vertical-align:1px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.2}}
+.pvlabel{position:absolute;left:28px;top:6px;font-size:.66rem;font-weight:800;color:#fff;text-shadow:0 1px 3px rgba(93,64,55,.45)}
+
+/* ── 詳細視窗 ── */
+.modal{position:fixed;inset:0;background:rgba(93,64,55,.35);display:none;align-items:flex-start;justify-content:center;
+  z-index:50;padding:20px 12px;overflow-y:auto}
+.modal.on{display:flex}
+.sheet{background:#fff;border:3px solid var(--pink2);border-radius:28px;max-width:860px;width:100%;padding:18px;
+  box-shadow:0 14px 40px rgba(255,143,171,.35);position:relative;animation:pop .3s ease}
+.close{position:absolute;right:12px;top:10px;border:0;background:var(--pinkbg);border-radius:50%;width:36px;height:36px;font-size:1.1rem;z-index:6}
+.dgrid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-top:6px}
+.dinfo dt{font-weight:800;font-size:.85rem;color:var(--ink2);margin-top:6px}
+.dinfo dd{font-size:.95rem}
+.dtitle{font-size:1.45rem;font-weight:800;padding-right:40px;line-height:1.4}
+.prompt{background:var(--sky);border:2px solid #fff;border-radius:18px;padding:10px 12px;font-size:.9rem;
+  word-break:break-word;margin:6px 0;box-shadow:inset 0 0 0 2px #D6E9FB}
+.prompt.zh{background:var(--mint);box-shadow:inset 0 0 0 2px #CDEFD9}
+.plabel{display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:800;font-size:.85rem;margin-top:8px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;margin:8px 0}
+.field label{font-weight:800;font-size:.9rem}
+.inp{border:3px solid var(--pink2);border-radius:16px;padding:8px 12px;font-size:1rem;background:#fff;width:100%;outline:none;min-width:0}
+.inp:focus{border-color:var(--pink)}
+.btn{background:var(--pink);color:#fff;border:0;border-radius:50px;padding:10px 20px;font-weight:800;font-size:.98rem;
+  box-shadow:0 4px 12px rgba(255,143,171,.4);transition:transform .2s}
+.btn:hover{transform:scale(1.05)}
+.btn.alt{background:var(--orange);box-shadow:0 4px 12px rgba(255,183,77,.4)}
+.btn.ghost{background:#fff;color:var(--ink);border:2px solid var(--pink2);box-shadow:none}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.related{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+
+/* ── 比一比 ── */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.vs .side{display:flex;flex-direction:column;gap:8px}
+.vsname{font-weight:800;font-size:1.05rem}
+
+/* ── 組合器 ── */
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.opt{display:flex;flex-wrap:wrap;gap:6px}
+.opt button{border:2px solid var(--pink2);background:#fff;border-radius:50px;padding:4px 12px;font-size:.88rem;font-weight:700}
+.opt button.on{background:var(--pink);border-color:var(--pink);color:#fff}
+
+/* ── 鏡頭表 ── */
+.shot{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;background:var(--pinkbg);
+  border:2px solid #fff;border-radius:20px;padding:10px 12px;margin-bottom:10px;box-shadow:0 4px 10px rgba(255,170,190,.2)}
+.shotno{background:var(--pink);color:#fff;font-weight:800;border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+.shot .t{font-weight:800}
+.shot .p{font-size:.82rem;word-break:break-word}
+.shotbtns{display:flex;flex-direction:column;gap:4px}
+.shotbtns button{border:2px solid var(--pink2);background:#fff;border-radius:12px;width:32px;height:30px;font-size:.85rem}
+
+/* ── 小測驗 ── */
+.qgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;align-items:start}
+.qopts{display:grid;gap:8px}
+.qopt{border:3px solid var(--pink2);background:#fff;border-radius:18px;padding:10px 14px;text-align:left;font-weight:700;font-size:1rem;transition:transform .15s}
+.qopt:hover:not(:disabled){transform:scale(1.02);border-color:var(--pink)}
+.qopt.ok{background:#DFF7E8;border-color:#5CC28A}
+.qopt.no{background:#FFE1E6;border-color:#FF8FAB}
+.qopt small{display:block;font-weight:400;color:var(--ink2);font-size:.78rem}
+.qbar{height:12px;background:var(--pinkbg);border-radius:50px;overflow:hidden;border:2px solid #fff;margin:6px 0 10px}
+.qbar span{display:block;height:100%;background:linear-gradient(90deg,#FF8FAB,#FFB74D);border-radius:50px;transition:width .3s}
+.qfb{border-radius:18px;padding:10px 14px;margin-top:10px;font-size:.92rem;display:none}
+.qfb.on{display:block}
+.qfb.ok{background:#DFF7E8}
+.qfb.no{background:#FFE1E6}
+.big{font-size:3rem;text-align:center}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(30px);background:var(--ink);color:#fff;
+  border-radius:50px;padding:8px 18px;font-weight:700;opacity:0;transition:.3s;z-index:99;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:.95;transform:translateX(-50%) translateY(0)}
+footer{text-align:center;font-size:.8rem;color:var(--ink2);padding:20px 0 30px}
+
+@media (max-width:760px){
+  .dgrid,.bgrid,.qgrid{grid-template-columns:1fr}
+  .vs{grid-template-columns:1fr}
+  .wrap{padding:12px}
+  header{padding-top:40px}
+}
+@media (prefers-reduced-motion:reduce){.bounce,.rec::before{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="home" href="../index.html">← 網站索引</a>
+    <h1><span class="bounce">🎥</span> AI 運鏡魔法圖鑑</h1>
+    <p>看動畫認識 43 種攝影機運鏡，一鍵複製提示詞，做出像電影一樣的 AI 影片 ✨</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab on" data-tab="lib">📚 運鏡圖鑑</button>
+    <button class="tab" data-tab="vs">⚖️ 比一比</button>
+    <button class="tab" data-tab="build">🧩 提示詞組合器</button>
+    <button class="tab" data-tab="shots">🎬 我的鏡頭表 <span id="shotCount"></span></button>
+    <button class="tab" data-tab="quiz">🎯 運鏡小測驗</button>
+  </nav>
+
+  <!-- 圖鑑 -->
+  <section class="panel on" id="p-lib">
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="🔍 搜尋運鏡：例如 推鏡、環繞、zoom…">
+      <select class="mini" id="rate" aria-label="動畫速度">
+        <option value="0.5">🐢 慢速播放</option>
+        <option value="1" selected>🐰 正常速度</option>
+        <option value="1.6">🚀 快速播放</option>
+      </select>
+      <button class="mini" id="pauseAll">🛑 暫停動畫</button>
+    </div>
+    <div class="chips" id="cats"></div>
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- 比一比 -->
+  <section class="panel" id="p-vs">
+    <div class="box">
+      <h2>⚖️ 容易搞混的運鏡</h2>
+      <p class="hint">點一組來比較，注意看<b>近的花</b>和<b>遠的山</b>移動速度有沒有不一樣！</p>
+      <div class="chips" id="pairs" style="margin:10px 0 0"></div>
+      <div class="key" id="pairNote"></div>
+    </div>
+    <div class="box">
+      <div class="vs">
+        <div class="side"><select class="inp" id="vsA"></select><div class="pv" id="pvA"></div><div class="vsname" id="nA"></div><div class="hint" id="dA"></div></div>
+        <div class="side"><select class="inp" id="vsB"></select><div class="pv" id="pvB"></div><div class="vsname" id="nB"></div><div class="hint" id="dB"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 組合器 -->
+  <section class="panel" id="p-build">
+    <div class="box">
+      <h2>🧩 提示詞組合器</h2>
+      <p class="hint">選好主角、場景和運鏡，自動組成完整的 AI 影片提示詞。AI 影片工具大多比較看得懂<b>英文</b>，建議複製英文版；中文版方便你確認意思。</p>
+      <div class="bgrid" style="margin-top:8px">
+        <div>
+          <div class="field"><label for="bSubj">🐰 主角</label><input class="inp" id="bSubj" value="小兔子"><div class="opt" id="oSubj"></div></div>
+          <div class="field"><label for="bScene">🏞️ 場景</label><input class="inp" id="bScene" value="陽光草原"><div class="opt" id="oScene"></div></div>
+          <div class="field"><label>🎨 畫風</label><div class="opt" id="oStyle"></div></div>
+          <div class="field"><label>📐 景別（拍多大）</label><div class="opt" id="oSize"></div></div>
+          <div class="field"><label>👀 角度</label><div class="opt" id="oAngle"></div></div>
+        </div>
+        <div>
+          <div class="field"><label for="bM1">🎥 運鏡 1</label><select class="inp" id="bM1"></select></div>
+          <div class="field"><label for="bM2">🎥 接著運鏡 2（可不選）</label><select class="inp" id="bM2"></select></div>
+          <div class="pv" id="pvB1"></div>
+          <div class="field"><label>⏱️ 速度</label><div class="opt" id="oSpeed"></div></div>
+          <div class="field"><label>💗 氣氛</label><div class="opt" id="oMood"></div></div>
+          <div class="field"><label>⌛ 長度</label><div class="opt" id="oDur"></div></div>
+        </div>
+      </div>
+      <div class="plabel">🇬🇧 英文提示詞 <button class="mini" data-copy="#outEn">📋 複製</button></div>
+      <div class="prompt" id="outEn"></div>
+      <div class="plabel">🇹🇼 中文提示詞 <button class="mini" data-copy="#outZh">📋 複製</button></div>
+      <div class="prompt zh" id="outZh"></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="addShot">🎬 加入我的鏡頭表</button><button class="btn ghost" id="rand">🎲 隨機組合</button></div>
+    </div>
+  </section>
+
+  <!-- 鏡頭表 -->
+  <section class="panel" id="p-shots">
+    <div class="box">
+      <h2>🎬 我的鏡頭表</h2>
+      <p class="hint">把一個一個鏡頭排起來，就是一支短片的分鏡！資料只存在這台電腦的瀏覽器裡。</p>
+      <div class="row" style="margin:10px 0">
+        <button class="btn" data-copyall="en">📋 複製全部（英文）</button>
+        <button class="btn alt" data-copyall="zh">📋 複製全部（中文）</button>
+        <button class="btn ghost" id="dlShots">💾 下載文字檔</button>
+        <button class="btn ghost" id="clearShots">🗑️ 全部清除</button>
+      </div>
+      <div id="shotList"></div>
+    </div>
+  </section>
+
+  <!-- 小測驗 -->
+  <section class="panel" id="p-quiz">
+    <div class="box" id="quizStart">
+      <h2>🎯 運鏡小測驗</h2>
+      <p>看動畫，猜猜看這是哪一種運鏡？一共 10 題。</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" data-qlv="1">🌱 入門挑戰（基本運鏡）</button>
+        <button class="btn alt" data-qlv="3">🔥 高手挑戰（全部運鏡）</button>
+      </div>
+    </div>
+    <div class="box" id="quizRun" hidden>
+      <div class="row" style="justify-content:space-between"><b id="qNo"></b><b id="qScore"></b></div>
+      <div class="qbar"><span id="qBar"></span></div>
+      <div class="qgrid">
+        <div><div class="pv" id="pvQ"></div><div class="qfb" id="qFb"></div></div>
+        <div><p style="font-weight:800;margin-bottom:6px">這是哪一種運鏡？</p><div class="qopts" id="qOpts"></div>
+          <button class="btn" id="qNext" style="margin-top:12px;display:none">下一題 ➜</button></div>
+      </div>
+    </div>
+    <div class="box" id="quizEnd" hidden style="text-align:center">
+      <div class="big" id="qMedal"></div>
+      <h2 id="qResult"></h2>
+      <p class="hint" id="qReview"></p>
+      <button class="btn" id="qAgain" style="margin-top:12px">再玩一次</button>
+    </div>
+  </section>
+
+  <footer>動畫為示意，用遠近視差模擬真實運鏡 · 提示詞可貼到各種 AI 影片工具使用</footer>
+</div>
+
+<div class="modal" id="modal" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <button class="close" id="mClose" aria-label="關閉">✕</button>
+    <div class="dtitle" id="mTitle"></div>
+    <div class="dgrid">
+      <div>
+        <div class="pv" id="pvM"></div>
+        <div class="field"><label for="mSubj">✏️ 換成你的主角</label><input class="inp" id="mSubj" value="可愛的小兔子"></div>
+        <div class="plabel">🇬🇧 英文提示詞 <button class="mini" data-copy="#mEn">📋 複製</button></div>
+        <div class="prompt" id="mEn"></div>
+        <div class="plabel">🇹🇼 中文提示詞 <button class="mini" data-copy="#mZh">📋 複製</button></div>
+        <div class="prompt zh" id="mZh"></div>
+        <div class="row" style="margin-top:8px"><button class="btn" id="mAdd">🎬 加入鏡頭表</button><button class="btn ghost" id="mBuild">🧩 用組合器編輯</button></div>
+      </div>
+      <dl class="dinfo" id="mInfo"></dl>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= 分類 ================= */
+const CATS = {
+  push:   {zh:'推拉與橫移', icon:'🚃', c:'var(--c-push)',   note:'攝影機整台在移動，像坐在小火車上'},
+  pan:    {zh:'搖攝',       icon:'🔄', c:'var(--c-pan)',    note:'攝影機站著不動，只是轉頭'},
+  zoom:   {zh:'變焦',       icon:'🔍', c:'var(--c-zoom)',   note:'攝影機不動，用鏡頭放大縮小'},
+  orbit:  {zh:'環繞',       icon:'🌀', c:'var(--c-orbit)',  note:'繞著主角轉圈圈'},
+  aerial: {zh:'升降與空拍', icon:'🚁', c:'var(--c-aerial)', note:'飛到高處或從高處降下'},
+  follow: {zh:'跟拍與手持', icon:'🏃', c:'var(--c-follow)', note:'跟著主角走，或用手拿著拍'},
+  special:{zh:'特殊效果',   icon:'✨', c:'var(--c-special)',note:'時間、焦點、角度的魔法'}
+};
+
+/* ================= 動畫工具 =================
+   畫面分成 5 層：bg 遠景、mid 中景、subj 主角、fg 前景、occ 遮擋物。
+   視差係數不同 → 攝影機「真的移動」時近的跑得快、遠的跑得慢；
+   搖攝、變焦則作用在整台攝影機（cam），所有層一起動。 */
+const PF = {bg:.25, mid:.6, subj:1, fg:1.7, occ:1.7};
+const LAY = ['bg','mid','subj','fg','occ'];
+const lf = (o, f) => Object.assign({}, o, {x:(o.x||0)*f, y:(o.y||0)*f, s:1+((o.s ?? 1)-1)*f, r:(o.r||0)*f});
+const par = frames => Object.fromEntries(LAY.map(l => [l, frames.map(fr => lf(fr, PF[l]))]));
+const all = (...objs) => Object.assign({}, ...objs);
+const still = [{}, {}];
+const bob = (h = 4, d = .5) => ({f:[{y:0},{y:-h},{y:0}], dur:d});
+const n = v => +(+v).toFixed(3);
+function tf(o, unit) {
+  const s = o.s ?? 1, sx = o.sx ?? 1;
+  return `translate(${n(o.x||0)}${unit},${n(o.y||0)}${unit}) scale(${n(s*sx)},${n(s)}) rotate(${n(o.r||0)}deg)`;
+}
+const camTf = o => `perspective(700px) rotateX(${n(o.rx||0)}deg) ` + tf(o, '%');
+
+/* 方向用語：攝影機往左 → 畫面裡的東西往右跑 */
+const A = {
+  dollyIn:   {dur:3.4, L:par([{}, {s:1.38}])},
+  pushSlow:  {dur:5.5, L:par([{}, {s:1.16}])},
+  dollyOut:  {dur:3.4, L:par([{s:1.38}, {}])},
+  pullReveal:{dur:4.6, L:par([{s:1.75, y:-2}, {}])},
+  truckL:    {dur:3.6, L:par([{x:-6}, {x:6}])},
+  truckR:    {dur:3.6, L:par([{x:6}, {x:-6}])},
+  pedUp:     {dur:3.6, L:par([{y:-5}, {y:5}])},
+  pedDown:   {dur:3.6, L:par([{y:5}, {y:-5}])},
+  panL:      {dur:3.6, L:{cam:[{x:-12}, {x:12}]}},
+  panR:      {dur:3.6, L:{cam:[{x:12}, {x:-12}]}},
+  tiltUp:    {dur:3.6, L:{cam:[{y:-15}, {y:15}]}},
+  tiltDown:  {dur:3.6, L:{cam:[{y:15}, {y:-15}]}},
+  whip:      {dur:2.6, L:{cam:[{x:-14,f:'blur(0px)'},{x:-14,f:'blur(0px)',offset:.42},{x:0,f:'blur(9px)',offset:.5},{x:14,f:'blur(0px)',offset:.58},{x:14,f:'blur(0px)'}]}},
+  zoomIn:    {dur:3.4, L:{cam:[{}, {s:1.6}]}},
+  zoomOut:   {dur:3.4, L:{cam:[{s:1.6}, {}]}},
+  crash:     {dur:2.6, L:{cam:[{},{offset:.5},{s:2.4,y:6,offset:.58},{s:2.4,y:6}]}},
+  dollyZoom: {dur:3.6, L:{bg:[{},{s:1.7}], mid:[{},{s:1.32}], subj:still, fg:[{},{s:.82}]}},
+  orbitL:    {dur:4.2, L:{bg:[{x:5},{x:-5}], mid:[{x:3},{x:-3}], subj:[{},{sx:.82,offset:.5},{}], fg:[{x:-10},{x:10}]}},
+  orbitR:    {dur:4.2, L:{bg:[{x:-5},{x:5}], mid:[{x:-3},{x:3}], subj:[{},{sx:.82,offset:.5},{}], fg:[{x:10},{x:-10}]}},
+  arc:       {dur:4, L:{bg:[{x:2.5,s:1.05},{x:-2.5,s:1.05}], mid:[{x:1.5,s:1.05},{x:-1.5,s:1.05}], subj:[{s:1.05},{s:1.08,sx:.9,offset:.5},{s:1.05}], fg:[{x:-6,s:1.1},{x:6,s:1.1}]}},
+  spiral:    {dur:4, L:all(par([{}, {s:1.2}]), {cam:[{r:0,s:1.2},{r:28,s:1.55}]})},
+  bullet:    {dur:5, L:{bg:[{x:4},{x:-4}], mid:[{x:2.5},{x:-2.5}], subj:still, fg:[{x:-9},{x:9}], '.bun':[{y:-26,r:-8},{y:-26,r:-8}], '.shadow':[{s:.6},{s:.6}]}},
+  craneUp:   {dur:4, L:all(par([{y:-4}, {y:6}]), {cam:[{s:1.12},{s:1.05, rx:16}]})},
+  craneDown: {dur:4, L:all(par([{y:6}, {y:-4}]), {cam:[{s:1.05, rx:16},{s:1.12}]})},
+  flyover:   {dur:3.6, L:all(par([{y:-5}, {y:7, s:1.25}]), {cam:[{rx:28,s:1.3},{rx:28,s:1.3}]})},
+  droneRev:  {dur:4.2, occ:'bush', L:all(par([{y:-2}, {y:4}]), {occ:[{y:-2},{y:34}], cam:[{s:1.08},{s:1}]})},
+  topDown:   {dur:4.2, L:{cam:[{s:1.05},{rx:42, s:1.4, r:10}]}},
+  aerialPB:  {dur:4.4, L:all(par([{s:1.45}, {}]), {cam:[{rx:6,s:1.6},{rx:26,s:1.2}]})},
+  fpv:       {dur:2.4, ease:'linear', L:all(par([{}, {s:1.55}]), {cam:[{r:-10,s:1.35},{r:9,s:1.35,offset:.5},{r:-6,s:1.35}]})},
+  track:     {dur:3.6, ease:'linear', L:all(par([{x:5}, {x:-6}]), {subj:still, '.bun':bob(4,.45)})},
+  follow:    {dur:3.6, ease:'linear', L:all(par([{}, {s:1.32}]), {subj:still, '.bun':bob(4,.45)})},
+  leading:   {dur:3.6, ease:'linear', L:all(par([{s:1.32}, {}]), {subj:still, '.bun':bob(4,.45)})},
+  handheld:  {dur:4, mode:'loop', L:{cam:[{s:1.06},{x:1.1,y:-.8,r:.7,s:1.06},{x:-.6,y:.7,r:-.5,s:1.06},{x:.8,y:1,r:.4,s:1.06},{x:-1,y:-.4,r:-.8,s:1.06},{s:1.06}]}},
+  shake:     {dur:.55, mode:'loop', ease:'linear', L:{cam:[{s:1.12},{x:2.6,y:-1.8,r:1.4,s:1.12},{x:-2.2,y:2,r:-1.2,s:1.12},{x:1.8,y:1.4,r:.8,s:1.12},{x:-2.4,y:-1.2,r:-1.4,s:1.12},{s:1.12}]}},
+  pov:       {dur:3.6, ease:'linear', hide:true, L:all(par([{}, {s:1.38}]), {cam:{f:[{s:1.06},{y:1.6,s:1.06},{s:1.06}], dur:.6}})},
+  static:    {dur:6, mode:'loop', L:{subj:[{x:-13},{x:13,offset:.5},{x:-13}], '.bun':bob(4,.45)}},
+  roll:      {dur:6, mode:'loop', ease:'linear', L:{cam:[{r:0,s:1.5},{r:360,s:1.5}]}},
+  dutch:     {dur:3.2, L:{cam:[{}, {r:-14,s:1.22}]}},
+  rack:      {dur:3.6, L:{fg:[{s:1.3,y:-3,f:'blur(0px)'},{s:1.3,y:-3,f:'blur(5px)'}], subj:[{f:'blur(3px)'},{f:'blur(0px)'}], mid:[{f:'blur(3px)'},{f:'blur(1px)'}], bg:[{f:'blur(3px)'},{f:'blur(1.5px)'}]}},
+  timelapse: {dur:4, ease:'linear', L:{'.sun':[{x:-230,y:75},{x:30,y:-10}], '.cloud':[{x:130},{x:-170}], bg:[{f:'brightness(.92) saturate(1)'},{f:'brightness(1.05) saturate(1.25)'}]}},
+  hyperlapse:{dur:4, ease:'linear', L:all(par([{x:5}, {x:-6}]), {'.sun':[{x:-230,y:75},{x:30,y:-10}], '.cloud':[{x:130},{x:-170}]})},
+  slowmo:    {dur:4.5, mode:'loop', L:{cam:[{s:1.05},{s:1.12,offset:.5},{s:1.05}], '.bun':[{},{y:-30,r:6,offset:.5},{}], '.shadow':[{},{s:.55,offset:.5},{}]}},
+  fgReveal:  {dur:3.8, occ:'trunk', L:all(par([{x:2}, {x:-3}]), {occ:[{x:0},{x:-44}]})}
+};
+
+/* ================= 運鏡資料 =================
+   act / zhAct 中的 {s} 會換成主角 */
+const RAW = [
+ ['dolly-in','push','推鏡','Dolly In',1,'dollyIn','攝影機整台往前走，慢慢靠近主角。近的花變大得快，遠的山變大得慢。','專心、靠近、發現重點','角色想到好點子、要觀眾注意某個東西','和「放大鏡頭」不同：推鏡是攝影機真的往前走，前景的花會衝出畫面。','the camera physically moves forward toward {s}','攝影機向前移動，慢慢靠近{s}'],
+ ['push-slow','push','緩慢推近','Slow Push-In',1,'pushSlow','非常非常慢地往前推，觀眾幾乎沒發現，卻覺得情緒越來越強。','情緒慢慢累積、感動、緊張','角色在思考、說重要的話、感人時刻','提示詞加上 slow、subtle，動作會更細膩。','a very slow, subtle push-in toward {s}, building emotion','非常緩慢、幾乎察覺不到地推近{s}，情緒慢慢累積'],
+ ['dolly-out','push','拉鏡','Dolly Out',1,'dollyOut','攝影機往後退，離主角越來越遠，畫面看到更多周圍的東西。','離開、孤單、交代環境','故事結尾、角色獨自一人','很適合當影片的最後一個鏡頭。','the camera moves backward away from {s}, showing more of the surroundings','攝影機往後退，遠離{s}，露出更多周圍環境'],
+ ['pull-reveal','push','後拉揭露','Pull-Back Reveal',2,'pullReveal','一開始很近、看不出在哪裡，往後拉開後才發現「原來在這裡！」','驚喜、恍然大悟','揭曉主角在哪裡、製造反轉','開頭的畫面要夠近，揭露才有驚喜感。','starts in a tight close-up of {s}, then pulls back to reveal the whole surprising scene','從{s}的特寫開始，往後拉開，揭露整個令人驚喜的場景'],
+ ['truck-left','push','左橫移','Truck Left',1,'truckL','攝影機像坐在軌道車上往左滑。近的花跑得快、遠的山跑得慢。','流動、巡視、介紹','介紹排成一排的東西、跟著角色走','攝影機往左，畫面裡的東西會往右跑。','the camera slides sideways to the left past {s}, with parallax between foreground and background','攝影機向左平移經過{s}，前景和背景有遠近視差'],
+ ['truck-right','push','右橫移','Truck Right',1,'truckR','攝影機像坐在軌道車上往右滑，近快遠慢，很有立體感。','流動、巡視、介紹','介紹場景、跟著角色走','攝影機往右，畫面裡的東西會往左跑。','the camera slides sideways to the right past {s}, with parallax between foreground and background','攝影機向右平移經過{s}，前景和背景有遠近視差'],
+ ['pedestal-up','push','升鏡','Pedestal Up',2,'pedUp','攝影機整台垂直往上升（像搭電梯），鏡頭方向不變。','長大、往上看、期待','從角色的腳慢慢升到臉、介紹高高的東西','和「上搖」不同：升鏡是攝影機換位置，上搖只是抬頭。','the camera rises straight up vertically like an elevator, keeping {s} in view','攝影機像電梯一樣垂直上升，持續拍著{s}'],
+ ['pedestal-down','push','降鏡','Pedestal Down',2,'pedDown','攝影機整台垂直往下降（像電梯下樓），鏡頭方向不變。','落地、回到現場','從天空降到角色身邊','和「下搖」不同：降鏡會有遠近視差。','the camera lowers straight down vertically like an elevator, keeping {s} in view','攝影機像電梯一樣垂直下降，持續拍著{s}'],
+
+ ['pan-left','pan','左搖','Pan Left',1,'panL','攝影機站在原地，像轉頭一樣往左看。遠近的東西一起移動，沒有視差。','觀察、尋找、看看旁邊','看看左邊有什麼、跟著角色的視線','和橫移最大的差別：搖攝時遠近的東西移動速度一樣。','the camera stays in place and pans left across the scene with {s}','攝影機停在原地向左轉，掃過有{s}的場景'],
+ ['pan-right','pan','右搖','Pan Right',1,'panR','攝影機站在原地，像轉頭一樣往右看，像在掃視整個場景。','觀察、尋找、看看旁邊','介紹寬寬的風景、跟著角色的視線','向右搖時，畫面裡的東西會往左跑。','the camera stays in place and pans right across the scene with {s}','攝影機停在原地向右轉，掃過有{s}的場景'],
+ ['tilt-up','pan','上搖','Tilt Up',1,'tiltUp','攝影機站在原地「抬頭」，從地面往上看到天空。','偉大、佩服、高大','介紹高樓、大樹、巨大的角色','從下往上看，東西會顯得很高大。','the camera stays in place and tilts upward, from the ground up to the sky above {s}','攝影機停在原地往上抬頭，從地面一路看到{s}上方的天空'],
+ ['tilt-down','pan','下搖','Tilt Down',1,'tiltDown','攝影機站在原地「低頭」，從天空往下看到地面。','開場、從風景帶到角色','影片開頭介紹場景，再找到主角','常用在開場：先看天空，再看到主角。','the camera tilts down from the sky to reveal {s} on the ground','鏡頭從天空往下搖，看到地面上的{s}'],
+ ['whip-pan','pan','甩鏡','Whip Pan',2,'whip','攝影機超快速地甩頭，畫面糊成一片，再停到新的畫面。','刺激、驚訝、轉場','兩個場景之間的轉場、突然聽到聲音回頭看','畫面模糊的那一下，可以用來接到另一個場景。','a super fast whip pan with motion blur, swinging over to {s}','超快速甩鏡，畫面出現動態模糊，甩到{s}身上'],
+
+ ['zoom-in','zoom','放大鏡頭','Zoom In',1,'zoomIn','攝影機不動，用鏡頭把畫面放大。遠近一起變大，像用放大鏡看照片。','注意、強調','看清楚小細節、強調表情','和推鏡不同：變焦時遠近的東西放大比例一樣，比較「平」。','the camera stays still and the lens zooms in on {s}','攝影機不動，鏡頭變焦放大{s}'],
+ ['zoom-out','zoom','縮小鏡頭','Zoom Out',1,'zoomOut','攝影機不動，用鏡頭把畫面縮小，看到更多東西。','交代環境、退一步看','從細節拉回全景','攝影機沒有移動，所以不會有視差。','the camera stays still and the lens zooms out from {s} to show the wider scene','攝影機不動，鏡頭從{s}變焦拉遠，看到更大的場景'],
+ ['crash-zoom','zoom','急速變焦','Crash Zoom',2,'crash','突然「咻！」一下快速放大到主角臉上。','震驚、搞笑、強調','角色嚇一跳、搞笑反應、重要發現','卡通和綜藝節目很常用，搞笑效果一流！','a sudden crash zoom rapidly into the face of {s}, dramatic and comedic','突然急速變焦，快速放大到{s}的臉上，有戲劇感又好笑'],
+ ['dolly-zoom','zoom','滑動變焦（眩暈鏡頭）','Dolly Zoom',3,'dollyZoom','攝影機往後退、同時鏡頭放大，主角大小不變，背景卻好像撲過來！','暈眩、震驚、不安','角色突然明白一件很嚴重的事','又叫「希區考克變焦」，是很有名的電影技巧。','a dolly zoom (vertigo effect): {s} stays the same size while the background stretches and warps','滑動變焦（眩暈效果）：{s}大小不變，背景卻被拉伸變形'],
+
+ ['orbit-left','orbit','左環繞','Orbit Left',2,'orbitL','攝影機繞著主角往左轉圈圈，主角一直待在畫面中間，背景往反方向跑。','帥氣、隆重、厲害','角色登場、展示作品','和橫移不同：環繞時主角不會跑出畫面。','the camera orbits around {s} to the left, keeping the subject centered','攝影機向左繞著{s}轉，主角一直在畫面中央'],
+ ['orbit-right','orbit','右環繞','Orbit Right',2,'orbitR','攝影機繞著主角往右轉圈圈，可以看到主角的不同面。','帥氣、隆重、厲害','角色登場、展示作品','提示詞可以加 360-degree 表示轉一整圈。','the camera orbits around {s} to the right, keeping the subject centered','攝影機向右繞著{s}轉，主角一直在畫面中央'],
+ ['arc-shot','orbit','弧形運鏡','Arc Shot',2,'arc','只繞一小段的環繞，像用筆畫出一條弧線。','優雅、流暢','兩個角色對話、展示角色心情','比環繞溫和，適合安靜的畫面。','a smooth arc shot, the camera moves in a half circle around {s}','流暢的弧形運鏡，攝影機繞著{s}走半圈'],
+ ['spiral','orbit','螺旋運鏡','Spiral Shot',3,'spiral','一邊轉圈、一邊靠近，像漩渦一樣。','魔法、夢境、混亂','進入夢境、施魔法、穿越時空','動作很強烈，一支影片用一次就好。','the camera spirals and rotates while moving closer to {s}, dreamy and magical','攝影機一邊旋轉一邊靠近{s}，夢幻又神奇'],
+ ['bullet-time','orbit','子彈時間','Bullet Time',3,'bullet','時間好像停住了，主角停在半空中，攝影機卻繞著主角移動。','超酷、定格、動作片','跳躍、投球、施魔法的瞬間','記得在提示詞寫出主角「正在做什麼動作」。','bullet time effect: {s} freezes in mid-air while the camera orbits around','子彈時間效果：{s}在半空中定格，攝影機繞著拍'],
+
+ ['crane-up','aerial','搖臂上升','Crane Up',2,'craneUp','攝影機被大手臂舉高，往上升的同時往下看，畫面越來越開闊。','壯觀、自由、結束','影片結尾、展現大場面','和升鏡不同：搖臂上升時鏡頭會慢慢往下看。','a crane shot rising high above {s}, tilting down to reveal the wide scene','搖臂鏡頭從{s}身邊升高，往下俯看展開寬廣的場景'],
+ ['crane-down','aerial','搖臂下降','Crane Down',2,'craneDown','從高高的地方降下來，最後停在主角身邊。','進入故事、開場','影片開場、帶觀眾走進場景','很適合放在第一個鏡頭。','a crane shot descending from high above down to {s}','搖臂鏡頭從高處慢慢降到{s}身邊'],
+ ['drone-flyover','aerial','空拍飛越','Drone Flyover',2,'flyover','像無人機在高空往前飛，從上方掠過整片風景。','壯觀、旅行、出發','介紹地點、旅程開始','加上 golden hour（黃金時刻）會更漂亮。','an aerial drone shot flying forward high over {s} and the landscape','空拍無人機在高空往前飛，掠過{s}和整片風景'],
+ ['drone-reveal','aerial','空拍揭露','Drone Reveal',2,'droneRev','無人機從山丘或樹叢後面升起，前方的景色才出現。','期待、驚嘆','揭曉目的地、新世界出現','一開始畫面被擋住，升起來才看到，驚喜感最強。','a drone rises up from behind a hill to reveal {s} and the scene beyond','無人機從山丘後方升起，揭露{s}和後方的景色'],
+ ['top-down','aerial','鳥瞰俯視','Top-Down Shot',2,'topDown','攝影機轉到上方往下看，像小鳥從天空看地面。','像看地圖、全知、可愛','看路線、看排好的東西','也叫 bird\'s-eye view（鳥的眼睛）。','the camera tilts to a top-down bird\'s-eye view looking straight down at {s}','攝影機轉到正上方，以鳥瞰角度往下看{s}'],
+ ['aerial-pullback','aerial','空拍後拉','Aerial Pull-Back',2,'aerialPB','從主角身上往後、往上飛走，最後看見整個世界。','渺小、遼闊、結束','結尾、讓主角看起來很小','很適合「故事結束了」的感覺。','an aerial pull-back shot, the drone flies backward and upward away from {s}, revealing the vast landscape','空拍後拉，無人機往後往上飛離{s}，展開遼闊的風景'],
+ ['fpv-drone','aerial','穿越機','FPV Drone',3,'fpv','像賽車無人機一樣超快地衝刺、轉彎、傾斜。','刺激、速度感、冒險','追逐、冒險、穿越森林','動作很快，影片長度短一點效果比較好。','a fast FPV drone shot zooming and banking through the scene toward {s}','穿越機鏡頭高速衝刺、傾斜轉彎，飛向{s}'],
+
+ ['side-tracking','follow','側面跟拍','Side Tracking Shot',1,'track','攝影機和主角並排一起走，主角一直在畫面中，背景一直往後跑。','陪伴、旅程','角色走路、跑步、騎腳踏車','主角和攝影機速度一樣，所以主角不會跑出畫面。','a side tracking shot moving alongside {s} as the subject walks, background scrolling by','側面跟拍，攝影機和{s}並排前進，背景不斷往後退'],
+ ['follow-shot','follow','背後跟拍','Follow Shot',1,'follow','攝影機跟在主角後面一起往前走，好像跟著主角去冒險。','好奇、冒險、一起出發','角色走進森林、走進新地方','觀眾會覺得自己也跟著主角走。','the camera follows behind {s}, moving forward together into the scene','攝影機跟在{s}後面，一起往前走進場景'],
+ ['leading-shot','follow','前導鏡頭','Leading Shot',2,'leading','攝影機走在主角前面倒退著拍，主角朝鏡頭走過來。','自信、堅定、帥氣','角色出發、一群朋友一起走來','可以看清楚主角的表情。','a leading shot, the camera moves backward in front of {s} as the subject walks toward the camera','前導鏡頭，攝影機在{s}前方倒退，主角朝鏡頭走來'],
+ ['handheld','follow','手持鏡頭','Handheld',1,'handheld','像用手拿手機拍，畫面會輕輕晃動，感覺很真實。','真實、臨場感、紀錄片','訪問、日常生活、紀錄片','晃動要「輕輕的」，太大會變成震動鏡頭。','handheld camera with natural slight shake, filming {s} like a documentary','手持攝影，畫面自然輕微晃動，像紀錄片一樣拍{s}'],
+ ['camera-shake','follow','震動鏡頭','Camera Shake',1,'shake','畫面劇烈地抖動，好像地震或大爆炸。','緊張、衝擊、危險','怪獸走路、地震、撞擊','只要一下下就好，太久會讓人頭暈。','strong camera shake as if from an earthquake, with {s} in the frame','強烈的鏡頭震動，像地震一樣，畫面中有{s}'],
+ ['pov','follow','第一人稱視角','POV Shot',2,'pov','攝影機就是角色的眼睛，看見角色看見的東西。','身歷其境、代入感','角色在找東西、走進新地方','畫面中看不到主角本人，因為「你」就是主角！','a first-person POV shot, seeing through the eyes of {s} while walking forward','第一人稱視角，透過{s}的眼睛往前走'],
+
+ ['static','special','固定鏡頭','Static Shot',1,'static','攝影機完全不動，讓畫面裡的角色自己動。','穩定、平靜、看清楚動作','角色表演、說話、做動作','最簡單也最常用！不知道選什麼時就用它。','a static locked-off shot, the camera does not move while {s} moves within the frame','固定鏡頭，攝影機完全不動，讓{s}在畫面中活動'],
+ ['camera-roll','special','旋轉鏡頭','Camera Roll',3,'roll','畫面像車輪一樣整個轉圈。','混亂、暈頭轉向、魔法','掉進兔子洞、魔法變身','轉太久會頭暈，短短幾秒就好。','the camera rolls 360 degrees around its lens axis while filming {s}','攝影機繞著鏡頭軸心旋轉 360 度拍{s}'],
+ ['dutch-angle','special','斜角鏡頭','Dutch Angle',2,'dutch','畫面故意歪一邊，讓人覺得怪怪的、不安。','不安、奇怪、懸疑','壞人出現、事情不對勁','歪 10～20 度就有效果了。','the camera tilts sideways into a dutch angle, framing {s} at a slanted angle','攝影機往側邊傾斜成斜角，歪歪地拍{s}'],
+ ['rack-focus','special','移焦','Rack Focus',3,'rack','清楚的地方從前面的花，換到後面的主角，引導觀眾看向重點。','引導視線、發現','從前景慢慢發現主角','提示詞寫清楚「從什麼」移焦「到什麼」。','rack focus: the focus shifts from the flowers in the foreground to {s} in the background','移焦：焦點從前景的花朵轉移到後方的{s}'],
+ ['time-lapse','special','縮時攝影','Time-Lapse',2,'timelapse','攝影機不動，時間變超快：太陽跑過天空、雲飛快移動。','時間流逝','從早上到晚上、花朵開花、植物長大','自然課觀察植物生長也很適合！','a time-lapse shot, the sun moves across the sky and clouds race by while {s} stays still','縮時攝影，太陽劃過天空、雲朵飛快移動，{s}靜靜待著'],
+ ['hyperlapse','special','移動縮時','Hyperlapse',3,'hyperlapse','一邊移動攝影機、一邊縮時，時間和空間都在快轉。','快轉、旅行、城市感','介紹一條街、一段旅程','比縮時攝影多了攝影機移動。','a hyperlapse, the camera travels sideways past {s} while time speeds up and clouds rush across the sky','移動縮時，攝影機橫移經過{s}，時間加速、雲朵快速飛過'],
+ ['slow-motion','special','慢動作','Slow Motion',1,'slowmo','動作變得超級慢，可以看清楚每個細節。','感動、帥氣、重要時刻','跳躍、潑水、吹蠟燭','寫出主角的「動作」，慢動作才看得出來。','slow motion shot of {s} jumping, every detail visible','慢動作拍{s}跳起來，每個細節都看得清清楚楚'],
+ ['foreground-reveal','special','前景揭露','Foreground Reveal',2,'fgReveal','攝影機從大樹後面橫移出來，主角才出現在畫面中。','神秘、偷看、登場','角色登場、偷偷觀察','前景可以是樹、牆壁、窗簾，記得寫進提示詞。','the camera slides out from behind a tree trunk in the foreground to reveal {s}','攝影機從前景的樹幹後面橫移出來，揭露{s}']
+];
+const MOVES = RAW.map(r => ({id:r[0], cat:r[1], zh:r[2], en:r[3], lv:r[4], anim:A[r[5]], desc:r[6], feel:r[7], use:r[8], tip:r[9], act:r[10], zhAct:r[11]}));
+const BY = Object.fromEntries(MOVES.map(m => [m.id, m]));
+const DEF_EN = 'a cute little rabbit', DEF_ZH = '可愛的小兔子';
+const fillS = (t, s) => t.split('{s}').join(s);
+const cardEn = (m, s = DEF_EN) => `${m.en}: ${fillS(m.act, s)}, smooth cinematic camera movement.`;
+const cardZh = (m, s = DEF_ZH) => `${m.zh}運鏡：${fillS(m.zhAct, s)}，畫面流暢有電影感。`;
+
+/* ================= 場景 SVG ================= */
+const VB = 'viewBox="-80 -45 480 270" preserveAspectRatio="xMidYMid slice"';
+const tree = (x, y, k = 1) => `<g transform="translate(${x} ${y}) scale(${k})"><rect x="-3" y="-16" width="6" height="18" rx="2" fill="#C8A27A"/><circle cx="0" cy="-26" r="15" fill="#8FD19E"/><circle cx="-7" cy="-22" r="9" fill="#9ADAA8"/><circle cx="6" cy="-31" r="5" fill="#B5E6BF"/></g>`;
+const cloud = (x, y, k = 1) => `<g class="cloud"><g transform="translate(${x} ${y}) scale(${k})"><ellipse cx="0" cy="0" rx="24" ry="8" fill="#fff"/><ellipse cx="-6" cy="-6" rx="11" ry="9" fill="#fff"/><ellipse cx="9" cy="-5" rx="9" ry="7" fill="#fff"/></g></g>`;
+const flower = (x, y, c) => `<g transform="translate(${x} ${y})"><path d="M0 0 V12" stroke="#6DB57A" stroke-width="2"/><circle cx="0" cy="-4" r="3.4" fill="${c}"/><circle cx="4" cy="0" r="3.4" fill="${c}"/><circle cx="-4" cy="0" r="3.4" fill="${c}"/><circle cx="0" cy="4" r="3.4" fill="${c}"/><circle cx="0" cy="0" r="2.4" fill="#FFF3B0"/></g>`;
+const tuft = (x, y, k = 1) => `<path transform="translate(${x} ${y}) scale(${k})" d="M-10 0 Q-8 -14 -4 -2 Q-1 -18 2 -2 Q6 -15 10 0Z" fill="#7CC48C"/>`;
+const SVG = {
+  bg: `<svg ${VB}><rect x="-80" y="-45" width="480" height="270" fill="#CDEAFF"/><rect x="-80" y="70" width="480" height="70" fill="#E6F4FF" opacity=".75"/>
+    <g class="sun"><circle cx="255" cy="36" r="23" fill="#FFE9A8" opacity=".55"/><circle cx="255" cy="36" r="15" fill="#FFD76E"/></g>
+    ${cloud(70,30)}${cloud(190,58,.8)}${cloud(330,22,1.1)}${cloud(-40,45,.9)}
+    <path d="M-80 132 L-30 84 L15 118 L68 70 L128 126 L188 86 L246 124 L300 76 L360 118 L400 96 V225 H-80Z" fill="#C3D4F4"/>
+    <path d="M-80 140 Q0 110 60 134 T200 128 T330 126 T400 134 V225 H-80Z" fill="#D8CDF2"/></svg>`,
+  mid: `<svg ${VB}><path d="M-80 136 Q60 122 160 134 T400 131 V225 H-80Z" fill="#BFE8B5"/>
+    <g><rect x="30" y="110" width="46" height="28" rx="4" fill="#FFE3B3"/><path d="M25 112 L53 90 L81 112Z" fill="#FF9BB3"/><rect x="48" y="122" width="10" height="16" rx="2" fill="#C8A27A"/><rect x="35" y="117" width="9" height="8" rx="2" fill="#BFE3FF"/></g>
+    ${tree(232,134)}${tree(274,137,.85)}${tree(-40,136,1.1)}${tree(112,132,.7)}${tree(372,134,1.05)}${tree(-5,135,.6)}</svg>`,
+  subj: `<svg ${VB}><ellipse class="shadow" cx="160" cy="143" rx="19" ry="4.5" fill="rgba(93,64,55,.16)"/>
+    <g class="bun"><ellipse cx="153" cy="80" rx="4.6" ry="13" fill="#fff" stroke="#F2C6D4" stroke-width="1.6"/><ellipse cx="167" cy="80" rx="4.6" ry="13" fill="#fff" stroke="#F2C6D4" stroke-width="1.6"/>
+    <ellipse cx="153" cy="81" rx="2" ry="8" fill="#FFC2D4"/><ellipse cx="167" cy="81" rx="2" ry="8" fill="#FFC2D4"/>
+    <ellipse cx="160" cy="126" rx="15" ry="16" fill="#fff" stroke="#F2C6D4" stroke-width="1.8"/><circle cx="160" cy="101" r="13" fill="#fff" stroke="#F2C6D4" stroke-width="1.8"/>
+    <path d="M149 112 Q160 118 171 112 L169 117 Q160 121 151 117Z" fill="#FF8FAB"/>
+    <circle cx="155" cy="100" r="1.9" fill="#5D4037"/><circle cx="165" cy="100" r="1.9" fill="#5D4037"/><ellipse cx="151" cy="105" rx="2.8" ry="1.6" fill="#FFC2D4"/><ellipse cx="169" cy="105" rx="2.8" ry="1.6" fill="#FFC2D4"/><path d="M158.5 104 Q160 105.5 161.5 104" stroke="#5D4037" stroke-width="1" fill="none"/>
+    <ellipse cx="153" cy="141" rx="5" ry="2.6" fill="#fff" stroke="#F2C6D4" stroke-width="1.4"/><ellipse cx="167" cy="141" rx="5" ry="2.6" fill="#fff" stroke="#F2C6D4" stroke-width="1.4"/></g></svg>`,
+  fg: `<svg ${VB}><path d="M-80 188 Q0 172 80 184 T240 182 T400 180 V225 H-80Z" fill="#9AD39A"/>
+    ${tuft(10,180,1.4)}${tuft(300,178,1.5)}${tuft(-50,186,1.6)}${tuft(370,184,1.4)}${tuft(120,186)}${tuft(210,184)}
+    ${flower(22,170,'#FF8FAB')}${flower(296,168,'#FFD36E')}${flower(102,178,'#FFD36E')}${flower(218,176,'#FF8FAB')}${flower(-30,174,'#B79CF0')}${flower(352,172,'#FF8FAB')}${flower(52,182,'#B79CF0')}${flower(262,182,'#7FB2E8')}</svg>`,
+  occ: `<svg ${VB}><g class="occ-bush"><path d="M-80 225 L-80 116 Q-10 58 70 92 Q160 24 250 90 Q330 52 400 110 L400 225Z" fill="#7CC48C"/>
+    <path d="M-20 140 Q40 104 100 128 M180 118 Q240 92 300 124" stroke="#9AD7A2" stroke-width="6" fill="none" stroke-linecap="round"/>${flower(40,150,'#FF8FAB')}${flower(260,140,'#FFD36E')}</g>
+    <g class="occ-trunk"><rect x="92" y="-45" width="136" height="270" rx="26" fill="#B98B67"/><path d="M120 -20 Q112 40 124 90 M165 10 Q158 80 170 150 M200 -30 Q208 40 198 120" stroke="#A47552" stroke-width="5" fill="none" stroke-linecap="round"/><ellipse cx="160" cy="70" rx="12" ry="16" fill="#8E6446"/></g></svg>`
+};
+function buildPV(pv, label) {
+  pv.innerHTML = `<div class="fx"><div class="cam">${LAY.map(l => `<div class="L L-${l}">${SVG[l]}</div>`).join('')}</div></div>
+    <div class="hud"><i></i><i></i><i></i><i></i><span class="rec">REC</span>${label ? `<span class="pvlabel">${label}</span>` : ''}</div>`;
+}
+
+/* ================= 播放引擎 ================= */
+let RATE = 1, PAUSED = false;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE = [{opacity:0,offset:0},{opacity:1,offset:.07},{opacity:1,offset:.93},{opacity:0,offset:1}];
+function withOffsets(fr) {
+  const out = fr.map(f => Object.assign({}, f));
+  if (out[0].offset == null) out[0].offset = 0;
+  if (out[out.length-1].offset == null) out[out.length-1].offset = 1;
+  for (let i = 1; i < out.length; i++) {
+    if (out[i].offset != null) continue;
+    let j = i; while (out[j].offset == null) j++;
+    const a = out[i-1].offset, b = out[j].offset;
+    for (let k = i; k < j; k++) out[k].offset = a + (b - a) * (k - i + 1) / (j - i + 1);
+  }
+  return out;
+}
+function toKF(frames, key, ease, hold) {
+  let fr = withOffsets(frames);
+  if (hold) fr = [Object.assign({}, fr[0], {offset:0}), ...fr.map(f => Object.assign({}, f, {offset:.12 + f.offset*.74})), Object.assign({}, fr[fr.length-1], {offset:1})];
+  const hasF = fr.some(f => f.f);
+  return fr.map(f => {
+    const k = {offset:f.offset, easing:ease};
+    k.transform = key === 'cam' ? camTf(f) : tf(f, key[0] === '.' ? 'px' : '%');
+    if (hasF) k.filter = f.f || 'none';
+    return k;
+  });
+}
+function stopPV(pv) { (pv._anims || []).forEach(a => a.cancel()); pv._anims = []; }
+function playPV(pv, m) {
+  stopPV(pv);
+  const sp = m.anim, hold = sp.mode !== 'loop', anims = [];
+  const occ = pv.querySelector('.L-occ');
+  occ.style.display = sp.occ ? 'block' : 'none';
+  if (sp.occ) { occ.querySelector('.occ-bush').style.display = sp.occ === 'bush' ? '' : 'none'; occ.querySelector('.occ-trunk').style.display = sp.occ === 'trunk' ? '' : 'none'; }
+  pv.querySelector('.L-subj').style.visibility = sp.hide ? 'hidden' : '';
+  for (const [key, val] of Object.entries(sp.L)) {
+    const spec = Array.isArray(val) ? {f:val} : val;
+    const own = spec.dur != null;
+    const kf = toKF(spec.f, key, spec.ease || sp.ease || 'ease-in-out', hold && !own);
+    const targets = key[0] === '.' ? pv.querySelectorAll(key) : [pv.querySelector(key === 'cam' ? '.cam' : '.L-' + key)];
+    targets.forEach(t => anims.push(t.animate(kf, {duration:(own ? spec.dur : sp.dur) * 1000, iterations:Infinity})));
+  }
+  if (hold) anims.push(pv.querySelector('.fx').animate(FADE, {duration:sp.dur * 1000, iterations:Infinity}));
+  anims.forEach(a => { a.playbackRate = RATE; if (PAUSED) a.pause(); });
+  pv._anims = anims; pv._move = m;
+}
+function setRate(r) { RATE = r; document.querySelectorAll('.pv').forEach(pv => (pv._anims || []).forEach(a => a.playbackRate = r)); }
+function setPaused(p) {
+  PAUSED = p;
+  document.querySelectorAll('.pv').forEach(pv => (pv._anims || []).forEach(a => p ? a.pause() : a.play()));
+  $('#pauseAll').textContent = p ? '▶️ 播放動畫' : '🛑 暫停動畫';
+}
+
+/* ================= 小工具 ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('acm_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('acm_' + k, JSON.stringify(v)); } catch (e) {} }
+};
+let toastT;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 1800); }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e2) {} ta.remove(); }
+  toast('📋 已複製！可以貼到 AI 影片工具囉');
+}
+const stars = lv => '⭐'.repeat(lv) + '<span style="opacity:.25">' + '⭐'.repeat(3 - lv) + '</span>';
+const lvName = ['', '入門', '進階', '高手'];
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+
+/* ================= 分頁 ================= */
+const TABS = document.querySelectorAll('.tab');
+function showTab(id) {
+  TABS.forEach(t => t.classList.toggle('on', t.dataset.tab === id));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id === 'p-' + id));
+  ['#pvA', '#pvB', '#pvB1', '#pvQ'].forEach(s => { const pv = $(s); if (pv && pv._anims) pv._anims.forEach(a => (id === 'lib' || PAUSED) ? a.pause() : a.play()); });
+  if (id === 'vs') renderVS();
+  if (id === 'build') buildUpdate();
+  if (id === 'shots') renderShots();
+  if (id === 'quiz' && quiz.cur && !quiz.done) playPV($('#pvQ'), quiz.cur.ans);
+}
+TABS.forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+/* ================= 圖鑑 ================= */
+let favs = new Set(store.get('favs', []));
+let curCat = 'all';
+const io = new IntersectionObserver(es => es.forEach(e => {
+  const pv = e.target;
+  if (e.isIntersecting) { if (!pv._anims || !pv._anims.length) { if (!REDUCED) playPV(pv, pv._m); } else if (!PAUSED) pv._anims.forEach(a => a.play()); }
+  else (pv._anims || []).forEach(a => a.pause());
+}), {rootMargin:'80px'});
+
+function renderCats() {
+  const counts = {}; MOVES.forEach(m => counts[m.cat] = (counts[m.cat] || 0) + 1);
+  const list = [['all', '🎞️ 全部', 'var(--pink)', MOVES.length], ['fav', '⭐ 我的收藏', 'var(--orange)', favs.size],
+    ...Object.entries(CATS).map(([k, c]) => [k, c.icon + ' ' + c.zh, c.c, counts[k]])];
+  $('#cats').innerHTML = list.map(([k, t, c, n]) => `<button class="chip ${k === curCat ? 'on' : ''}" data-cat="${k}" style="--cc:${c}">${t}（${n}）</button>`).join('');
+}
+$('#cats').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; curCat = b.dataset.cat; renderCats(); renderGrid(); });
+
+const cards = {};
+function makeCard(m) {
+  const c = CATS[m.cat], el = document.createElement('article');
+  el.className = 'card'; el.tabIndex = 0; el.style.setProperty('--cc', c.c); el.dataset.id = m.id;
+  el.innerHTML = `<div class="pv" role="img" aria-label="${esc(m.zh)} 動畫示意"></div>
+    <div class="cbody"><div class="ctop"><span class="tag">${c.icon} ${c.zh}</span><span class="lv" title="${lvName[m.lv]}">${stars(m.lv)}</span></div>
+    <div class="ctop"><div><div class="cname">${esc(m.zh)}</div><div class="cen">${esc(m.en)}</div></div><button class="star" aria-label="收藏" data-fav="${m.id}">⭐</button></div>
+    <div class="cdesc">${esc(m.desc)}</div>
+    <div class="cact"><button class="mini" data-cp="${m.id}">📋 複製</button><button class="mini" data-open="${m.id}">🔎 看更多</button></div></div>`;
+  const pv = el.querySelector('.pv'); buildPV(pv); pv._m = m; io.observe(pv);
+  return el;
+}
+function renderGrid() {
+  const q = $('#q').value.trim().toLowerCase();
+  const list = MOVES.filter(m => (curCat === 'all' || (curCat === 'fav' ? favs.has(m.id) : m.cat === curCat)) &&
+    (!q || [m.zh, m.en, m.desc, m.feel, m.use, CATS[m.cat].zh].join(' ').toLowerCase().includes(q)));
+  const g = $('#grid'); g.textContent = '';
+  list.forEach(m => { const el = cards[m.id] || (cards[m.id] = makeCard(m)); el.querySelector('.star').classList.toggle('on', favs.has(m.id)); g.appendChild(el); });
+  if (!list.length) g.innerHTML = `<div class="empty">${curCat === 'fav' ? '還沒有收藏喔～按卡片上的 ⭐ 就能收藏 🌸' : '找不到符合的運鏡，換個關鍵字試試看 🔍'}</div>`;
+  $('#count').textContent = curCat === 'all' || curCat === 'fav' ? `共 ${list.length} 種運鏡` : `${CATS[curCat].icon} ${CATS[curCat].zh}：${CATS[curCat].note}（${list.length} 種）`;
+}
+$('#q').addEventListener('input', renderGrid);
+$('#grid').addEventListener('click', e => {
+  const f = e.target.closest('[data-fav]'), cp = e.target.closest('[data-cp]');
+  if (f) { const id = f.dataset.fav; favs.has(id) ? favs.delete(id) : favs.add(id); store.set('favs', [...favs]); f.classList.toggle('on', favs.has(id)); renderCats(); if (curCat === 'fav') renderGrid(); toast(favs.has(id) ? '⭐ 已加入收藏' : '已取消收藏'); return; }
+  if (cp) { copy(cardEn(BY[cp.dataset.cp])); return; }
+  const card = e.target.closest('.card'); if (card) openModal(BY[card.dataset.id]);
+});
+$('#grid').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList.contains('card')) openModal(BY[e.target.dataset.id]); });
+$('#rate').value = String(store.get('rate', 1));
+RATE = +$('#rate').value || 1;
+$('#rate').addEventListener('change', e => { setRate(+e.target.value); store.set('rate', +e.target.value); });
+$('#pauseAll').addEventListener('click', () => setPaused(!PAUSED));
+
+/* ================= 詳細視窗 ================= */
+let mMove = null; const pvM = $('#pvM'); buildPV(pvM);
+const ZH2EN = {};
+function subjEn(zh) { return ZH2EN[zh.trim()] || zh.trim() || DEF_EN; }
+function openModal(m) {
+  mMove = m; const c = CATS[m.cat];
+  $('#mTitle').innerHTML = `${c.icon} ${esc(m.zh)} <span class="cen" style="font-size:1rem">${esc(m.en)}</span>`;
+  const rel = MOVES.filter(x => x.cat === m.cat && x.id !== m.id);
+  $('#mInfo').innerHTML = `<dt>分類</dt><dd><span class="tag" style="--cc:${c.c}">${c.zh}</span> ${c.note}</dd>
+    <dt>難度</dt><dd>${stars(m.lv)} ${lvName[m.lv]}</dd>
+    <dt>🎥 攝影機怎麼動</dt><dd>${esc(m.desc)}</dd><dt>💗 給人的感覺</dt><dd>${esc(m.feel)}</dd>
+    <dt>🎬 適合用在</dt><dd>${esc(m.use)}</dd><dt>💡 小提醒</dt><dd>${esc(m.tip)}</dd>
+    <dt>🔗 同一類的運鏡</dt><dd class="related">${rel.map(x => `<button class="mini" data-rel="${x.id}">${esc(x.zh)}</button>`).join('')}</dd>`;
+  modalPrompt();
+  $('#modal').classList.add('on'); $('#modal').setAttribute('aria-hidden', 'false');
+  playPV(pvM, m); $('#mClose').focus();
+}
+function modalPrompt() { const zh = $('#mSubj').value.trim() || DEF_ZH; $('#mEn').textContent = cardEn(mMove, ZH2EN[zh] || (zh === DEF_ZH ? DEF_EN : zh)); $('#mZh').textContent = cardZh(mMove, zh); }
+function closeModal() { $('#modal').classList.remove('on'); $('#modal').setAttribute('aria-hidden', 'true'); stopPV(pvM); }
+$('#mSubj').addEventListener('input', modalPrompt);
+$('#mClose').addEventListener('click', closeModal);
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); const r = e.target.closest('[data-rel]'); if (r) openModal(BY[r.dataset.rel]); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#modal').classList.contains('on')) closeModal(); });
+$('#mAdd').addEventListener('click', () => addShot({move:mMove.id, en:$('#mEn').textContent, zh:$('#mZh').textContent}));
+$('#mBuild').addEventListener('click', () => { $('#bM1').value = mMove.id; const s = $('#mSubj').value.trim(); if (s && s !== DEF_ZH) $('#bSubj').value = s; closeModal(); showTab('build'); });
+document.addEventListener('click', e => { const b = e.target.closest('[data-copy]'); if (b) copy($(b.dataset.copy).textContent); });
+
+/* ================= 比一比 ================= */
+const PAIRS = [
+  ['pan-right', 'truck-right', '搖攝 vs 橫移', '<b>搖攝</b>是攝影機「站著轉頭」，遠山和近花一起移動；<b>橫移</b>是攝影機「整台走過去」，近的花跑得快、遠的山跑得慢，這就是<mark>視差</mark>。'],
+  ['zoom-in', 'dolly-in', '變焦 vs 推鏡', '<b>變焦</b>是鏡頭放大，所有東西照同樣比例變大，像放大照片；<b>推鏡</b>是攝影機往前走，前景的花很快衝出畫面，比較有立體感。'],
+  ['tilt-up', 'pedestal-up', '上搖 vs 升鏡', '<b>上搖</b>是攝影機原地抬頭；<b>升鏡</b>是攝影機整台升高，近處的花草往下掉得比遠山快。'],
+  ['orbit-left', 'truck-left', '環繞 vs 橫移', '<b>橫移</b>時主角也會跟著滑走；<b>環繞</b>時主角一直在中間，前景和背景往相反方向跑。'],
+  ['handheld', 'camera-shake', '手持 vs 震動', '<b>手持</b>是輕輕的自然晃動，像用手機拍；<b>震動</b>是又快又大的搖晃，像地震。'],
+  ['dolly-zoom', 'zoom-in', '滑動變焦 vs 放大鏡頭', '<b>放大鏡頭</b>時主角跟著變大；<b>滑動變焦</b>時主角大小不變，只有背景在變，所以讓人頭暈。'],
+  ['time-lapse', 'slow-motion', '縮時 vs 慢動作', '<b>縮時</b>讓時間變快（太陽跑過天空）；<b>慢動作</b>讓時間變慢（看清楚跳起來的瞬間）。']
+];
+const pvA = $('#pvA'), pvB = $('#pvB'); buildPV(pvA); buildPV(pvB);
+const opts = (sel, none) => (none ? `<option value="">（不選）</option>` : '') + Object.entries(CATS).map(([k, c]) =>
+  `<optgroup label="${c.icon} ${c.zh}">${MOVES.filter(m => m.cat === k).map(m => `<option value="${m.id}" ${m.id === sel ? 'selected' : ''}>${m.zh}（${m.en}）</option>`).join('')}</optgroup>`).join('');
+$('#vsA').innerHTML = opts(PAIRS[0][0]); $('#vsB').innerHTML = opts(PAIRS[0][1]);
+$('#pairs').innerHTML = PAIRS.map((p, i) => `<button class="chip ${i ? '' : 'on'}" data-pair="${i}">${p[2]}</button>`).join('');
+$('#pairNote').innerHTML = PAIRS[0][3];
+$('#pairs').addEventListener('click', e => {
+  const b = e.target.closest('[data-pair]'); if (!b) return; const p = PAIRS[+b.dataset.pair];
+  document.querySelectorAll('#pairs .chip').forEach(c => c.classList.toggle('on', c === b));
+  $('#vsA').value = p[0]; $('#vsB').value = p[1]; $('#pairNote').innerHTML = p[3]; renderVS();
+});
+function renderVS() {
+  [['#vsA', pvA, '#nA', '#dA'], ['#vsB', pvB, '#nB', '#dB']].forEach(([s, pv, nn, d]) => {
+    const m = BY[$(s).value]; $(nn).textContent = `${CATS[m.cat].icon} ${m.zh}（${m.en}）`; $(d).textContent = m.desc; playPV(pv, m);
+  });
+}
+['#vsA', '#vsB'].forEach(s => $(s).addEventListener('change', () => { document.querySelectorAll('#pairs .chip').forEach(c => c.classList.remove('on')); $('#pairNote').innerHTML = '自己挑兩種運鏡比比看，找找看哪裡不一樣 👀'; renderVS(); }));
+
+/* ================= 提示詞組合器 ================= */
+const O = {
+  subj: [['小兔子', 'a cute little rabbit'], ['小女孩', 'a little girl with a red backpack'], ['小機器人', 'a friendly small robot'], ['小恐龍', 'a baby dinosaur'], ['橘貓', 'a fluffy orange cat'], ['小學生們', 'a group of happy elementary school students']],
+  scene: [['陽光草原', 'in a sunny meadow'], ['魔法森林', 'in a magical forest'], ['明亮的教室', 'in a bright classroom'], ['夕陽海邊', 'on a beach at sunset'], ['外太空', 'in outer space'], ['下雪的小鎮', 'in a snowy little town']],
+  style: [['3D 動畫電影', '3D animated film style'], ['日系手繪動畫', 'Japanese hand-drawn anime style'], ['黏土定格動畫', 'claymation stop-motion style'], ['水彩繪本', 'soft watercolor picture-book style'], ['寫實電影', 'realistic cinematic live-action'], ['像素遊戲', 'pixel-art game style'], ['剪紙動畫', 'paper-cut animation style']],
+  size: [['遠景', 'Extreme wide shot'], ['全景', 'Wide shot'], ['中景', 'Medium shot'], ['近景', 'Medium close-up'], ['特寫', 'Close-up']],
+  angle: [['平視', 'eye-level angle'], ['仰角（由下往上）', 'low angle looking up'], ['俯角（由上往下）', 'high angle looking down'], ['鳥瞰', "bird's-eye view"]],
+  speed: [['緩慢', 'slow'], ['平穩', 'steady'], ['快速', 'fast']],
+  mood: [['溫暖', 'Warm and cozy'], ['歡樂', 'Cheerful'], ['夢幻', 'Dreamy'], ['神秘', 'Mysterious'], ['緊張', 'Tense'], ['感動', 'Touching, emotional'], ['壯觀', 'Epic']],
+  dur: [['5 秒', '5'], ['8 秒', '8'], ['10 秒', '10']]
+};
+O.subj.concat(O.scene).forEach(([z, e]) => ZH2EN[z] = e);
+ZH2EN[DEF_ZH] = DEF_EN;
+const B = {style:0, size:1, angle:0, speed:1, mood:0, dur:0};
+function chipRow(id, key, target) {
+  $(id).innerHTML = O[key].map((o, i) => `<button type="button" data-i="${i}" class="${!target && B[key] === i ? 'on' : ''}">${o[0]}</button>`).join('');
+  $(id).addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; const i = +b.dataset.i;
+    if (target) $(target).value = O[key][i][0];
+    else { B[key] = i; $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); }
+    buildUpdate();
+  });
+}
+chipRow('#oSubj', 'subj', '#bSubj'); chipRow('#oScene', 'scene', '#bScene');
+['style', 'size', 'angle', 'speed', 'mood', 'dur'].forEach(k => chipRow('#o' + k[0].toUpperCase() + k.slice(1), k));
+$('#bM1').innerHTML = opts('dolly-in'); $('#bM2').innerHTML = opts('', true);
+const pvB1 = $('#pvB1'); buildPV(pvB1);
+['#bSubj', '#bScene'].forEach(s => $(s).addEventListener('input', buildUpdate));
+let lastM1 = null;
+['#bM1', '#bM2'].forEach(s => $(s).addEventListener('change', buildUpdate));
+function buildUpdate() {
+  const sz = $('#bSubj').value.trim() || '小兔子', se = ZH2EN[sz] || sz;
+  const cz = $('#bScene').value.trim(), ce = ZH2EN[cz] || cz;
+  const m1 = BY[$('#bM1').value], m2 = BY[$('#bM2').value];
+  const g = k => O[k][B[k]];
+  const sp = g('speed');
+  const en = `${g('style')[1]}. ${g('size')[1]} of ${se}${ce ? ' ' + ce : ''}, ${g('angle')[1]}. Camera movement: ${sp[1]} ${m1.en.toLowerCase()} — ${fillS(m1.act, se)}${m2 ? `; then ${m2.en.toLowerCase()} — ${fillS(m2.act, se)}` : ''}. ${g('mood')[1]} mood, smooth motion, ${g('dur')[1]} seconds.`;
+  const zh = `${g('style')[0]}風格，${cz ? '在' + cz + '，' : ''}用${g('size')[0]}拍${sz}，${g('angle')[0]}角度。運鏡：${sp[0]}的${m1.zh}（${fillS(m1.zhAct, sz)}）${m2 ? `，接著${m2.zh}（${fillS(m2.zhAct, sz)}）` : ''}。氣氛${g('mood')[0]}，畫面流暢，長度 ${g('dur')[1]} 秒。`;
+  $('#outEn').textContent = en; $('#outZh').textContent = zh;
+  if (lastM1 !== m1 || !pvB1._anims || !pvB1._anims.length) { playPV(pvB1, m1); lastM1 = m1; }
+}
+$('#addShot').addEventListener('click', () => addShot({move:$('#bM1').value, en:$('#outEn').textContent, zh:$('#outZh').textContent}));
+$('#rand').addEventListener('click', () => {
+  const r = a => Math.floor(Math.random() * a.length);
+  $('#bSubj').value = O.subj[r(O.subj)][0]; $('#bScene').value = O.scene[r(O.scene)][0];
+  ['style', 'size', 'angle', 'speed', 'mood'].forEach(k => { B[k] = r(O[k]); document.querySelectorAll(`#o${k[0].toUpperCase() + k.slice(1)} button`).forEach((b, i) => b.classList.toggle('on', i === B[k])); });
+  $('#bM1').value = MOVES[r(MOVES)].id; $('#bM2').value = Math.random() < .4 ? MOVES[r(MOVES)].id : '';
+  buildUpdate(); toast('🎲 隨機組合完成！');
+});
+
+/* ================= 鏡頭表 ================= */
+let shots = store.get('shots', []);
+function saveShots() { store.set('shots', shots); $('#shotCount').textContent = shots.length ? `(${shots.length})` : ''; }
+function addShot(s) { shots.push(s); saveShots(); toast(`🎬 已加入鏡頭表，目前 ${shots.length} 個鏡頭`); }
+function renderShots() {
+  const L = $('#shotList');
+  if (!shots.length) { L.innerHTML = '<div class="empty">還沒有鏡頭～到「運鏡圖鑑」或「提示詞組合器」按「加入鏡頭表」吧 🎥</div>'; return; }
+  L.innerHTML = shots.map((s, i) => { const m = BY[s.move]; return `<div class="shot"><div class="shotno">${i + 1}</div>
+    <div><div class="t">${m ? CATS[m.cat].icon + ' ' + esc(m.zh) : '鏡頭'}</div><div class="p">${esc(s.en)}</div><div class="p hint">${esc(s.zh)}</div></div>
+    <div class="shotbtns"><button data-sh="up" data-i="${i}" aria-label="上移">▲</button><button data-sh="down" data-i="${i}" aria-label="下移">▼</button><button data-sh="del" data-i="${i}" aria-label="刪除">✕</button></div></div>`; }).join('');
+}
+$('#shotList').addEventListener('click', e => {
+  const b = e.target.closest('[data-sh]'); if (!b) return; const i = +b.dataset.i, a = b.dataset.sh;
+  if (a === 'del') shots.splice(i, 1);
+  if (a === 'up' && i > 0) [shots[i - 1], shots[i]] = [shots[i], shots[i - 1]];
+  if (a === 'down' && i < shots.length - 1) [shots[i + 1], shots[i]] = [shots[i], shots[i + 1]];
+  saveShots(); renderShots();
+});
+const shotText = lang => shots.map((s, i) => `${lang === 'en' ? 'Shot' : '鏡頭'} ${i + 1}: ${s[lang]}`).join('\n\n');
+document.querySelectorAll('[data-copyall]').forEach(b => b.addEventListener('click', () => shots.length ? copy(shotText(b.dataset.copyall)) : toast('鏡頭表是空的喔')));
+$('#dlShots').addEventListener('click', () => {
+  if (!shots.length) return toast('鏡頭表是空的喔');
+  const blob = new Blob(['我的鏡頭表\n\n' + shotText('zh') + '\n\n──────── English ────────\n\n' + shotText('en')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '我的鏡頭表.txt'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+$('#clearShots').addEventListener('click', () => { if (shots.length && confirm('確定要清除全部鏡頭嗎？')) { shots = []; saveShots(); renderShots(); } });
+
+/* ================= 小測驗 ================= */
+const pvQ = $('#pvQ'); buildPV(pvQ, '❓ 猜猜看');
+const quiz = {qs:[], i:0, score:0, cur:null, done:false, wrong:[]};
+function startQuiz(lv) {
+  const pool = MOVES.filter(m => m.lv <= lv);
+  quiz.qs = shuffle(pool).slice(0, 10).map(ans => {
+    const same = shuffle(pool.filter(m => m !== ans && m.cat === ans.cat)), other = shuffle(pool.filter(m => m !== ans && m.cat !== ans.cat));
+    const wrong = (lv > 1 ? same.slice(0, 2).concat(other) : other.concat(same)).slice(0, 3);
+    return {ans, opts:shuffle([ans, ...wrong])};
+  });
+  Object.assign(quiz, {i:0, score:0, done:false, wrong:[]});
+  $('#quizStart').hidden = true; $('#quizEnd').hidden = true; $('#quizRun').hidden = false;
+  showQ();
+}
+function showQ() {
+  const q = quiz.cur = quiz.qs[quiz.i];
+  $('#qNo').textContent = `第 ${quiz.i + 1} / ${quiz.qs.length} 題`; $('#qScore').textContent = `得分 ${quiz.score}`;
+  $('#qBar').style.width = (quiz.i / quiz.qs.length * 100) + '%';
+  $('#qOpts').innerHTML = q.opts.map(m => `<button class="qopt" data-q="${m.id}">${esc(m.zh)}<small>${esc(m.en)}</small></button>`).join('');
+  $('#qFb').className = 'qfb'; $('#qNext').style.display = 'none';
+  playPV(pvQ, q.ans);
+}
+$('#qOpts').addEventListener('click', e => {
+  const b = e.target.closest('[data-q]'); if (!b || b.disabled) return;
+  const q = quiz.cur, ok = b.dataset.q === q.ans.id;
+  document.querySelectorAll('.qopt').forEach(x => { x.disabled = true; if (x.dataset.q === q.ans.id) x.classList.add('ok'); });
+  if (ok) quiz.score++; else { b.classList.add('no'); quiz.wrong.push(q.ans.zh); }
+  const fb = $('#qFb'); fb.className = 'qfb on ' + (ok ? 'ok' : 'no');
+  fb.innerHTML = `${ok ? '🎉 答對了！' : `😅 答案是「${esc(q.ans.zh)}」`}<br>${esc(q.ans.desc)}${ok ? '' : `<br><small>💡 ${esc(q.ans.tip)}</small>`}`;
+  $('#qScore').textContent = `得分 ${quiz.score}`;
+  $('#qNext').textContent = quiz.i === quiz.qs.length - 1 ? '看結果 🏆' : '下一題 ➜'; $('#qNext').style.display = '';
+});
+$('#qNext').addEventListener('click', () => { quiz.i++; if (quiz.i < quiz.qs.length) showQ(); else endQuiz(); });
+function endQuiz() {
+  quiz.done = true; stopPV(pvQ);
+  const s = quiz.score, t = quiz.qs.length;
+  $('#quizRun').hidden = true; $('#quizEnd').hidden = false;
+  $('#qMedal').textContent = s === t ? '🏆' : s >= t * .7 ? '🥇' : s >= t * .4 ? '🥈' : '🌱';
+  $('#qResult').textContent = `答對 ${s} / ${t} 題！${s === t ? '你是運鏡大師！' : s >= t * .7 ? '很厲害喔！' : '多看幾次圖鑑，下次一定更好！'}`;
+  $('#qReview').textContent = quiz.wrong.length ? `可以再複習：${quiz.wrong.join('、')}` : '全部答對，太棒了 ✨';
+}
+document.querySelectorAll('[data-qlv]').forEach(b => b.addEventListener('click', () => startQuiz(+b.dataset.qlv)));
+$('#qAgain').addEventListener('click', () => { $('#quizEnd').hidden = true; $('#quizStart').hidden = false; });
+
+/* ================= 啟動 ================= */
+renderCats(); renderGrid(); saveShots();
+if (REDUCED) toast('已偵測到「減少動態」設定，點卡片即可播放動畫');
+})();
+</script>
+</body>
+</html>
